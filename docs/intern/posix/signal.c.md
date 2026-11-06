@@ -7,13 +7,14 @@ Each function keeps the contract of `docs/extern/os.h.md`, *Functions*.
 
 `get_stop` keeps one `struct os_stop` of `src/posix/os_types.h`: the flag, the line of the caller and the length of the line.
 A handler of a signal can reach only an object of static storage, and safely only an atomic object that has no lock.
-So each field is atomic, and each of them has no lock on each target.
+So each field is atomic, and each of them has no lock on each target. `line` is an `atomic_uintptr_t` that holds the address of the line.
+Each access to a field gives `memory_order_seq_cst`, so all the threads and the handler see the accesses in one order.
 `os_signal_catch` stores the line and its length before it gives the handler to a signal.
 
 ## The handler
 
 `os_signal_catch` gives `catch_stop` to `sigaction` for `SIGINT`, `SIGTERM` and `SIGHUP`, through `catch_one`.
-`catch_stop` sets the flag with `atomic_exchange`, which also gives the value before the set.
+`catch_stop` sets the flag with `atomic_exchange_explicit`, which also gives the value before the set.
 At the first signal, `catch_stop` writes the line with `write` on `STDOUT_FILENO`.
 The system reads the bytes of the line, and the handler reads only atomic fields.
 
@@ -26,7 +27,7 @@ If the flag was set already, the signal is a second one, and `catch_stop` calls 
 
 The write of the line waits when the output is full.
 `SA_NODEFER` lets a second signal of the same kind run the handler again in that time, so the second signal still ends the process.
-An empty `sa_mask` blocks no other signal while the handler runs, because `atomic_exchange` already orders two signals.
+An empty `sa_mask` blocks no other signal while the handler runs, because `atomic_exchange_explicit` already orders two signals.
 
 ## The broken pipe
 

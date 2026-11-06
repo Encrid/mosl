@@ -35,7 +35,7 @@ struct os_folder {
 
 struct os_stop {
     atomic_bool caught;
-    _Atomic(const char *) line;
+    atomic_uintptr_t line;
     atomic_size_t length;
 };
 

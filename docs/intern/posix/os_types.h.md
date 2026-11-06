@@ -49,7 +49,7 @@ The state of the signals: `docs/intern/posix/signal.c.md`, *The state*.
 | Field | Content |
 | --- | --- |
 | `caught` | True after the first signal. |
-| `line` | The line that the handler writes at the first signal. |
+| `line` | The address of the line that the handler writes at the first signal. |
 | `length` | The number of bytes of `line`. |
 
 ## Functions
