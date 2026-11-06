@@ -1,0 +1,275 @@
+[[case]]
+name = "os_folder_make makes each folder above the folder"
+run = ["{out}/files{exe}", "{case}", "make", "a/b/c"]
+claims = { line = ["make: 0 3"] }
+false = { files = { "{case}/a" = "x" } }
+
+[[case]]
+name = "os_folder_make gives 0 for a folder that is there"
+run = ["{out}/files{exe}", "{case}", "make", "a"]
+files = { "{case}/a/k" = "" }
+claims = { line = ["make: 0 3"] }
+false = { run = ["{out}/files{exe}", "{case}", "make", "a/k"] }
+
+[[case]]
+name = "each call on a path takes a path past the limit of the system"
+run = ["{out}/files{exe}", "{case}", "deep", "made"]
+claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, link 0, entry 3, remove 0, entry 0"] }
+false = { run = ["{out}/files{exe}", "{case}", "deep", "unmade"] }
+
+[[case]]
+name = "os_file_write replaces all the bytes of a file"
+run = ["{out}/files{exe}", "{case}", "replace", "new"]
+files = { "{case}/f" = "old text" }
+claims = { line = ["replace: 0, 3 bytes: new"] }
+false = { run = ["{out}/files{exe}", "{case}", "replace", "news"] }
+
+[[case]]
+name = "a new file with executable gets 0777 less the umask"
+run = ["{out}/files{exe}", "{case}", "mode", "none", "x", "0755"]
+claims = { line = ["mode: as The files tells"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "mode", "none", "x", "0755"] }
+
+[[case]]
+name = "a new file gets 0666 less the umask"
+run = ["{out}/files{exe}", "{case}", "mode", "none", "-", "0644"]
+claims = { line = ["mode: as The files tells"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "mode", "none", "-", "0644"] }
+
+[[case]]
+name = "a file that was there with executable gets an execute bit for each read bit"
+run = ["{out}/files{exe}", "{case}", "mode", "0600", "x", "0700"]
+claims = { line = ["mode: as The files tells"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "mode", "0600", "x", "0700"] }
+
+[[case]]
+name = "a file that was there loses each execute bit, and keeps its read and write bits"
+run = ["{out}/files{exe}", "{case}", "mode", "0755", "-", "0644"]
+claims = { line = ["mode: as The files tells"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "mode", "0755", "-", "0644"] }
+
+[[case]]
+name = "os_path_entry tells a file, a folder and nothing"
+run = ["{out}/files{exe}", "{case}", "entry"]
+claims = { line = ["entry: 1 3 0 0"] }
+false = { files = { "{case}/m" = "" } }
+
+[[case]]
+name = "os_path_entry gives 2 for a file with an execute bit, and 1 on Windows"
+run = ["{out}/files{exe}", "{case}", "entry-x"]
+claims = { line = ["entry-x: as The files tells"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "entry-x"] }
+
+[[case]]
+name = "os_path_entry follows a link to a folder and to a file, and gives 0 for a link with no target"
+run = ["{out}/files{exe}", "{case}", "entry-link"]
+claims = { line = ["entry-link: 3 1 0"] }
+false = { run = ["{out}/files{exe}", "{case}/f/x", "entry-link"], files = { "{case}/f" = "" } }
+
+[[case]]
+name = "os_path_move gives a file the path of another file, and replaces it"
+run = ["{out}/files{exe}", "{case}", "move"]
+files = { "{case}/a" = "a", "{case}/b" = "b" }
+claims = { line = ["move: 0, a 0, b holds a, none -1"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "move"] }
+
+[[case]]
+name = "os_path_move moves a folder with its entries"
+run = ["{out}/files{exe}", "{case}", "move-folder"]
+claims = { line = ["move-folder: 0, d 0, e/f 1"] }
+false = { run = ["{out}/files{exe}", "{case}/f/x", "move-folder"], files = { "{case}/f" = "" } }
+
+[[case]]
+name = "os_path_remove removes a folder with read-only entries and a link, and keeps the target of the link"
+run = ["{out}/files{exe}", "{case}", "remove"]
+claims = { line = ["remove: 0, d 0, t 3, k 1"] }
+false = { run = ["{out}/files{exe}", "{case}/f/x", "remove"], files = { "{case}/f" = "" } }
+
+[[case]]
+name = "os_path_remove gives 1 when nothing is at the path"
+run = ["{out}/files{exe}", "{case}", "remove-none"]
+claims = { line = ["remove-none: 1 1"] }
+false = { files = { "{case}/none" = "" } }
+
+[[case]]
+name = "a relative target of a link starts in the folder of the link"
+run = ["{out}/files{exe}", "{case}", "link-relative", "../f"]
+claims = { line = ["link-relative: 0, reads f"] }
+false = { run = ["{out}/files{exe}", "{case}", "link-relative", "f"] }
+
+[[case]]
+name = "os_path_whole and os_folder_make keep a name of UTF-8"
+run = ["{out}/files{exe}", "{case}", "whole"]
+claims = { line = ["whole: as The folders tells"] }
+false = { run = ["{out}/files{exe}", "{case}/f/x", "whole"], files = { "{case}/f" = "" } }
+
+[[case]]
+name = "os_folder_make gives -1 for a file at the path"
+run = ["{out}/files{exe}", "{case}", "make", "a/k"]
+files = { "{case}/a/k" = "" }
+claims = { line = ["make: -1 1"] }
+false = { run = ["{out}/files{exe}", "{case}", "make", "a/x"] }
+
+[[case]]
+name = "each call on a long path that is not there fails"
+run = ["{out}/files{exe}", "{case}", "deep", "unmade"]
+claims = { line = ["deep: make 1, write -1, read none, entry 0, move -1, entry 0, link -1, entry 0, remove 1, entry 0"] }
+false = { run = ["{out}/files{exe}", "{case}", "deep", "made"] }
+
+[[case]]
+name = "os_file_write writes a file of 2 MiB"
+run = ["{out}/files{exe}", "{case}", "big"]
+claims = { line = ["big: 0, 2097152 bytes"] }
+false = { run = ["{out}/files{exe}", "{case}/none", "big"] }
+
+[[case]]
+name = "os_link_make takes a link with no folder, an absolute target and an empty target"
+run = ["{out}/files{exe}", "{case}", "link-forms"]
+files = { "{case}/t/k" = "", "{case}/f" = "" }
+claims = { line = ["link-forms: set -1, 0 3 0 3 0 0 0 0 -1"] }
+false = { run = ["{out}/files{exe}", "{case}/f/x", "link-forms"] }
+
+[[case]]
+name = "a write of a file is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "write"]
+fail = { malloc = 1, CreateFileW = 1, WriteFile = 1, openat = 1, write = 1 }
+claims = { matches = ["write: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a write of a file is refused when its close fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "write-n"]
+fail = { CloseHandle = 1, close = 1 }
+claims = { matches = ["write-n: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a write over a file is refused when the memory of its path or its mode fails"
+run = ["{out}/files{exe}", "{case}", "again", "write"]
+fail = { malloc = 2, fstat = 1 }
+files = { "{case}/w" = "old" }
+claims = { matches = ["write: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a write over a file is refused when its second open or its new mode fails"
+run = ["{out}/files{exe}", "{case}", "again", "write-x"]
+fail = { GetFullPathNameW = 1, openat = 2, fchmod = 1 }
+files = { "{case}/w" = "old" }
+claims = { matches = ["write-x: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_entry is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "entry"]
+fail = { malloc = 1, CreateFileW = 1, GetFileInformationByHandle = 1, fstatat = 1 }
+files = { "{case}/e" = "" }
+claims = { matches = ["entry: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_move is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "move"]
+fail = { malloc = 1, MoveFileExW = 1, renameat = 1 }
+files = { "{case}/a" = "a" }
+claims = { matches = ["move: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_move is refused when the memory of its second path fails"
+run = ["{out}/files{exe}", "{case}", "again", "move"]
+fail = { malloc = 3, renameat = 1 }
+files = { "{case}/a" = "a" }
+claims = { matches = ["move: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_remove is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "remove"]
+fail = { malloc = 1, GetFileAttributesW = 1, SetFileAttributesW = 1, DeleteFileW = 1, RemoveDirectoryW = 1, FindFirstFileExW = 1, fstatat = 1, unlinkat = 1, fchmodat = 1, openat = 1 }
+files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
+claims = { matches = ["remove: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_remove is refused when the memory of a search or the attributes of an entry fail"
+run = ["{out}/files{exe}", "{case}", "again", "remove"]
+fail = { malloc = 3, GetFileAttributesW = 4, fdopendir = 1, fstatat = 2 }
+files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
+claims = { matches = ["remove: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_remove is refused when the memory of the path of an entry fails"
+run = ["{out}/files{exe}", "{case}", "again", "remove"]
+fail = { malloc = 4, unlinkat = 3 }
+files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
+claims = { matches = ["remove: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_link_make is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "link"]
+fail = { malloc = 1, CreateSymbolicLinkW = 1, symlinkat = 1 }
+files = { "{case}/t/k" = "" }
+claims = { matches = ["link: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_link_make is refused when its memory 3 fails"
+run = ["{out}/files{exe}", "{case}", "again", "link"]
+fail = { malloc = 3, symlinkat = 1 }
+files = { "{case}/t/k" = "" }
+claims = { matches = ["link: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_link_make is refused when its memory 4 fails"
+run = ["{out}/files{exe}", "{case}", "again", "link"]
+fail = { malloc = 4, symlinkat = 1 }
+files = { "{case}/t/k" = "" }
+claims = { matches = ["link: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_link_make is refused when its memory 5 fails"
+run = ["{out}/files{exe}", "{case}", "again", "link"]
+fail = { malloc = 5, symlinkat = 1 }
+files = { "{case}/t/k" = "" }
+claims = { matches = ["link: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_folder_make is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "make"]
+fail = { malloc = 1, CreateDirectoryW = 1, GetFileAttributesW = 1, strndup = 1, openat = 1 }
+claims = { matches = ["make: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_folder_set is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "set"]
+fail = { malloc = 1, SetCurrentDirectoryW = 1, chdir = 1 }
+claims = { matches = ["set: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_whole is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/files{exe}", "{case}", "again", "whole"]
+fail = { malloc = 1, GetFullPathNameW = 1, realpath = 1 }
+claims = { matches = ["whole: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_whole is refused when the memory of the whole path or its second call fails"
+run = ["{out}/files{exe}", "{case}", "again", "whole"]
+fail = { malloc = 2, GetFullPathNameW = 3, realpath = 1 }
+claims = { matches = ["whole: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_entry gives -1 for a name that Windows refuses, and 0 on Linux and macOS"
+run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/a<b"]
+files = { "{case}/e" = "" }
+claims = { line = ["entry-of: {invalid_entry}"] }
+false = { run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/e"] }
