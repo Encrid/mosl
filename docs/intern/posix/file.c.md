@@ -5,7 +5,7 @@ Each function keeps the contract of `docs/extern/os.h.md`, *The files*.
 
 ## The path
 
-Each function gives its path to `os_open_parent` of `src/posix/folder_open.c`, which gives the folder of the last name, and that name.
+Each function gives its path to `os_open_parent` of `src/posix/folder_open.c` with no `make`. It gives the folder of the last name, and that name.
 Then a call with the folder and the name works on the entry: `openat`, `fstatat`, `renameat`, `unlinkat` or `symlinkat`.
 Thus a path past `PATH_MAX` works as a short one. `os_close_parent` closes the folder at the end.
 

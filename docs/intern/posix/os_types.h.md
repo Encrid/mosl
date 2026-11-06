@@ -64,6 +64,6 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 | `os_cond_start(cond)` | Starts the condition of an event. Gives 0 on success. |
 | `os_cond_wait(e, nanos)` | Waits on the condition of `e` until its flag is set or `nanos` nanoseconds pass. The caller holds the mutex of `e`. |
 | `os_open_search(at, name)` | Opens the folder `name` of the folder `at` for search only, and gives its descriptor, or -1. |
-| `os_open_parent(path, name)` | The folder before the last name, for `src/posix/folder_open.c` and `src/posix/file.c`. |
+| `os_open_parent(path, name, make)` | The folder before the last name, for `src/posix/folder_open.c`, `src/posix/folder.c` and `src/posix/file.c`. |
 | `os_close_parent(at)` | Closes a folder that `os_open_parent` gave. |
 | `os_write_all(fd, bytes, len)` | Writes each byte into `fd` with `SIGPIPE` blocked. |

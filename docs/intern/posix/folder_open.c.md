@@ -12,7 +12,8 @@ Then `openat` opens the last name with `O_RDONLY`, and `fdopendir` makes its str
 ## The parent
 
 `os_open_parent` gives the folder of the last name of a path, and that name. `src/posix/file.c` also calls it.
-A path shorter than `PATH_MAX` needs no walk: the folder is `AT_FDCWD`, and the name is the path.
+With no `make`, a path shorter than `PATH_MAX` needs no walk: the folder is `AT_FDCWD`, and the name is the path.
+With `make`, the walk makes each folder before it opens it, for `src/posix/folder.c`.
 `os_close_parent` closes a folder that is not `AT_FDCWD`.
 
 A longer path starts the walk at `/` if it starts with `/`, else at the current folder.
@@ -30,8 +31,8 @@ If the walk, `openat` or `fdopendir` fails, `os_folder_open` closes each descrip
 
 | Function | Result |
 | --- | --- |
-| `step(at, name)` | Goes one name down the walk of *The parent*: it opens `name` in `at` for search, closes `at`, and gives the new descriptor, or -1. |
-| `os_open_parent(path, name)` | Opens the folder before the last name, as *The parent* tells, or gives -1. Sets `*name`. |
+| `step(at, name, make)` | Makes `name` in `at` if `make`, and opens it for search. Closes `at`, and gives the new descriptor, or -1. |
+| `os_open_parent(path, name, make)` | Opens the folder before the last name, as *The parent* tells, or gives -1. Sets `*name`. |
 | `os_close_parent(at)` | Closes `at` if it is not `AT_FDCWD`. |
 | `os_folder_open(path)` | Makes the folder with `calloc`, and opens its stream as *The path* tells. Gives `nullptr` if no stream opens. |
 | `os_folder_close(f)` | Closes the stream with `closedir`, and frees the bytes and the folder. A null `f` does nothing. |

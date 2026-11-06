@@ -173,6 +173,7 @@ A folder opens by its path, and `os_folder_read_file` reads a file of it by its 
 - Each folder of that path before the last opens for search only: with `O_PATH` on Linux, and with `O_SEARCH` on macOS. Thus a long path needs the same rights as a short one.
 - On Windows, `GetFullPathNameW` makes the path whole, from the current folder for a relative path. The layer then gives it the form `\\?\`, and joins the name of a file to it.
 - Windows takes that form up to about 32,767 characters. A network path `\\server\share` gets the form `\\?\UNC\server\share`. A path that has the form `\\?\` or `\\.\` already keeps that form.
+- `os_folder_make` also takes a path past that limit, and makes each folder of it that is not there.
 - `os_folder_set` keeps the limit of each system, so the current folder stays short: `PATH_MAX` on Linux and macOS, and 260 characters on Windows. Windows needs an opt-in of the program for a longer current folder.
 
 The path of a folder can end with a separator. It can also be a root: `/` on Linux and macOS, or the root of a drive on Windows, for example `C:\`.
