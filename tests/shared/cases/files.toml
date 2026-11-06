@@ -242,7 +242,7 @@ false = { fail = {} }
 [[case]]
 name = "os_folder_make is refused when a call that it needs fails, and a later one is made"
 run = ["{out}/files{exe}", "{case}", "again", "make"]
-fail = { malloc = 1, CreateDirectoryW = 1, GetFileAttributesW = 1, strndup = 1, mkdirat = 1 }
+fail = { malloc = 1, CreateDirectoryW = 1, GetFileAttributesW = 1, mkdirat = 1 }
 claims = { matches = ["make: [1-9] refused, then made"] }
 false = { fail = {} }
 

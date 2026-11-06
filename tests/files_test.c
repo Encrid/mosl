@@ -78,6 +78,15 @@ static void make_read_only(const char *path)
 #endif
 }
 
+static void make_writable(const char *path)
+{
+#ifdef _WIN32
+    SetFileAttributesA(path, FILE_ATTRIBUTE_NORMAL);
+#else
+    chmod(path, 0644);
+#endif
+}
+
 static int make(char **argv)
 {
     char *path = in(argv[3]);
@@ -138,8 +147,12 @@ static int deep(char **argv)
 
 static int locked(char **)
 {
+    int wrote = 0;
+
     make_read_only(in("f"));
-    return (printf("locked: %d\n", os_file_write(in("f"), "f", 1, false)), 0);
+    wrote = os_file_write(in("f"), "f", 1, false);
+    make_writable(in("f"));
+    return (printf("locked: %d\n", wrote), 0);
 }
 
 static int replace(char **argv)

@@ -34,6 +34,17 @@ static size_t get_last_start(const char *path)
     return (end);
 }
 
+static char *copy_start(const char *path, size_t len)
+{
+    char *start = malloc(len + 1);
+
+    if (start) {
+        memcpy(start, path, len);
+        start[len] = '\0';
+    }
+    return (start);
+}
+
 int os_open_parent(const char *path, const char **name, bool make)
 {
     size_t last = get_last_start(path);
@@ -46,7 +57,7 @@ int os_open_parent(const char *path, const char **name, bool make)
     if (!make && strlen(path) < PATH_MAX)
         return (AT_FDCWD);
     *name = path[last] ? path + last : ".";
-    names = strndup(path, last);
+    names = copy_start(path, last);
     if (names)
         at = os_open_search(AT_FDCWD, *path == '/' ? "/" : ".");
     item = names ? strtok_r(names, "/", &place) : nullptr;
