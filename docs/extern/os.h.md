@@ -308,8 +308,9 @@ Each call on a path takes a path past the limit of the system, as `os_folder_ope
 
 `os_file_write` makes the file `path`, or replaces all its bytes. The folder of the file must be there.
 
-- With `executable`, the mode of the file is 0777 without the bits of the umask. Else it is 0666 without them.
-- The file gets this mode also when it was there before.
+- A new file gets the mode 0777 without the bits of the umask with `executable`, and 0666 without them else.
+- A file that was there keeps its read bits and its write bits. With `executable`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
+- Thus no call reads the umask: POSIX has no call that reads it with no change. A private file, for example of mode 0600, stays private.
 - On Windows, a file has no execute bit, and `executable` changes nothing.
 
 `os_path_entry` follows a link, and tells what is at its end:
