@@ -102,3 +102,6 @@ It also declares the turns of a text that `src/windows/wide.c` defines, and `os_
 | `os_widen(text)` | The copy of a text of UTF-8 in UTF-16. |
 | `os_narrow(wide)` | The copy of a text of UTF-16 in UTF-8. |
 | `os_write_all(handle, bytes, len)` | The write of each byte into a handle. |
+| `os_whole_text(path)` | The whole path of `path` in UTF-8, which `src/windows/path.c` defines. |
+| `os_get_variable(name)` | The value of a variable, which `src/windows/env.c` defines. |
+| `os_remove_entry(whole)` | The remove of the entry of a whole path, which `src/windows/remove.c` defines. |

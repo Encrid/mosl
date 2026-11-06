@@ -5,16 +5,15 @@ On macOS, this file asks the system for the path of the program, and for the pro
 ## The program
 
 `_NSGetExecutablePath` gives the size that the path needs, then writes the path. That path can be relative, or hold a link.
-`realpath` then makes it whole.
+`realpath` then makes it whole, into a buffer of `PATH_MAX` bytes that `malloc` gives. A path of a program keeps that limit on macOS.
 
 ## The processors
 
-macOS has no affinity of a process to processors. So `os_get_processor_count` gives `sysconf(_SC_NPROCESSORS_ONLN)`, the processors that run.
-A result below 1 gives 0.
+`os_get_processor_count` gives `os_get_online_count` of `src/posix/online.c`: `docs/intern/posix/online.c.md`, *The count*.
 
 ## Functions
 
 | Function | Result |
 | --- | --- |
 | `os_get_program_path()` | Gives the whole path of the program, or `nullptr`. |
-| `os_get_processor_count()` | Gives the count of the processors, or 0. |
+| `os_get_processor_count()` | Gives the result of `os_get_online_count`. |

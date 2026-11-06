@@ -1,6 +1,6 @@
 # src/macos/folder_search.c
 
-On macOS, this file gives the walk of `src/posix/folder_open.c` a folder that is open for search only.
+On macOS, this file gives the walk of `src/posix/parent.c` a folder that is open for search only.
 Each function keeps the contract of `docs/extern/os.h.md`, *The folders*.
 
 ## The flag

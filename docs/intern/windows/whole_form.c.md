@@ -15,6 +15,13 @@ Then `os_mark_whole` drops one last backslash, so that a joined name follows one
 Thus `C:\mods\` gives `\\?\C:\mods`, and the root `C:\` gives `\\?\C:`.
 `GetFullPathNameW` keeps one last backslash of a path, and folds a run of them into one. So one backslash at most is left to drop.
 
+## The root
+
+`os_get_root_end` gives the place of the 4th `\` of a whole path, or of the 6th for the form `\\?\UNC\`.
+A path with fewer gives its end.
+That place ends the root: `\\?\C:`, the share of `\\?\UNC\server\share`, or the device of `\\.\device`.
+`src/windows/folder.c` makes no folder of the root.
+
 ## The test
 
 The file uses only the C of the standard. Thus the program of `tests/whole_test.c` compiles it on each system, and the cases check each form.
@@ -24,3 +31,4 @@ The file uses only the C of the standard. Thus the program of `tests/whole_test.
 | Function | Result |
 | --- | --- |
 | `os_mark_whole(whole, size)` | Gives the whole path in `whole` the form of *The form*. `size` counts its characters and its end. |
+| `os_get_root_end(whole)` | Gives the place where the root of `whole` ends, as *The root* tells. |

@@ -10,11 +10,11 @@ A thread of the caller that changes the environment during the call makes a race
 
 ## The search
 
-1. A name with a `/` is a path. `is_program` checks it, and `os_path_whole` of `src/posix/path.c` makes it whole.
+1. A name with a `/` is a path. `is_program` checks it, and `realpath` makes it whole.
 2. Else `os_path_find` cuts a copy of `PATH` at each `:`. An empty item names the current folder.
 3. For each folder, it joins the folder, a `/` and the name.
 4. `is_program` checks the joined path: `stat` must find a regular file with one of its 3 execute bits.
-5. The first path that passes gives the result, made whole by `os_path_whole`.
+5. The first path that passes gives the result, made whole by `realpath`.
 
 With no `PATH` in the environment, the call finds nothing, and gives `nullptr`.
 
