@@ -345,7 +345,7 @@ It gives `nullptr` if the variable is not there, or if the copy fails.
 
 - A name with a separator is a path. The call gives it if it is a file with an execute bit, or on Windows a file.
 - Else the call looks in each folder of the `PATH` of the caller, in order.
-- On Windows, it also tries each extension of `PATHEXT`, if `name` has none.
+- On Windows, if `name` has no extension, it tries `name` with each extension of `PATHEXT`, in order, and then `name` alone. With no `PATHEXT`, it tries no extension.
 - It looks in the current folder only if `PATH` names it.
 
 ## The output
