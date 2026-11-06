@@ -26,7 +26,7 @@
 | `test(config, values, outputs, groups, broken, said, copies, counted, failing)` | Runs all the groups, and writes each verdict. With `said`, it writes `said.txt`. It gives the names of the cases that failed. |
 | `chosen(groups, text)` | Gives only the cases whose name contains `text`. It stops if no case has it: `no case has <text> in its name`. |
 | `picked(config, groups, args)` | Gives only the groups of the parts of `--part`, as *Groups* tells, then only the cases of `-k`, with `chosen`. |
-| `groups_of(config, values, folder)` | Reads and checks the groups of a folder: `tests/cases`, or `.toolchain/tests/cases` of the repository `my_c23_template`. |
+| `groups_of(config, values, folder)` | Reads and checks the groups of a folder: `tests/cases`, or `.toolchain/tests/cases` of the repository `mc23t`. |
 | `changed(args, run, write, prepared)` | Does the steps of a changed run, as *A changed run* tells. It gives the config, the variables, what `write` gave, the artifacts and the groups. |
 | `scoped(args, entries, key, names)` | Gives the exemptions whose `key` matches one of the names, with `*`. With no `--part`, it gives all the exemptions. |
 | `measured(args)` | Runs the command `test --branches`, as *The branches* tells. |
@@ -40,7 +40,7 @@ Else `main` does these steps:
 
 1. It builds with `build`, which stops if the target does not run on this machine. With `--toolchain`, it only calls `prepared` of `build.py`, and builds nothing.
 2. It stops if an artifact is not linked: `the cases need what is linked: <names>`.
-3. It reads the groups of `[test] cases` (the default is `tests/cases`). With `--toolchain`, it reads `.toolchain/tests/cases` of the repository `my_c23_template`.
+3. It reads the groups of `[test] cases` (the default is `tests/cases`). With `--toolchain`, it reads `.toolchain/tests/cases` of the repository `mc23t`.
 4. If there is no case, it writes `no case: <folder> holds no case`, and ends.
 5. With `--part`, it keeps only the groups of the named parts. With `-k`, it keeps only the cases whose name contains the text.
 6. If a case states `fail`, it makes the run `fail`: *A changed run*, with `failed` of `fail.py`.

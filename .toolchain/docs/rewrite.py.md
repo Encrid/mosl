@@ -31,6 +31,7 @@ A `#line` after the block keeps the numbers of the lines.
 At the end of the file, `#pragma pop_macro` gives each name its first meaning again. Then the run writes the function of each new name.
 
 `found` finds the functions that a file uses, and their declarations. A function that the file defines does not count, unless it is in `callbacks`.
+A use is a reference to a function. A variable with the name of a function, for example a local `free`, is not a use.
 `found` takes the declaration that the code writes, and not the declaration that the compiler makes for a builtin such as `malloc`. That one spells its types with names of the compiler, such as `__size_t`.
 
 `signed` gives the start of the function of a new name. It writes the type of each parameter as the declaration spells it, with no nullability mark such as `_Nullable`.

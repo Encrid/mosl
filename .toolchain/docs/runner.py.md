@@ -10,6 +10,7 @@ python .toolchain/tools/runner.py --target <target> | bash -e
 ## The needs
 
 `[ci] needs` of the configuration lists the needs of the project: `.toolchain/docs/project.toml.md`, *[ci]*.
+`[runner]` of `.toolchain/toolchain.toml` gives the packages and the archives: `.toolchain/docs/toolchain.toml.md`, *[runner]*.
 
 | Need | Linux | Windows | macOS |
 | --- | --- | --- | --- |
@@ -41,8 +42,8 @@ weston runs with `--no-config`, so no file of the runner changes it.
 
 For `gl`, the commands do these steps:
 
-1. They download `mesa-llvmpipe-<arch>-26.2.5.7z` of `mmozeiko/build-mesa`. `<arch>` is `x64` for `AMD64`, and `arm64` for `ARM64`.
-2. They check the SHA-256 digest of the archive. `runner.py` pins the digest of each archive.
+1. They download the archive of `[runner] mesa.url`, with the `arch` of the processor.
+2. They check the SHA-256 digest of the archive, from `[runner] mesa.archives`.
 3. The `tar.exe` of Windows unpacks `opengl32.dll`. The `tar` of Git cannot unpack a `.7z`.
 4. They write `SDL_OPENGL_LIBRARY`, the whole path of the file, into `$GITHUB_ENV`.
 
@@ -60,5 +61,5 @@ It stops with these messages:
 
 | Function | Result |
 | --- | --- |
-| `commands(needs, machine)` | Gives the commands of the needs for a machine, as `runs_on` names the machine. |
+| `commands(needs, machine, runner)` | Gives the commands of the needs for a machine, as `runs_on` names the machine. `runner` is `[runner]` of the configuration. |
 | `main()` | Reads the options and the needs, and writes the commands. |

@@ -25,6 +25,7 @@ KEYS = {'step': {'run', 'cwd', 'section', 'text', 'contains', 'copy', 'rename'},
         'kind': {'takes', 'gives'}}
 SIDES = {'include': 'docs/extern', 'src': 'docs/intern', 'tools': 'docs/tools'}
 TAG = re.compile(r'(?:([a-z0-9_]+)-)?v\d+\.\d+\.\d+')
+UNSET = {}
 
 
 def die(why):
@@ -56,7 +57,8 @@ def merged(into, more, name, whence, above=()):
 
 def config(root):
     whole, whence = {}, {}
-    files = [('toolchain.toml', HERE / '.toolchain' / 'toolchain.toml'), ('project.toml', root / '.toolchain' / 'project.toml')]
+    own = root / '.toolchain' / 'project.toml'
+    files = [('toolchain.toml', HERE / '.toolchain' / 'toolchain.toml')] + ([('project.toml', own)] if own.is_file() else [])
     where = root / '.toolchain' / 'config'
     files += [('config/' + path.relative_to(where).as_posix(), path) for path in sorted(where.rglob('*.toml'))]
     for name, path in files:
@@ -84,6 +86,8 @@ def expand(text, values):
         if m.group(1) not in values:
             die('no variable {%s} for %s' % (m.group(1), text))
         value = values[m.group(1)]
+        if value is None:
+            die(UNSET[m.group(1)])
         if not isinstance(value, list):
             return expand(str(value), values)
         if m.group(2) is None:
@@ -130,12 +134,26 @@ def sha256(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def macos_sdk():
+    if platform.system() != 'Darwin':
+        return None, 'this host is not a Mac'
+    try:
+        done = subprocess.run(['xcrun', '--show-sdk-path'], capture_output=True, text=True)
+    except OSError:
+        return None, 'xcrun did not start'
+    path = done.stdout.strip()
+    return (path, '') if done.returncode == 0 and path else (None, 'xcrun gave no path')
+
+
 def variables(config, args, target, zig):
     build = (args.out or args.root / config['build']['folder']).resolve()
     sub = target + ('-debug' if args.debug else '')
     values = {'root': args.root.as_posix(), 'build': build.as_posix(), 'home': this_target(config['targets']) or '',
               'dist': (build / sub).as_posix(), 'out': (build / sub / 'scratch').as_posix(), 'target': target,
               'python': Path(sys.executable).as_posix(), 'zig': zig, 'toolchain': (HERE / '.toolchain').as_posix()}
+    sdk, why = macos_sdk()
+    values['macos_sdk'] = sdk
+    UNSET['macos_sdk'] = '{macos_sdk} needs a macOS host with xcrun: ' + why
     values.update(config['targets'][target])
     own = config.get('variables', {})
     if set(own) & set(values):
