@@ -136,6 +136,12 @@ static int deep(char **argv)
     return (0);
 }
 
+static int locked(char **)
+{
+    make_read_only(in("f"));
+    return (printf("locked: %d\n", os_file_write(in("f"), "f", 1, false)), 0);
+}
+
 static int replace(char **argv)
 {
     int wrote = os_file_write(in("f"), argv[3], strlen(argv[3]), false);
@@ -438,6 +444,7 @@ static const test_mode_t MODES[] = {
     {"remove-none", 3, remove_none}, {"link-relative", 4, link_relative},
     {"whole", 3, whole}, {"again", 4, again}, {"big", 3, big},
     {"link-forms", 3, link_forms}, {"entry-of", 4, entry_of},
+    {"locked", 3, locked},
 };
 
 int main(int argc, char **argv)

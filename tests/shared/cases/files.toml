@@ -132,7 +132,7 @@ false = { run = ["{out}/files{exe}", "{case}/f/x", "link-forms"] }
 [[case]]
 name = "a write of a file is refused when a call that it needs fails, and a later one is made"
 run = ["{out}/files{exe}", "{case}", "again", "write"]
-fail = { malloc = 1, CreateFileW = 1, WriteFile = 1, openat = 1, write = 1 }
+fail = { malloc = 1, CreateFileW = 1, WriteFile = 1, write = 1 }
 claims = { matches = ["write: [1-9] refused, then made"] }
 false = { fail = {} }
 
@@ -154,7 +154,7 @@ false = { fail = {} }
 [[case]]
 name = "a write over a file is refused when its second open or its new mode fails"
 run = ["{out}/files{exe}", "{case}", "again", "write-x"]
-fail = { GetFullPathNameW = 1, openat = 2, fchmod = 1 }
+fail = { GetFullPathNameW = 1, fchmod = 1 }
 files = { "{case}/w" = "old" }
 claims = { matches = ["write-x: [1-9] refused, then made"] }
 false = { fail = {} }
@@ -186,7 +186,7 @@ false = { fail = {} }
 [[case]]
 name = "os_path_remove is refused when a call that it needs fails, and a later one is made"
 run = ["{out}/files{exe}", "{case}", "again", "remove"]
-fail = { malloc = 1, GetFileAttributesW = 1, SetFileAttributesW = 1, DeleteFileW = 1, RemoveDirectoryW = 1, FindFirstFileExW = 1, fstatat = 1, unlinkat = 1, fchmodat = 1, openat = 1 }
+fail = { malloc = 1, GetFileAttributesW = 1, SetFileAttributesW = 1, DeleteFileW = 1, RemoveDirectoryW = 1, FindFirstFileExW = 1, fstatat = 1, unlinkat = 1, fchmodat = 1 }
 files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
 claims = { matches = ["remove: [1-9] refused, then made"] }
 false = { fail = {} }
@@ -242,7 +242,7 @@ false = { fail = {} }
 [[case]]
 name = "os_folder_make is refused when a call that it needs fails, and a later one is made"
 run = ["{out}/files{exe}", "{case}", "again", "make"]
-fail = { malloc = 1, CreateDirectoryW = 1, GetFileAttributesW = 1, strndup = 1, openat = 1 }
+fail = { malloc = 1, CreateDirectoryW = 1, GetFileAttributesW = 1, strndup = 1, mkdirat = 1 }
 claims = { matches = ["make: [1-9] refused, then made"] }
 false = { fail = {} }
 
@@ -273,3 +273,17 @@ run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/a<b"]
 files = { "{case}/e" = "" }
 claims = { line = ["entry-of: {invalid_entry}"] }
 false = { run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/e"] }
+
+[[case]]
+name = "os_file_write gives -1 for a file that is read-only"
+run = ["{out}/files{exe}", "{case}", "locked"]
+files = { "{case}/f" = "old" }
+claims = { line = ["locked: -1"] }
+false = { run = ["{out}/files{exe}", "{case}", "replace", "new"] }
+
+[[case]]
+name = "os_folder_make gives -1 when a folder above it is a file"
+run = ["{out}/files{exe}", "{case}", "make", "a/k/x"]
+files = { "{case}/a/k" = "" }
+claims = { line = ["make: -1 0"] }
+false = { run = ["{out}/files{exe}", "{case}", "make", "a/x/y"] }
