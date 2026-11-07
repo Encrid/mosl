@@ -11,6 +11,7 @@ With `make`, the walk makes each folder before it opens it, for `src/posix/folde
 `os_close_parent` closes a folder that is not `AT_FDCWD`.
 
 A longer path starts the walk at `/` if it starts with `/`, else at the current folder.
+A longer path that holds only the root opens `/` itself, with the right to read it.
 `strtok_r` cuts a copy of the path before the last name, which `malloc` gives, at each `/`. `step` opens each name from the folder before it.
 `strtok_r` gives no empty name, so a path that holds `//` gives `step` no empty name. The last name keeps a `/` at its end.
 

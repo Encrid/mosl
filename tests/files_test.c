@@ -7,7 +7,6 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
-    #include <errno.h>
     #include <fcntl.h>
     #include <sys/stat.h>
     #include <unistd.h>
@@ -303,13 +302,6 @@ static int entry_of(char **argv)
     return (printf("entry-of: %d\n", os_path_entry(argv[3])), 0);
 }
 
-static int entry_why(char **argv)
-{
-    int found = os_path_entry(argv[3]);
-
-    return (printf("entry-why: %d, %d, %zu\n", found, errno,
-        strlen(argv[3])), 0);
-}
 
 static int remove_none(char **)
 {
@@ -511,7 +503,6 @@ static const test_mode_t MODES[] = {
     {"whole", 3, whole}, {"again", 4, again}, {"big", 3, big},
     {"link-forms", 3, link_forms}, {"entry-of", 4, entry_of},
     {"locked", 3, locked}, {"move-args", 5, move_args},
-    {"entry-why", 4, entry_why},
     {"remove-of", 4, remove_of}, {"locked-folder", 3, locked_folder},
     {"make-file", 3, make_file},
 };

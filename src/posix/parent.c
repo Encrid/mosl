@@ -12,6 +12,8 @@
 
 #include "os_types.h"
 
+constexpr int READABLE = O_RDONLY | O_DIRECTORY | O_CLOEXEC;
+
 static int step(int at, const char *name, bool make)
 {
     int next = -1;
@@ -34,15 +36,19 @@ static size_t get_last_start(const char *path)
     return (end);
 }
 
-static char *copy_start(const char *path, size_t len)
+static char *start_copy(const char *path, size_t last, int *at)
 {
-    char *start = malloc(len + 1);
+    char *names = malloc(last + 1);
 
-    if (start) {
-        memcpy(start, path, len);
-        start[len] = '\0';
-    }
-    return (start);
+    if (!names)
+        return (nullptr);
+    memcpy(names, path, last);
+    names[last] = '\0';
+    if (last <= 1)
+        *at = open("/", READABLE);
+    else
+        *at = os_open_search(AT_FDCWD, *path == '/' ? "/" : ".");
+    return (names);
 }
 
 int os_open_parent(const char *path, const char **name, bool make)
@@ -57,9 +63,7 @@ int os_open_parent(const char *path, const char **name, bool make)
     if (!make && strlen(path) < PATH_MAX)
         return (AT_FDCWD);
     *name = path[last] ? path + last : ".";
-    names = copy_start(path, last);
-    if (names)
-        at = os_open_search(AT_FDCWD, *path == '/' ? "/" : ".");
+    names = start_copy(path, last, &at);
     item = names ? strtok_r(names, "/", &place) : nullptr;
     while (item && at >= 0) {
         at = step(at, item, make);
