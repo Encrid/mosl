@@ -7,6 +7,7 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
+    #include <dirent.h>
     #include <fcntl.h>
     #include <sys/stat.h>
     #include <unistd.h>
