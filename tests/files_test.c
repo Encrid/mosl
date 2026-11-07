@@ -382,7 +382,7 @@ static int whole(char **)
 
     printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
 #ifdef _WIN32
-    printf("whole: dirfd 0, 0\n");
+    printf("whole: dirfd 0, 1\n");
 #else
     probe_dirfd(folder, "\xc3\xa9d");
 #endif
