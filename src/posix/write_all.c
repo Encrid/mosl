@@ -58,7 +58,7 @@ int os_write_all(int fd, const void *bytes, size_t len)
     before = is_pipe_waiting();
     wrote = write_each(fd, bytes, len);
     if (wrote && errno == EPIPE && !before) {
-        if (is_pipe_waiting())
+        if (is_pipe_waiting() == true)
             sigwait(&pipe_only, &number);
     }
     pthread_sigmask(SIG_SETMASK, &old, nullptr);
