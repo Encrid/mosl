@@ -8,7 +8,10 @@ This file gives the folder calls for Linux and macOS.
 
 `os_folder_make` gives the path to `os_open_parent` of `src/posix/parent.c` with `make`.
 The walk then makes each folder before the last name with `mkdirat`, before it opens it, also past `PATH_MAX`.
-At the end, `mkdirat` makes the last folder with the mode 0777, less the umask.
+The last folder is made by its whole path with `mkdirat` and `AT_FDCWD` when the path fits in `PATH_MAX`.
+
+A make through a folder handle can land out of sight of the path, for a name of UTF-8 on an overlay file system.
+A path past `PATH_MAX` keeps the handle of the walk.
 A folder that is there already is not an error: `EEXIST` gives 0 when the name opens for search. A folder opens, and a file does not.
 
 ## Functions

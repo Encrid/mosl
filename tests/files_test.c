@@ -7,7 +7,6 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
-    #include <dirent.h>
     #include <fcntl.h>
     #include <sys/stat.h>
     #include <unistd.h>
@@ -361,35 +360,19 @@ static int link_relative(char **argv)
 }
 
 
-#ifndef _WIN32
-static int list_bytes(const char *at_path)
-{
-    DIR *dir = opendir(at_path);
-    struct dirent *entry = dir ? readdir(dir) : nullptr;
-
-    while (entry) {
-        unsigned char *bytes = (unsigned char *)entry->d_name;
-
-        printf("whole: entry %02x%02x%02x\n", bytes[0], bytes[1],
-            bytes[2]);
-        entry = readdir(dir);
-    }
-    closedir(dir);
-    return (0);
-}
-#endif
 
 static int whole(char **)
 {
     char *path = in("\xc3\xa9");
-    int status = os_folder_make(path);
+    char *made = os_folder_make(path) ? nullptr : os_path_whole(path);
+    size_t len = made ? strlen(made) : 0;
+    bool kept = len > 2 && !strcmp(made + len - 2, "\xc3\xa9");
 
-    printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
-#ifdef _WIN32
-    printf("whole: entry c3a900\n");
-#else
-    list_bytes(folder);
-#endif
+    if (kept && os_path_entry(made) == 3)
+        printf("whole: as The folders tells\n");
+    else
+        printf("whole: %s\n", made ? made : "none");
+    free(made);
     return (0);
 }
 
