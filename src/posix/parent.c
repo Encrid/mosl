@@ -18,9 +18,11 @@ static int step(int at, const char *name, bool make)
 {
     int next = -1;
 
-    if (make)
+    if (make) {
         mkdirat(at, name, 0777);
-    next = os_open_search(at, name);
+        next = openat(at, name, READABLE);
+    } else
+        next = os_open_search(at, name);
     close(at);
     return (next);
 }
