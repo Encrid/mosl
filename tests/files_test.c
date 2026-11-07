@@ -7,11 +7,7 @@
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
 #else
-    #include <errno.h>
     #include <fcntl.h>
-    #include <limits.h>
-    #include <sys/stat.h>
-    #include <unistd.h>
     #include <sys/stat.h>
     #include <unistd.h>
 #endif
@@ -306,42 +302,12 @@ static int entry_of(char **argv)
     return (printf("entry-of: %d\n", os_path_entry(argv[3])), 0);
 }
 
-static int entry_why(char **argv)
-{
-    int found = os_path_entry(argv[3]);
-#ifdef _WIN32
-    int raw = 0;
-    int dir = 0;
-#else
-    size_t end = strlen(argv[3]);
-
-    while (end > 1 && argv[3][end - 1] == '/')
-        end--;
-    while (end > 0 && argv[3][end - 1] != '/')
-        end--;
-    int at = open("/", O_RDONLY | O_DIRECTORY);
-    struct stat st = {};
-    int raw = at >= 0 ? fstatat(at, ".", &st, 0) : -1;
-    int dir = raw == 0 && S_ISDIR(st.st_mode);
-
-    if (at >= 0)
-        close(at);
-#endif
-
-    printf("entry-why: %d, %d, %zu, %d, %d, raw %d, dir %d, last %zu\n",
-        found, errno, strlen(argv[3]), PATH_MAX, os_path_entry("x"), raw,
-        dir, end);
-    return (0);
-}
-
-
 static int remove_none(char **)
 {
     printf("remove-none: %d ", os_path_remove(in("none")));
     printf("%d ", os_path_remove(in("none/x")));
     return (printf("%d\n", os_path_remove(in("a/k/x"))), 0);
 }
-
 static int move_args(char **argv)
 {
     return (printf("move-args: %d\n", os_path_move(argv[3], argv[4])), 0);
@@ -535,7 +501,6 @@ static const test_mode_t MODES[] = {
     {"whole", 3, whole}, {"again", 4, again}, {"big", 3, big},
     {"link-forms", 3, link_forms}, {"entry-of", 4, entry_of},
     {"locked", 3, locked}, {"move-args", 5, move_args},
-    {"entry-why", 4, entry_why},
     {"remove-of", 4, remove_of}, {"locked-folder", 3, locked_folder},
     {"make-file", 3, make_file},
 };

@@ -62,7 +62,7 @@ int os_open_parent(const char *path, const char **name, bool make)
     *name = path;
     if (!make && strlen(path) < PATH_MAX)
         return (AT_FDCWD);
-    *name = path[last] ? path + last : ".";
+    *name = path[last] > '/' ? path + last : ".";
     names = start_copy(path, last, &at);
     item = names ? strtok_r(names, "/", &place) : nullptr;
     while (item && at >= 0) {
