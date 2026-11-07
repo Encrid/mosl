@@ -285,5 +285,5 @@ false = { fail = {} }
 [[case]]
 name = "os_output_write gives -1 with no signal when the layer ignores the signal of the pipe"
 run = ["{out}/environment{exe}", "{case}", "out-ignored"]
-claims = { matches = ["out-ignored: -1(, pending [01])?"] }
+claims = { matches = ["out-ignored: -1($|, pending 0)"] }
 false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
