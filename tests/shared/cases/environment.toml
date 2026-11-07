@@ -281,3 +281,9 @@ env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
 fail = { malloc = 1 }
 claims = { matches = ["find: [1-9] refused, then made"] }
 false = { fail = {} }
+
+[[case]]
+name = "os_output_write gives -1 with no signal when the layer ignores the signal of the pipe"
+run = ["{out}/environment{exe}", "{case}", "out-ignored"]
+claims = { line = ["out-ignored: -1"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
