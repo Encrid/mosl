@@ -10,6 +10,7 @@
 #else
     #include <arpa/inet.h>
     #include <fcntl.h>
+    #include <signal.h>
     #include <netinet/in.h>
     #include <sys/socket.h>
     #include <unistd.h>
@@ -94,16 +95,21 @@ static int find_here(char **argv)
     return (0);
 }
 
+static int find_none(char **argv)
+{
+    char *path = os_path_find(argv[3]);
+
+    printf("find-none: %s\n", path ? "found" : "none");
+    free(path);
+    return (0);
+}
+
 static int find_plain(char **argv)
 {
     char *bin = join(folder, "bin");
     char *plain = join(folder, "bin/plain");
+    char name[16] = "";
     char *path = nullptr;
-#ifdef _WIN32
-    constexpr bool WANT = true;
-#else
-    constexpr bool WANT = false;
-#endif
 
     if (!bin || !plain)
         return (printf("find-plain: no memory\n"), 1);
@@ -113,10 +119,11 @@ static int find_plain(char **argv)
     else
         setup(os_file_write(plain, "", 0, !strcmp(argv[3], "x")));
     path = os_path_find("plain");
-    if ((path != nullptr) == WANT)
-        printf("find-plain: %s\n", TOLD);
+    if (argv[3][0] == '-')
+        snprintf(name, sizeof(name), "plain");
     else
-        printf("find-plain: %s\n", path ? path : "none");
+        snprintf(name, sizeof(name), "plain-%s", argv[3]);
+    printf("%s: %s\n", name, path ? "found" : "none");
     free(path);
     free(plain);
     free(bin);
@@ -282,10 +289,36 @@ static int out(char **argv)
     return (0);
 }
 
+#ifndef _WIN32
+static int block_pipe(void)
+{
+    sigset_t pipe_only;
+
+    sigemptyset(&pipe_only);
+    sigaddset(&pipe_only, SIGPIPE);
+    pthread_sigmask(SIG_BLOCK, &pipe_only, nullptr);
+    raise(SIGPIPE);
+    return (0);
+}
+
+static void report_pending(int wrote)
+{
+    sigset_t waiting;
+
+    sigemptyset(&waiting);
+    sigpending(&waiting);
+    fprintf(stderr, "out-closed: %d, pending %d\n", wrote,
+        sigismember(&waiting, SIGPIPE) == 1);
+}
+#endif
+
 static int out_closed(char **argv)
 {
-    bool closed = !strcmp(argv[3], "closed");
+    bool closed = !strcmp(argv[3], "closed") || !strcmp(argv[3], "catch")
+        || !strcmp(argv[3], "pending");
     bool none = !strcmp(argv[3], "none");
+    bool catchit = !strcmp(argv[3], "catch");
+    [[maybe_unused]] bool pending = !strcmp(argv[3], "pending");
     int wrote = 0;
 #ifdef _WIN32
     HANDLE pipe[2] = {};
@@ -294,6 +327,8 @@ static int out_closed(char **argv)
     if (closed)
         CloseHandle(pipe[0]);
     SetStdHandle(STD_OUTPUT_HANDLE, none ? nullptr : pipe[1]);
+    if (catchit)
+        setup(os_signal_catch("caught\n"));
     wrote = os_output_write("x", 1);
 #else
     int pipe_ends[2] = {-1, -1};
@@ -301,13 +336,21 @@ static int out_closed(char **argv)
 
     if (pipe(pipe_ends))
         return (fprintf(stderr, "out-closed: no pipe\n"), 1);
+    if (pending)
+        block_pipe();
     if (closed)
         close(pipe_ends[0]);
     dup2(pipe_ends[1], STDOUT_FILENO);
     if (none)
         close(STDOUT_FILENO);
+    if (catchit)
+        setup(os_signal_catch("caught\n"));
     wrote = os_output_write("x", 1);
     dup2(kept, STDOUT_FILENO);
+    if (pending) {
+        report_pending(wrote);
+        return (0);
+    }
 #endif
     return (fprintf(stderr, "out-closed: %d\n", wrote), 0);
 }
@@ -460,6 +503,7 @@ typedef struct {
 
 static const test_mode_t MODES[] = {
     {"get", 4, get}, {"find", 5, find}, {"find-here", 5, find_here},
+    {"find-none", 4, find_none},
     {"find-plain", 4, find_plain}, {"find-ext", 3, find_ext},
     {"program", 4, program}, {"cpus", 3, cpus}, {"cpus-free", 3, cpus_free}, {"out", 4, out},
     {"out-closed", 4, out_closed}, {"console", 3, console}, {"port", 3, port},

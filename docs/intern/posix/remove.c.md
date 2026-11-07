@@ -29,7 +29,7 @@ Each level of the walk keeps 1 folder open. Thus the depth of a tree is limited 
 
 | Function | Result |
 | --- | --- |
-| `open_writable(at, name, mode)` | Gives the owner each right on the folder, and opens its stream, or gives `nullptr`. |
+| `open_writable(at, name, mode)` | Gives the owner each right on the folder, and opens its stream. `fdopendir` of a descriptor that `openat` refused is `nullptr`. |
 | `remove_entries(at, name, mode)` | Removes each entry of the folder, as *The remove* tells. Gives 0, or -1. |
 | `os_remove_entry(at, name)` | Removes the entry `name` of the folder `at`, as *The remove* tells. Gives 0, or -1. |
 | `os_path_remove(path)` | Gives 1 if nothing is at `path`, else the result of `os_remove_entry`. |

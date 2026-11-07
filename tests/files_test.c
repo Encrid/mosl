@@ -83,7 +83,10 @@ static void make_writable(const char *path)
 #ifdef _WIN32
     SetFileAttributesA(path, FILE_ATTRIBUTE_NORMAL);
 #else
-    chmod(path, 0644);
+    struct stat st = {};
+
+    if (!stat(path, &st))
+        chmod(path, S_ISDIR(st.st_mode) ? 0755 : 0644);
 #endif
 }
 
@@ -302,7 +305,48 @@ static int entry_of(char **argv)
 static int remove_none(char **)
 {
     printf("remove-none: %d ", os_path_remove(in("none")));
-    return (printf("%d\n", os_path_remove(in("none/x"))), 0);
+    printf("%d ", os_path_remove(in("none/x")));
+    return (printf("%d\n", os_path_remove(in("a/k/x"))), 0);
+}
+
+static int move_args(char **argv)
+{
+    return (printf("move-args: %d\n", os_path_move(argv[3], argv[4])), 0);
+}
+
+static int remove_of(char **argv)
+{
+    return (printf("remove-of: %d\n", os_path_remove(argv[3])), 0);
+}
+
+static int locked_folder(char **)
+{
+    char *ro = in("ro");
+    int wrote = 0;
+    int made = 0;
+    int removed = 0;
+
+    setup(os_folder_make(ro));
+    setup(os_folder_make(in("ro/sub")));
+    make_read_only(ro);
+    wrote = os_file_write(in("ro/f"), "f", 1, false);
+    made = os_folder_make(in("ro/new"));
+    removed = os_path_remove(in("ro/sub"));
+    make_writable(ro);
+    printf("locked-write: %d\n", wrote);
+    printf("locked-make: %d\n", made);
+    printf("locked-remove: %d\n", removed);
+    return (0);
+}
+
+static int make_file(char **)
+{
+    char *path = in("mf");
+
+    setup(os_folder_make(path));
+    setup(os_path_remove(path));
+    setup(os_file_write(path, "f", 1, false));
+    return (printf("make-file: %d\n", os_folder_make(path)), 0);
 }
 
 static int link_relative(char **argv)
@@ -457,7 +501,9 @@ static const test_mode_t MODES[] = {
     {"remove-none", 3, remove_none}, {"link-relative", 4, link_relative},
     {"whole", 3, whole}, {"again", 4, again}, {"big", 3, big},
     {"link-forms", 3, link_forms}, {"entry-of", 4, entry_of},
-    {"locked", 3, locked},
+    {"locked", 3, locked}, {"move-args", 5, move_args},
+    {"remove-of", 4, remove_of}, {"locked-folder", 3, locked_folder},
+    {"make-file", 3, make_file},
 };
 
 int main(int argc, char **argv)

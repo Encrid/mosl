@@ -10,7 +10,8 @@ Thus each call runs the growth, and the cases run each of its branches.
 
 ## The processors
 
-`os_get_processor_count` asks `sched_getaffinity` for the set of the processors of the process, and `CPU_COUNT` counts them.
+`os_get_processor_count` asks `sched_getaffinity` for the set of the processors of the process, and `__builtin_popcountg` counts its bits:
+`docs/contributing/coding_style.md`, *A4 - The extensions of the compiler*.
 Thus `taskset` and the limits of a container change the count.
 The set has room for 1024 processors. On a machine with more, `sched_getaffinity` fails.
 Then the count is `os_get_online_count` of `src/posix/online.c`, as `available_parallelism` of Rust does.
@@ -20,4 +21,4 @@ Then the count is `os_get_online_count` of `src/posix/online.c`, as `available_p
 | Function | Result |
 | --- | --- |
 | `os_get_program_path()` | Gives the target of `/proc/self/exe`, or `nullptr`. |
-| `os_get_processor_count()` | Gives `CPU_COUNT` of the affinity, or `os_get_online_count`. |
+| `os_get_processor_count()` | Gives the bits of the affinity, or `os_get_online_count`. |

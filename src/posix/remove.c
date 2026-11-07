@@ -16,15 +16,15 @@ constexpr int FOLDER = O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC;
 
 static DIR *open_writable(int at, const char *name, mode_t mode)
 {
-    int fd = -1;
     DIR *dir = nullptr;
+    int fd = -1;
 
     if ((mode & S_IRWXU) != S_IRWXU
         && fchmodat(at, name, (mode & 07777) | S_IRWXU, 0))
         return (nullptr);
     fd = openat(at, name, FOLDER);
-    dir = fd < 0 ? nullptr : fdopendir(fd);
-    if (!dir && fd >= 0)
+    dir = fdopendir(fd);
+    if (!dir)
         close(fd);
     return (dir);
 }

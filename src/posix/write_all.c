@@ -18,18 +18,28 @@ static bool is_pipe_waiting(void)
     return (sigismember(&waiting, SIGPIPE) == 1);
 }
 
+static ssize_t write_once(int fd, const char *bytes, size_t len)
+{
+    ssize_t wrote = write(fd, bytes, len);
+
+    if (wrote < 0) {
+        if (errno != EINTR)
+            return (-1);
+        return (0);
+    }
+    return (wrote);
+}
+
 static int write_each(int fd, const char *bytes, size_t len)
 {
     ssize_t wrote = 0;
 
     while (len) {
-        wrote = write(fd, bytes, len);
-        if (wrote < 0 && errno != EINTR)
+        wrote = write_once(fd, bytes, len);
+        if (wrote < 0)
             return (-1);
-        if (wrote > 0) {
-            bytes += wrote;
-            len -= (size_t)wrote;
-        }
+        bytes += wrote;
+        len -= (size_t)wrote;
     }
     return (0);
 }

@@ -40,8 +40,8 @@ false = { env = { PATH = ".", PATHEXT = ".EXE" } }
 name = "os_path_find needs an execute bit, and on Windows a file"
 run = ["{out}/environment{exe}", "{case}", "find-plain", "-"]
 env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
-claims = { line = ["find-plain: as The environment tells"] }
-false = { run = ["{out}/environment{exe}", "{case}", "find-plain", "{plain_break}"] }
+claims = { line = ["plain: {plain_dash}"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find-plain", "x"] }
 
 [[case]]
 name = "os_path_find tries the extensions of PATHEXT in order before the name alone"
@@ -175,22 +175,49 @@ claims = { matches = ["get: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
-name = "os_path_find is refused when its memory 7 fails"
+name = "os_path_find is refused when its memory 3 fails"
 run = ["{out}/environment{exe}", "{case}", "again", "find"]
-fail = { malloc = 7, realpath = 1 }
+fail = { malloc = 3, realpath = 1 }
 folders = { "{case}/bin" = ["environment"] }
 env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
 claims = { matches = ["find: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
-name = "os_path_find is refused when its memory 8 fails"
+name = "os_path_find is refused when its memory 6 fails"
 run = ["{out}/environment{exe}", "{case}", "again", "find"]
-fail = { malloc = 8, realpath = 1 }
+fail = { malloc = 6, realpath = 1 }
 folders = { "{case}/bin" = ["environment"] }
 env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
 claims = { matches = ["find: [1-9] refused, then made"] }
 false = { fail = {} }
+
+[[case]]
+name = "os_path_find is refused when its memory 7 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+fail = { malloc = 7, realpath = 1 }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find is refused when its memory 8 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+fail = { malloc = 8, realpath = 1 }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find takes no PATHEXT for a name with an extension"
+run = ["{out}/environment{exe}", "{case}", "find-none", "plain.txt"]
+folders = { "{case}/bin" = ["environment"] }
+files = { "{case}/bin/plain.txt" = "" }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { line = ["find-none: {find_dot}"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find-none", "{find_dot_false}"] }
 
 [[case]]
 name = "os_get_program_path is refused when a call that it needs fails, and a later one is made"
@@ -219,3 +246,29 @@ run = ["{out}/environment{exe}", "{case}", "again", "set"]
 fail = { malloc = 1, chdir = 1 }
 claims = { matches = ["set: [1-9] refused, then made"] }
 false = { fail = {} }
+
+[[case]]
+name = "a folder that has the name of the program is not a program"
+run = ["{out}/environment{exe}", "{case}", "find-plain", "folder"]
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { line = ["plain-folder: none"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find-plain", "x"] }
+
+[[case]]
+name = "os_get_processor_count gives the online count when the affinity of the process fails"
+run = ["{out}/environment{exe}", "{case}", "cpus-free"]
+fail = { sched_getaffinity = 1, GetProcessAffinityMask = 1 }
+claims = { line = ["cpus-free: as The environment tells"] }
+false = { fail = { sched_getaffinity = 1, GetProcessAffinityMask = 1, GetActiveProcessorCount = 1, sysconf = 1 } }
+
+[[case]]
+name = "os_output_write takes no signal of the layer when the output is closed"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "catch"]
+claims = { line = ["out-closed: -1"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
+
+[[case]]
+name = "a write into a closed output does not take a signal that the caller left pending"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "pending"]
+claims = { line = ["{closed_pending}"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }

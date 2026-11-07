@@ -36,10 +36,9 @@ char *os_get_program_path(void)
 
 uint32_t os_get_processor_count(void)
 {
-    cpu_set_t set;
+    cpu_set_t set = {};
 
-    CPU_ZERO(&set);
     if (!sched_getaffinity(0, sizeof(set), &set))
-        return ((uint32_t)CPU_COUNT(&set));
+        return ((uint32_t)__builtin_popcountg(&set, sizeof(set)));
     return (os_get_online_count());
 }
