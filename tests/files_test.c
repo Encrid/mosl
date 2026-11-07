@@ -313,6 +313,12 @@ static int entry_why(char **argv)
     int raw = 0;
     int dir = 0;
 #else
+    size_t end = strlen(argv[3]);
+
+    while (end > 1 && argv[3][end - 1] == '/')
+        end--;
+    while (end > 0 && argv[3][end - 1] != '/')
+        end--;
     int at = open("/", O_RDONLY | O_DIRECTORY);
     struct stat st = {};
     int raw = at >= 0 ? fstatat(at, ".", &st, 0) : -1;
@@ -322,8 +328,9 @@ static int entry_why(char **argv)
         close(at);
 #endif
 
-    printf("entry-why: %d, %d, %zu, %d, %d, raw %d, dir %d\n", found,
-        errno, strlen(argv[3]), PATH_MAX, os_path_entry("x"), raw, dir);
+    printf("entry-why: %d, %d, %zu, %d, %d, raw %d, dir %d, last %zu\n",
+        found, errno, strlen(argv[3]), PATH_MAX, os_path_entry("x"), raw,
+        dir, end);
     return (0);
 }
 
