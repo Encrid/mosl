@@ -359,41 +359,21 @@ static int link_relative(char **argv)
         show(in("s"), "l")), 0);
 }
 
+
 #ifndef _WIN32
-static int probe_walk(const char *at_path)
+static int list_bytes(const char *at_path)
 {
-    constexpr int READ = O_RDONLY | O_DIRECTORY | O_CLOEXEC;
-    char *names = strdup(at_path);
-    struct stat st = {};
-    struct stat at_st = {};
-    char *place = nullptr;
-    char *item = names ? strtok_r(names, "/", &place) : nullptr;
-    int at = open("/", O_PATH | O_DIRECTORY | O_CLOEXEC);
-    int made = -9;
+    DIR *dir = opendir(at_path);
+    struct dirent *entry = dir ? readdir(dir) : nullptr;
 
-    while (item && at >= 0) {
-        int next = openat(at, item, READ);
+    while (entry) {
+        unsigned char *bytes = (unsigned char *)entry->d_name;
 
-        close(at);
-        at = next;
-        item = strtok_r(nullptr, "/", &place);
+        printf("whole: entry %02x%02x%02x\n", bytes[0], bytes[1],
+            bytes[2]);
+        entry = readdir(dir);
     }
-    if (at >= 0) {
-        char link[32];
-        char where[512] = "";
-        ssize_t got = 0;
-
-        made = mkdirat(at, "\xc3\xa9" "w", 0777);
-        snprintf(link, sizeof(link), "/proc/self/fd/%d", at);
-        got = readlink(link, where, sizeof(where) - 1);
-        where[got > 0 ? got : 0] = '\0';
-        fstatat(at, ".", &st, 0);
-        stat(at_path, &at_st);
-        printf("whole: walk %d, fd %lld, path %lld, at %s\n", made,
-            (long long)st.st_ino, (long long)at_st.st_ino, where);
-    }
-    close(at);
-    free(names);
+    closedir(dir);
     return (0);
 }
 #endif
@@ -402,15 +382,13 @@ static int whole(char **)
 {
     char *path = in("\xc3\xa9");
     int status = os_folder_make(path);
-    char *made = status ? nullptr : os_path_whole(path);
 
     printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
 #ifdef _WIN32
-    printf("whole: walk 0, fd 0, path 0, at none\n");
+    printf("whole: entry 65cc81\n");
 #else
-    probe_walk(folder);
+    list_bytes(folder);
 #endif
-    free(made);
     return (0);
 }
 
