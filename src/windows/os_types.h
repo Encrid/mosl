@@ -75,4 +75,16 @@ int os_finish_read(os_watch_t *w);
 
 void os_end_read(HANDLE handle, OVERLAPPED *overlapped);
 
+wchar_t *os_widen(const char *text);
+
+char *os_narrow(const wchar_t *wide);
+
+int os_write_all(HANDLE handle, const void *bytes, size_t len);
+
+char *os_whole_text(const char *path);
+
+char *os_get_variable(const char *name);
+
+int os_remove_entry(const wchar_t *whole);
+
 #endif

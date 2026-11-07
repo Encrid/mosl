@@ -38,6 +38,7 @@ A group is a file of cases in `tests/cases`, or in a folder of `tests/cases`.
 The name of a group is the path of the file in `tests/cases`, without `.toml`.
 For example, the name of the group `tests/cases/<folder>/<name>.toml` is `<folder>/<name>`.
 If `tests/cases` holds no case, `test` writes `no case: tests/cases holds no case`.
+In a project with parts, the groups of a part are in `tests/cases/<folder>`, with the folder of the part: `.toolchain/docs/project.toml.md`, *[parts]*.
 
 ## The keys of a case
 
@@ -207,6 +208,7 @@ The false variant states no `fail`, or a different number.
 | `python project.py test --branches` | Runs each case one time on a build with probes. Each branch must run. |
 | `python project.py test --leaks` | Runs each case one time on a build with counts. Each case must give back what the code takes. |
 | `python project.py test -k <text>` | Runs only the cases whose name contains `<text>`. |
+| `python project.py test --part <part>` | Builds the part and the parts that it uses, then runs only the groups in `tests/cases/<folder>`, with the folder of the part. |
 | `python project.py test --copies <number>` | Runs this number of copies of each case at the same time. Each copy must pass. |
 | `python project.py test --rounds <number>` | Runs all the cases this number of times, one round after the other. |
 

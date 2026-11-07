@@ -1,29 +1,95 @@
 [targets.x86_64-windows-gnu]
+find_dot_false = "nothere"
+slash_entry = "-1"
+find_dot = "found"
+plain_dash = "found"
+locked_write = "0"
+locked_make = "0"
+locked_remove = "0"
+closed_pending = "out-closed: -1"
+invalid_entry = "-1"
+list_separator = ";"
+socket_libraries = ["-lws2_32"]
 system_defines = []
 system_libraries = []
 system_sources = ["src/common/*.c"]
 
 [targets.x86_64-linux-gnu]
+find_dot_false = "environment"
+slash_entry = "3"
+find_dot = "none"
+plain_dash = "none"
+locked_write = "-1"
+locked_make = "-1"
+locked_remove = "-1"
+closed_pending = "out-closed: -1, pending 1"
+invalid_entry = "0"
+list_separator = ":"
+socket_libraries = []
 system_defines = ["-D_GNU_SOURCE"]
 system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
 [targets.aarch64-linux-gnu]
+find_dot_false = "environment"
+slash_entry = "3"
+find_dot = "none"
+plain_dash = "none"
+locked_write = "-1"
+locked_make = "-1"
+locked_remove = "-1"
+closed_pending = "out-closed: -1, pending 1"
+invalid_entry = "0"
+list_separator = ":"
+socket_libraries = []
 system_defines = ["-D_GNU_SOURCE"]
 system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
 [targets.aarch64-macos]
+find_dot_false = "environment"
+slash_entry = "3"
+find_dot = "none"
+plain_dash = "none"
+locked_write = "-1"
+locked_make = "-1"
+locked_remove = "-1"
+closed_pending = "out-closed: -1, pending 1"
+invalid_entry = "0"
+list_separator = ":"
+socket_libraries = []
 system_defines = ["-D_DARWIN_C_SOURCE"]
 system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
 [targets.x86_64-macos]
+find_dot_false = "environment"
+slash_entry = "3"
+find_dot = "none"
+plain_dash = "none"
+locked_write = "-1"
+locked_make = "-1"
+locked_remove = "-1"
+closed_pending = "out-closed: -1, pending 1"
+invalid_entry = "0"
+list_separator = ":"
+socket_libraries = []
 system_defines = ["-D_DARWIN_C_SOURCE"]
 system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
 [targets.aarch64-windows-gnu]
+find_dot_false = "nothere"
+slash_entry = "-1"
+find_dot = "found"
+plain_dash = "found"
+locked_write = "0"
+locked_make = "0"
+locked_remove = "0"
+closed_pending = "out-closed: -1"
+invalid_entry = "-1"
+list_separator = ";"
+socket_libraries = ["-lws2_32"]
 system_defines = []
 system_libraries = []
 system_sources = ["src/common/*.c"]

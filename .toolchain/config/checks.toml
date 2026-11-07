@@ -14,18 +14,44 @@ side = "false"
 system = "windows"
 why = "The reachable refusal of an over-long path is at MultiByteToWideChar; a wide path that fits yet whose full form passes MAX_PATH depends on the working directory, which the tests do not force."
 
-[[branches.exception]]
-path = "src/windows/folder.c"
-line = 22
-col = 9
-side = "false"
-system = "windows"
-why = "os_folder_make's mkdir fails only when the lock folder already exists, and then _stat finds it, so the not-found branch is not reached."
+[[dup.exception]]
+paths = ["docs/contributing/coding_style.md", "docs/contributing/coding_style_cxx.md"]
+why = "Each coding guide states each of its rules in full, for a reader of one language."
+
+[[leaks.exception]]
+case = "os_env_get*"
+kind = "memory"
+why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+
+[[leaks.exception]]
+case = "os_path_find*"
+kind = "memory"
+why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+
+[[leaks.exception]]
+case = "os_path_whole*"
+kind = "memory"
+why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+
+[[leaks.exception]]
+case = "os_link_make takes a link with no folder*"
+kind = "memory"
+why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+
+[[leaks.exception]]
+case = "os_get_program_path*"
+kind = "memory"
+why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+
+[[leaks.exception]]
+case = "the os layer runs every call and its error paths"
+kind = "memory"
+why = "The test frees the memory that os_path_whole gives to it, and the count does not see the code of tests."
 
 [[branches.exception]]
-path = "src/posix/folder.c"
-line = 22
-col = 9
+path = "src/posix/write_all.c"
+line = 26
+col = 13
 side = "false"
 system = "posix"
-why = "os_folder_make's mkdir fails only when the folder already exists, and then stat finds it, so the not-found branch is not reached."
+why = "write gives EINTR only when a signal interrupts it, and no case of the layer sends a signal during a write."

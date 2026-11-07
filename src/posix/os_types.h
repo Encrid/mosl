@@ -35,7 +35,7 @@ struct os_folder {
 
 struct os_stop {
     atomic_bool caught;
-    _Atomic(const char *) line;
+    atomic_uintptr_t line;
     atomic_size_t length;
 };
 
@@ -44,5 +44,15 @@ int os_cond_start(pthread_cond_t *cond);
 void os_cond_wait(os_event_t *e, uint64_t nanos);
 
 int os_open_search(int at, const char *name);
+
+int os_open_parent(const char *path, const char **name, bool make);
+
+void os_close_parent(int at);
+
+int os_write_all(int fd, const void *bytes, size_t len);
+
+uint32_t os_get_online_count(void);
+
+int os_remove_entry(int at, const char *name);
 
 #endif

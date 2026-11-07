@@ -9,19 +9,9 @@
 #include "os_types.h"
 #include "os_whole.h"
 
-static wchar_t *widen(const char *text)
-{
-    int count = MultiByteToWideChar(CP_UTF8, 0, text, -1, nullptr, 0);
-    wchar_t *wide = malloc((size_t)count * sizeof(*wide));
-
-    if (wide)
-        MultiByteToWideChar(CP_UTF8, 0, text, -1, wide, count);
-    return (wide);
-}
-
 wchar_t *os_get_whole(const char *path)
 {
-    wchar_t *wide = widen(path);
+    wchar_t *wide = os_widen(path);
     wchar_t *whole = nullptr;
     DWORD size = 0;
 

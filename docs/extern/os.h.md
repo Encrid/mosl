@@ -173,6 +173,7 @@ A folder opens by its path, and `os_folder_read_file` reads a file of it by its 
 - Each folder of that path before the last opens for search only: with `O_PATH` on Linux, and with `O_SEARCH` on macOS. Thus a long path needs the same rights as a short one.
 - On Windows, `GetFullPathNameW` makes the path whole, from the current folder for a relative path. The layer then gives it the form `\\?\`, and joins the name of a file to it.
 - Windows takes that form up to about 32,767 characters. A network path `\\server\share` gets the form `\\?\UNC\server\share`. A path that has the form `\\?\` or `\\.\` already keeps that form.
+- `os_folder_make` also takes a path past that limit, and makes each folder of it that is not there.
 - `os_folder_set` keeps the limit of each system, so the current folder stays short: `PATH_MAX` on Linux and macOS, and 260 characters on Windows. Windows needs an opt-in of the program for a longer current folder.
 
 The path of a folder can end with a separator. It can also be a root: `/` on Linux and macOS, or the root of a drive on Windows, for example `C:\`.
@@ -308,8 +309,9 @@ Each call on a path takes a path past the limit of the system, as `os_folder_ope
 
 `os_file_write` makes the file `path`, or replaces all its bytes. The folder of the file must be there.
 
-- With `executable`, the mode of the file is 0777 without the bits of the umask. Else it is 0666 without them.
-- The file gets this mode also when it was there before.
+- A new file gets the mode 0777 without the bits of the umask with `executable`, and 0666 without them else.
+- A file that was there keeps its read bits and its write bits. With `executable`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
+- Thus no call reads the umask: POSIX has no call that reads it with no change. A private file, for example of mode 0600, stays private.
 - On Windows, a file has no execute bit, and `executable` changes nothing.
 
 `os_path_entry` follows a link, and tells what is at its end:
@@ -344,7 +346,7 @@ It gives `nullptr` if the variable is not there, or if the copy fails.
 
 - A name with a separator is a path. The call gives it if it is a file with an execute bit, or on Windows a file.
 - Else the call looks in each folder of the `PATH` of the caller, in order.
-- On Windows, it also tries each extension of `PATHEXT`, if `name` has none.
+- On Windows, if `name` has no extension, it tries `name` with each extension of `PATHEXT`, in order, and then `name` alone. With no `PATHEXT`, it tries no extension.
 - It looks in the current folder only if `PATH` names it.
 
 ## The output

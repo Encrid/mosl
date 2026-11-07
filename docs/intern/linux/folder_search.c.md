@@ -1,6 +1,6 @@
 # src/linux/folder_search.c
 
-This file opens a folder of a long path on Linux, for the walk of `src/posix/folder_open.c`.
+This file opens a folder of a long path on Linux, for the walk of `src/posix/parent.c`.
 Each function keeps the contract of `docs/extern/os.h.md`, *The folders*.
 
 ## The flag

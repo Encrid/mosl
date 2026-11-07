@@ -49,7 +49,7 @@ The state of the signals: `docs/intern/posix/signal.c.md`, *The state*.
 | Field | Content |
 | --- | --- |
 | `caught` | True after the first signal. |
-| `line` | The line that the handler writes at the first signal. |
+| `line` | The address of the line that the handler writes at the first signal. |
 | `length` | The number of bytes of `line`. |
 
 ## Functions
@@ -57,9 +57,16 @@ The state of the signals: `docs/intern/posix/signal.c.md`, *The state*.
 The header declares the two functions of a condition that `src/posix/event.c` calls.
 `src/linux/event_clock.c` defines them for Linux, and `src/macos/event_clock.c` for macOS.
 It also declares `os_open_search` for the walk of a long path. A file of `src/linux` and a file of `src/macos` define it.
+`src/posix/parent.c` defines `os_open_parent` and `os_close_parent`, and `src/posix/write_all.c` defines `os_write_all`.
+`src/posix/online.c` defines `os_get_online_count`, and `src/posix/remove.c` defines `os_remove_entry`.
 
 | Function | Result |
 | --- | --- |
 | `os_cond_start(cond)` | Starts the condition of an event. Gives 0 on success. |
 | `os_cond_wait(e, nanos)` | Waits on the condition of `e` until its flag is set or `nanos` nanoseconds pass. The caller holds the mutex of `e`. |
 | `os_open_search(at, name)` | Opens the folder `name` of the folder `at` for search only, and gives its descriptor, or -1. |
+| `os_open_parent(path, name, make)` | The folder before the last name of `path`. |
+| `os_close_parent(at)` | Closes a folder that `os_open_parent` gave. |
+| `os_write_all(fd, bytes, len)` | Writes each byte into `fd` with `SIGPIPE` blocked. |
+| `os_get_online_count()` | The count of the processors that run. |
+| `os_remove_entry(at, name)` | The remove of the entry `name` of the folder `at`. |

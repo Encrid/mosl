@@ -179,7 +179,8 @@ def found(root, path, tree, names, callbacks=()):
     def walk(node):
         kind, name = node.get('kind'), node.get('name')
         if kind == 'DeclRefExpr':
-            name = node.get('referencedDecl', {}).get('name')
+            referenced = node.get('referencedDecl', {})
+            name = referenced.get('name') if referenced.get('kind') == 'FunctionDecl' else None
             if name in names and owned(node.get('range', {}).get('begin', {}), root) == path:
                 used.add(name)
         elif kind == 'TypedefDecl':

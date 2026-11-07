@@ -90,6 +90,7 @@ The state of the signals: `docs/intern/windows/signal.c.md`, *The state*.
 ## Functions
 
 The header declares the reads of a watch, which `src/windows/watch_read.c` defines.
+It also declares the turns of a text that `src/windows/wide.c` defines, and `os_write_all` of `src/windows/write_all.c`.
 
 | Function | Result |
 | --- | --- |
@@ -98,3 +99,9 @@ The header declares the reads of a watch, which `src/windows/watch_read.c` defin
 | `os_is_in_place(w)` | The check of the path of `folder`. |
 | `os_finish_read(w)` | The result of the read of `folder`. |
 | `os_end_read(handle, overlapped)` | The end of a read at the stop. |
+| `os_widen(text)` | The copy of a text of UTF-8 in UTF-16. |
+| `os_narrow(wide)` | The copy of a text of UTF-16 in UTF-8. |
+| `os_write_all(handle, bytes, len)` | The write of each byte into a handle. |
+| `os_whole_text(path)` | The whole path of `path` in UTF-8, which `src/windows/path.c` defines. |
+| `os_get_variable(name)` | The value of a variable, which `src/windows/env.c` defines. |
+| `os_remove_entry(whole)` | The remove of the entry of a whole path, which `src/windows/remove.c` defines. |

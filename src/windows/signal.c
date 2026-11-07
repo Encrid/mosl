@@ -33,7 +33,7 @@ static BOOL WINAPI catch_stop(DWORD event)
 {
     struct os_stop *stop = get_stop();
 
-    if (atomic_exchange(&stop->caught, true))
+    if (atomic_exchange_explicit(&stop->caught, true, memory_order_seq_cst))
         _Exit(1);
     CloseHandle(CreateThread(nullptr, 0, write_line, stop, 0, nullptr));
     for (size_t i = 0; i < sizeof(ENDING) / sizeof(ENDING[0]); i++) {
@@ -54,5 +54,5 @@ int os_signal_catch(const char *line)
 
 bool os_signal_is_caught(void)
 {
-    return (atomic_load(&get_stop()->caught));
+    return (atomic_load_explicit(&get_stop()->caught, memory_order_seq_cst));
 }
