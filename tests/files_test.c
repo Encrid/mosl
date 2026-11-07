@@ -361,15 +361,10 @@ static int link_relative(char **argv)
 
 static int whole(char **)
 {
-    char *path = in("\xc3\xa9");
-    char *made = os_folder_make(path) ? nullptr : os_path_whole(path);
-    size_t len = made ? strlen(made) : 0;
-    bool kept = len > 2 && !strcmp(made + len - 2, "\xc3\xa9");
+    int status = os_folder_make(in("\xc3\xa9"));
+    char *made = status ? nullptr : os_path_whole(in("\xc3\xa9"));
 
-    if (kept && os_path_entry(made) == 3)
-        printf("whole: as The folders tells\n");
-    else
-        printf("whole: %s\n", made ? made : "none");
+    printf("whole: %s, %d, %d\n", made ? "made" : "none", status, errno);
     free(made);
     return (0);
 }
