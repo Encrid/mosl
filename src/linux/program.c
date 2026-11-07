@@ -34,11 +34,20 @@ char *os_get_program_path(void)
     return (nullptr);
 }
 
+static uint32_t count_bits(const cpu_set_t *set)
+{
+    uint32_t found = 0;
+
+    for (size_t i = 0; i < sizeof(*set) / sizeof(unsigned long); i++)
+        found += (uint32_t)__builtin_popcountg(set->__bits[i]);
+    return (found);
+}
+
 uint32_t os_get_processor_count(void)
 {
     cpu_set_t set = {};
 
     if (!sched_getaffinity(0, sizeof(set), &set))
-        return ((uint32_t)__builtin_popcountg(&set, sizeof(set)));
+        return (count_bits(&set));
     return (os_get_online_count());
 }
