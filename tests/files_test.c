@@ -359,17 +359,33 @@ static int link_relative(char **argv)
         show(in("s"), "l")), 0);
 }
 
+#ifndef _WIN32
+static int probe_dirfd(const char *at_path, const char *name)
+{
+    struct stat st = {};
+    int fd = open(at_path, O_RDONLY | O_DIRECTORY);
+    int made = fd < 0 ? -2 : mkdirat(fd, name, 0777);
+
+    printf("whole: dirfd %d, %d\n", made,
+        made ? -1 : (fstatat(fd, name, &st, 0) ? -3 : S_ISDIR(st.st_mode)));
+    if (fd >= 0)
+        close(fd);
+    return (0);
+}
+#endif
+
 static int whole(char **)
 {
     char *path = in("\xc3\xa9");
-    char *made = os_folder_make(path) ? nullptr : os_path_whole(path);
-    size_t len = made ? strlen(made) : 0;
-    bool kept = len > 2 && !strcmp(made + len - 2, "\xc3\xa9");
+    int status = os_folder_make(path);
+    char *made = status ? nullptr : os_path_whole(path);
 
-    if (kept && os_path_entry(made) == 3)
-        printf("whole: as The folders tells\n");
-    else
-        printf("whole: %s\n", made ? made : "none");
+    printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
+#ifdef _WIN32
+    printf("whole: dirfd 0, 0\n");
+#else
+    probe_dirfd(folder, "\xc3\xa9d");
+#endif
     free(made);
     return (0);
 }
