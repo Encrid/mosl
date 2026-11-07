@@ -11,10 +11,6 @@
     #include <sys/stat.h>
     #include <unistd.h>
 #endif
-#include <sys/stat.h>
-#ifdef _WIN32
-    #include <direct.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -366,20 +362,15 @@ static int link_relative(char **argv)
 static int whole(char **)
 {
     char *path = in("\xc3\xa9");
-    char *raw = in("\xc3\xa9r");
-    [[maybe_unused]] struct stat st = {};
-#ifdef _WIN32
-    int made = _mkdir(raw);
-    int seen = made ? -1 : 0;
-#else
-    int made = mkdir(raw, 0777);
-    int seen = made ? -1 : stat(raw, &st);
-#endif
-    int status = os_folder_make(path);
+    char *made = os_folder_make(path) ? nullptr : os_path_whole(path);
+    size_t len = made ? strlen(made) : 0;
+    bool kept = len > 2 && !strcmp(made + len - 2, "\xc3\xa9");
 
-    printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
-    printf("whole: raw %d, seen %d\n", made, seen);
-    free(nullptr);
+    if (kept && os_path_entry(made) == 3)
+        printf("whole: as The folders tells\n");
+    else
+        printf("whole: %s\n", made ? made : "none");
+    free(made);
     return (0);
 }
 
