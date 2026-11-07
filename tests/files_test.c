@@ -297,6 +297,57 @@ static int link_forms(char **)
     return (0);
 }
 
+static int deep_remake(char **)
+{
+    char *path = deep_path();
+    int first = 0;
+    int again = 1;
+
+    if (!path)
+        return (printf("deep-remake: no memory\n"), 1);
+    first = os_folder_make(path);
+    again = os_folder_make(path);
+    printf("deep-remake: %d %d\n", first, again);
+    setup(os_path_remove(path));
+    free(path);
+    return (0);
+}
+
+static int deep_move_none(char **)
+{
+    char *path = deep_path();
+    char *file = path ? join(path, "f") : nullptr;
+    char *none = path ? join(path, "no/none") : nullptr;
+    int moved = 0;
+
+    if (!file || !none)
+        return (printf("deep-move: no memory\n"), 1);
+    setup(os_folder_make(path));
+    setup(os_file_write(file, "f", 1, false));
+    moved = os_path_move(file, none);
+    printf("deep-move: %d\n", moved);
+    setup(os_path_remove(path));
+    free(path);
+    free(file);
+    free(none);
+    return (0);
+}
+
+static int deep_remove_none(char **)
+{
+    char *path = deep_path();
+    char *none = path ? join(path, "no/none") : nullptr;
+    int removed = 0;
+
+    if (!none)
+        return (printf("deep-remove: no memory\n"), 1);
+    removed = os_path_remove(none);
+    printf("deep-remove: %d\n", removed);
+    free(path);
+    free(none);
+    return (0);
+}
+
 static int entry_of(char **argv)
 {
     return (printf("entry-of: %d\n", os_path_entry(argv[3])), 0);
@@ -336,6 +387,14 @@ static int locked_folder(char **)
     printf("locked-make: %d\n", made);
     printf("locked-remove: %d\n", removed);
     return (0);
+}
+
+static int make_link_none(char **)
+{
+    char *path = in("ml");
+
+    setup(os_link_make(path, "none"));
+    return (printf("make-link: %d\n", os_folder_make(path)), 0);
 }
 
 static int make_file(char **)
@@ -504,7 +563,9 @@ static const test_mode_t MODES[] = {
     {"link-forms", 3, link_forms}, {"entry-of", 4, entry_of},
     {"locked", 3, locked}, {"move-args", 5, move_args},
     {"remove-of", 4, remove_of}, {"locked-folder", 3, locked_folder},
-    {"make-file", 3, make_file},
+    {"make-file", 3, make_file}, {"make-link", 3, make_link_none},
+    {"deep-remake", 3, deep_remake}, {"deep-move", 3, deep_move_none},
+    {"deep-remove", 3, deep_remove_none},
 };
 
 int main(int argc, char **argv)
