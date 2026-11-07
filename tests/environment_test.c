@@ -322,9 +322,11 @@ static int out_ignored(char **)
     CloseHandle(pipe[0]);
     SetStdHandle(STD_OUTPUT_HANDLE, pipe[1]);
     wrote = os_output_write("x", 1);
+    return (fprintf(stderr, "out-ignored: %d\n", wrote), 0);
 #else
     int pipe_ends[2] = {-1, -1};
     int kept = dup(STDOUT_FILENO);
+    sigset_t waiting;
 
     signal(SIGPIPE, SIG_IGN);
     if (pipe(pipe_ends))
@@ -334,8 +336,11 @@ static int out_ignored(char **)
     wrote = os_output_write("x", 1);
     dup2(kept, STDOUT_FILENO);
     close(kept);
+    sigemptyset(&waiting);
+    sigpending(&waiting);
+    return (fprintf(stderr, "out-ignored: %d, pending %d\n", wrote,
+        sigismember(&waiting, SIGPIPE) == 1), 0);
 #endif
-    return (fprintf(stderr, "out-ignored: %d\n", wrote), 0);
 }
 
 static int out_closed(char **argv)
