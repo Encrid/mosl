@@ -191,12 +191,17 @@ claims = { status = 1, line = ["greet: no memory"] }
 false = { fail = {} }
 ```
 
-`malloc`, `calloc` and `realloc` can always fail. `fail.toml` of `.toolchain/config` names more functions, each with the value that a failed call gives.
+`malloc`, `calloc` and `realloc` can always fail, and so can the two loaders `GetProcAddress` and `dlsym`, with `nullptr`.
+`fail.toml` of `.toolchain/config` names more functions, each with the value that a failed call gives.
 `.toolchain/docs/project.toml.md`, *[fail]*, gives its keys. Only the calls of the code of `src` count, and the files of one program share one count.
 The false variant states no `fail`, or a different number.
 
 `test` runs each case that states `fail` on a copy of the code in which these calls can fail. It judges the claims of the case.
 `test --branches` and `test --leaks` make the calls fail too. Thus a case reaches each `if (!p)`, and gives back what the code took on that path.
+
+A call through a pointer of a loader can fail too.
+A listed function that the file only names in a text fails by its own name with its own value.
+For example, `"socket"` is a text of a call of `GetProcAddress`, and `fail = { socket = 1 }` fails that call.
 `.toolchain/docs/fail.py.md` tells how a call fails.
 
 ## Run the tests

@@ -170,15 +170,3 @@ own = 6
 types = ["feat", "fix", "refactor", "chore", "docs", "test", "build", "perf", "style", "ci", "revert"]
 words = 20
 
-[runner.packages]
-display = ["openbox", "weston", "xvfb"]
-gl = ["libgl1", "libgl1-mesa-dri", "libglx-mesa0"]
-vulkan = ["libvulkan1", "mesa-vulkan-drivers"]
-
-[runner.mesa]
-version = "26.2.5"
-url = "https://github.com/mmozeiko/build-mesa/releases/download/{version}/mesa-llvmpipe-{arch}-{version}.7z"
-
-[runner.mesa.archives]
-AMD64 = { arch = "x64", sha256 = "d1b713ca2a7fba47a50c058099f13c435ddb76a16a422c334e4d787f9755a31d" }
-ARM64 = { arch = "arm64", sha256 = "e7df75398d50e07a68bbffa5cff2ece4c85e5f8ef8bda497f560dd04fe60cbbd" }

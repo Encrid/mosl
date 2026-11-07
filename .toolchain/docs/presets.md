@@ -17,7 +17,7 @@ On Linux and on macOS, the zip of Bridge-Host records the execute bits of that p
 | `native_kinds.toml` | The variable `native_flags`, and the kind `native_module`. |
 | `native_checks.toml` | `[check.makes]` with the 6 macros of `bridge_schema.h` of Bridge. Each makes a type, or its descriptor `<type>_desc`, from its first argument. |
 
-The kind `native_module` is the kind `library`, with these changes:
+The kind `native_module` is the kind `library`, with its step `each`, and with these changes:
 
 - It includes the headers of the two sources.
 - It hides each name that the module does not export, with `-fvisibility=hidden`.

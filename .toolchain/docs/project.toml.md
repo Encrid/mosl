@@ -380,7 +380,7 @@ A project with no `[parts]` states no part, and each command acts on the full pr
 
 | Key | Value |
 | --- | --- |
-| `needs` | Optional. What the cases need from a runner of the workflows: `display`, `vulkan` or `gl`. The default is an empty list. `.toolchain/docs/runner.py.md` tells what each need gives on each system. |
+| `needs` | Optional. The needs of the cases of a runner of the workflows, for example a display. Each name is a need that the project declares. The default is an empty list. `.toolchain/docs/runner.py.md`, *The needs*, tells the tables of a need. |
 
 For example, the cases of a module that opens a window and draws with Vulkan need these:
 
