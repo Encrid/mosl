@@ -384,7 +384,7 @@ static int whole(char **)
 #ifdef _WIN32
     printf("whole: dirfd 0, 1\n");
 #else
-    probe_dirfd(folder, "\xc3\xa9d");
+    probe_dirfd(folder, "\xc3\xa9" "d");
 #endif
     free(made);
     return (0);
