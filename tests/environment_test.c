@@ -312,6 +312,32 @@ static void report_pending(int wrote)
 }
 #endif
 
+static int out_ignored(char **)
+{
+    int wrote = 0;
+#ifdef _WIN32
+    HANDLE pipe[2] = {};
+
+    CreatePipe(&pipe[0], &pipe[1], nullptr, 0);
+    CloseHandle(pipe[0]);
+    SetStdHandle(STD_OUTPUT_HANDLE, pipe[1]);
+    wrote = os_output_write("x", 1);
+#else
+    int pipe_ends[2] = {-1, -1};
+    int kept = dup(STDOUT_FILENO);
+
+    signal(SIGPIPE, SIG_IGN);
+    if (pipe(pipe_ends))
+        return (fprintf(stderr, "out-ignored: no pipe\n"), 1);
+    close(pipe_ends[0]);
+    dup2(pipe_ends[1], STDOUT_FILENO);
+    wrote = os_output_write("x", 1);
+    dup2(kept, STDOUT_FILENO);
+    close(kept);
+#endif
+    return (fprintf(stderr, "out-ignored: %d\n", wrote), 0);
+}
+
 static int out_closed(char **argv)
 {
     bool closed = !strcmp(argv[3], "closed") || !strcmp(argv[3], "catch")
@@ -506,7 +532,7 @@ static const test_mode_t MODES[] = {
     {"find-none", 4, find_none},
     {"find-plain", 4, find_plain}, {"find-ext", 3, find_ext},
     {"program", 4, program}, {"cpus", 3, cpus}, {"cpus-free", 3, cpus_free}, {"out", 4, out},
-    {"out-closed", 4, out_closed}, {"console", 3, console}, {"port", 3, port},
+    {"out-closed", 4, out_closed}, {"out-ignored", 3, out_ignored}, {"console", 3, console}, {"port", 3, port},
     {"again", 4, again},
 };
 
