@@ -57,8 +57,10 @@ int os_write_all(int fd, const void *bytes, size_t len)
     pthread_sigmask(SIG_BLOCK, &pipe_only, &old);
     before = is_pipe_waiting();
     wrote = write_each(fd, bytes, len);
-    if (wrote && errno == EPIPE && !before && is_pipe_waiting())
-        sigwait(&pipe_only, &number);
+    if (wrote && errno == EPIPE && !before) {
+        if (is_pipe_waiting())
+            sigwait(&pipe_only, &number);
+    }
     pthread_sigmask(SIG_SETMASK, &old, nullptr);
     return (wrote);
 }
