@@ -272,3 +272,12 @@ name = "a write into a closed output does not take a signal that the caller left
 run = ["{out}/environment{exe}", "{case}", "out-closed", "pending"]
 claims = { line = ["{closed_pending}"] }
 false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
+
+[[case]]
+name = "os_path_find is refused when the memory of its path fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+fail = { malloc = 1 }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }

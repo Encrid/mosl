@@ -347,3 +347,27 @@ name = "os_folder_make gives -1 for a file that took the place of the folder"
 run = ["{out}/files{exe}", "{case}", "make-file"]
 claims = { line = ["make-file: -1"] }
 false = { run = ["{out}/files{exe}", "{case}", "make", "a/b"] }
+
+[[case]]
+name = "os_folder_make gives -1 for a link that hangs"
+run = ["{out}/files{exe}", "{case}", "make-link"]
+claims = { line = ["make-link: -1"] }
+false = { run = ["{out}/files{exe}", "{case}", "make-file"] }
+
+[[case]]
+name = "os_folder_make gives 0 for a deep folder that is there already"
+run = ["{out}/files{exe}", "{case}", "deep-remake"]
+claims = { line = ["deep-remake: 0 0"] }
+false = { run = ["{out}/files{exe}", "{case}", "deep-remove"] }
+
+[[case]]
+name = "os_path_move gives -1 for a deep path with no folder"
+run = ["{out}/files{exe}", "{case}", "deep-move"]
+claims = { line = ["deep-move: -1"] }
+false = { run = ["{out}/files{exe}", "{case}", "deep-remake"] }
+
+[[case]]
+name = "os_path_remove gives 1 for a deep path with no folder"
+run = ["{out}/files{exe}", "{case}", "deep-remove"]
+claims = { line = ["deep-remove: 1"] }
+false = { run = ["{out}/files{exe}", "{case}", "deep-move"] }
