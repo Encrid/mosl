@@ -307,7 +307,8 @@ static int entry_why(char **argv)
 {
     int found = os_path_entry(argv[3]);
 
-    return (printf("entry-why: %d, %d\n", found, errno), 0);
+    return (printf("entry-why: %d, %d, %zu\n", found, errno,
+        strlen(argv[3])), 0);
 }
 
 static int remove_none(char **)
