@@ -385,7 +385,7 @@ static int whole(char **)
 
     printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
 #ifdef _WIN32
-    printf("whole: entry 65cc81\n");
+    printf("whole: entry c3a900\n");
 #else
     list_bytes(folder);
 #endif
