@@ -12,6 +12,8 @@
     #include <limits.h>
     #include <sys/stat.h>
     #include <unistd.h>
+    #include <sys/stat.h>
+    #include <unistd.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -307,9 +309,21 @@ static int entry_of(char **argv)
 static int entry_why(char **argv)
 {
     int found = os_path_entry(argv[3]);
+#ifdef _WIN32
+    int raw = 0;
+    int dir = 0;
+#else
+    int at = open("/", O_RDONLY | O_DIRECTORY);
+    struct stat st = {};
+    int raw = at >= 0 ? fstatat(at, ".", &st, 0) : -1;
+    int dir = raw == 0 && S_ISDIR(st.st_mode);
 
-    printf("entry-why: %d, %d, %zu, %d, %d\n", found, errno,
-        strlen(argv[3]), PATH_MAX, os_path_entry("x"));
+    if (at >= 0)
+        close(at);
+#endif
+
+    printf("entry-why: %d, %d, %zu, %d, %d, raw %d, dir %d\n", found,
+        errno, strlen(argv[3]), PATH_MAX, os_path_entry("x"), raw, dir);
     return (0);
 }
 
