@@ -101,7 +101,7 @@ false = { run = ["{out}/files{exe}", "{case}", "link-relative", "f"] }
 [[case]]
 name = "os_path_whole and os_folder_make keep a name of UTF-8"
 run = ["{out}/files{exe}", "{case}", "whole"]
-claims = { line = ["whole: layer 0, entry 3", "whole: entry c3a900"] }
+claims = { line = ["whole: as The folders tells"] }
 false = { run = ["{out}/files{exe}", "{case}/f/x", "whole"], files = { "{case}/f" = "" } }
 
 [[case]]
