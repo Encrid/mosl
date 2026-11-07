@@ -365,6 +365,7 @@ static int probe_walk(const char *at_path)
     constexpr int READ = O_RDONLY | O_DIRECTORY | O_CLOEXEC;
     char *names = strdup(at_path);
     struct stat st = {};
+    struct stat at_st = {};
     char *place = nullptr;
     char *item = names ? strtok_r(names, "/", &place) : nullptr;
     int at = open("/", O_PATH | O_DIRECTORY | O_CLOEXEC);
@@ -378,10 +379,18 @@ static int probe_walk(const char *at_path)
         item = strtok_r(nullptr, "/", &place);
     }
     if (at >= 0) {
+        char link[32];
+        char where[512] = "";
+        ssize_t got = 0;
+
         made = mkdirat(at, "\xc3\xa9" "w", 0777);
-        printf("whole: walk %d, %d, same %d\n", made,
-            fstatat(at, "\xc3\xa9" "w", &st, 0),
-            fstatat(at, ".", &st, 0));
+        snprintf(link, sizeof(link), "/proc/self/fd/%d", at);
+        got = readlink(link, where, sizeof(where) - 1);
+        where[got > 0 ? got : 0] = '\0';
+        fstatat(at, ".", &st, 0);
+        stat(at_path, &at_st);
+        printf("whole: walk %d, fd %lld, path %lld, at %s\n", made,
+            (long long)st.st_ino, (long long)at_st.st_ino, where);
     }
     close(at);
     free(names);
@@ -397,7 +406,7 @@ static int whole(char **)
 
     printf("whole: layer %d, entry %d\n", status, os_path_entry(path));
 #ifdef _WIN32
-    printf("whole: walk 0, 0, same 0\n");
+    printf("whole: walk 0, fd 0, path 0, at none\n");
 #else
     probe_walk(folder);
 #endif
