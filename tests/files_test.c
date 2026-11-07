@@ -362,11 +362,22 @@ static int link_relative(char **argv)
 
 static int whole(char **)
 {
-    int status = os_folder_make(in("\xc3\xa9"));
-    char *made = status ? nullptr : os_path_whole(in("\xc3\xa9"));
+    char *path = in("\xc3\xa9");
+    char *parent = nullptr;
+    char *made = nullptr;
+    int status = os_folder_make(path);
 
-    printf("whole: %s, %d, %d\n", made ? "made" : "none", status, errno);
+    errno = 0;
+    made = os_path_whole(path);
+    printf("whole: %d, %d, entry %d\n", status, errno,
+        os_path_entry(path));
+    errno = 0;
+    parent = os_path_whole(folder);
+    printf("whole: parent %s, %d\n", parent ? "yes" : "none", errno);
+    printf("whole: bytes %02x %02x, cwd %d\n", (unsigned char)path[0],
+        (unsigned char)path[1], os_folder_set(".") == 0);
     free(made);
+    free(parent);
     return (0);
 }
 
