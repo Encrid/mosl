@@ -365,7 +365,7 @@ static int whole(char **)
 {
     char *path = in("\xc3\xa9");
     char *raw = in("\xc3\xa9r");
-    struct stat st = {};
+    [[maybe_unused]] struct stat st = {};
 #ifdef _WIN32
     int made = _mkdir(raw);
     int seen = made ? -1 : 0;
