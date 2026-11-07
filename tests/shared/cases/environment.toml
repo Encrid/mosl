@@ -229,7 +229,7 @@ false = { fail = {} }
 [[case]]
 name = "os_get_free_port is refused when a call that it needs fails, and a later one is made"
 run = ["{out}/environment{exe}", "{case}", "again", "port"]
-fail = { LoadLibraryW = 1, GetProcAddress = 1, socket = 1, bind = 1, getsockname = 1 }
+fail = { LoadLibraryW = 1, GetProcAddress = 1, WSAStartup = 1, socket = 1, bind = 1, getsockname = 1 }
 claims = { matches = ["port: [1-9] refused, then made"] }
 false = { fail = {} }
 
