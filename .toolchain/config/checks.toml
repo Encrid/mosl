@@ -55,8 +55,8 @@ why = "The test frees the memory that os_path_whole gives to it, and the count d
 
 [[branches.exception]]
 path = "src/posix/write_all.c"
-line = 26
+line = 40
 col = 13
-side = "false"
+side = "true"
 system = "posix"
 why = "write gives EINTR only when a signal interrupts it, and no case of the layer sends a signal during a write."

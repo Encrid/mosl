@@ -1,4 +1,8 @@
 [targets.x86_64-windows-gnu]
+kill_status = "1"
+interrupt_status = "3221225786"
+termination_status = "3221225786"
+hangup_status = "3221225786"
 find_dot_false = "nothere"
 slash_entry = "-1"
 find_dot = "found"
@@ -15,6 +19,10 @@ system_libraries = []
 system_sources = ["src/common/*.c"]
 
 [targets.x86_64-linux-gnu]
+kill_status = "-9"
+interrupt_status = "-2"
+termination_status = "-15"
+hangup_status = "-1"
 find_dot_false = "environment"
 slash_entry = "3"
 find_dot = "none"
@@ -31,6 +39,10 @@ system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
 [targets.aarch64-linux-gnu]
+kill_status = "-9"
+interrupt_status = "-2"
+termination_status = "-15"
+hangup_status = "-1"
 find_dot_false = "environment"
 slash_entry = "3"
 find_dot = "none"
@@ -47,6 +59,10 @@ system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
 [targets.aarch64-macos]
+kill_status = "-9"
+interrupt_status = "-2"
+termination_status = "-15"
+hangup_status = "-1"
 find_dot_false = "environment"
 slash_entry = "3"
 find_dot = "none"
@@ -63,6 +79,10 @@ system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
 [targets.x86_64-macos]
+kill_status = "-9"
+interrupt_status = "-2"
+termination_status = "-15"
+hangup_status = "-1"
 find_dot_false = "environment"
 slash_entry = "3"
 find_dot = "none"
@@ -79,6 +99,10 @@ system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
 [targets.aarch64-windows-gnu]
+kill_status = "1"
+interrupt_status = "3221225786"
+termination_status = "3221225786"
+hangup_status = "3221225786"
 find_dot_false = "nothere"
 slash_entry = "-1"
 find_dot = "found"
