@@ -21,4 +21,5 @@ With no `PATHEXT` in the environment, the call tries no extension.
 | `is_program(path)` | Gives true if an entry that is not a folder is at `path`. |
 | `find_with(path, at, exts)` | Tries the name at `at` of `path` with each extension of `exts`, then alone. Gives the whole path of the first program, or `nullptr`. |
 | `find_in(folders, name, exts)` | Tries each folder of `folders` with `find_with`. Gives the first program, or `nullptr`. |
-| `os_path_find(name)` | Gives the first path that `is_program` passes, or `nullptr`. |
+| `os_find_text(name)` | Gives the first path that `is_program` passes, or `nullptr`. `src/windows/process_program.c` calls it, so `test --leaks` counts its memory one time. |
+| `os_path_find(name)` | Gives the result of `os_find_text`. |

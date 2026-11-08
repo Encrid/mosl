@@ -87,10 +87,51 @@ The state of the signals: `docs/intern/windows/signal.c.md`, *The state*.
 | `line` | The line that a thread writes at the first event. |
 | `length` | The number of bytes of `line`. |
 
+### os_stream_t
+
+A pipe that the process writes into: its output or its errors.
+
+| Field | Content |
+| --- | --- |
+| `pipe` | The end of the parent, or `nullptr` when closed. |
+| `read` | The `OVERLAPPED` of the read that waits, with its event. |
+| `pending` | True while a read waits. |
+| `bytes` | The 65536 bytes of the last read, `OS_PROCESS_BYTES`. |
+
+### os_launch_t
+
+The texts and the ends that `CreateProcessW` needs.
+
+| Field | Content |
+| --- | --- |
+| `program` | The whole path of the program. |
+| `line` | The command line. |
+| `block` | The environment block. |
+| `folder` | The folder of the process, or `nullptr`. |
+| `child` | The ends of the child: input, output, errors. |
+
+### struct os_process
+
+A process that `os_process_start` starts.
+
+| Field | Content |
+| --- | --- |
+| `process` | The handle of the process. |
+| `input` | The end of the parent of the input, or `nullptr` when closed. |
+| `stop` | The event that `os_process_kill` sets. |
+| `writing` | The event of a write. |
+| `console_input` | The end of the parent of the input of the console. |
+| `console` | The pseudo console, or `nullptr`. |
+| `signals` | `signals` of the start. |
+| `hung` | True after a hang-up. |
+| `turn` | The count of the reads, which picks the first pipe of a read. |
+| `streams` | The output and the errors. |
+
 ## Functions
 
 The header declares the reads of a watch, which `src/windows/watch_read.c` defines.
 It also declares the turns of a text that `src/windows/wide.c` defines, and `os_write_all` of `src/windows/write_all.c`.
+The files of a process define the other functions of the table.
 
 | Function | Result |
 | --- | --- |
@@ -101,7 +142,19 @@ It also declares the turns of a text that `src/windows/wide.c` defines, and `os_
 | `os_end_read(handle, overlapped)` | The end of a read at the stop. |
 | `os_widen(text)` | The copy of a text of UTF-8 in UTF-16. |
 | `os_narrow(wide)` | The copy of a text of UTF-16 in UTF-8. |
+| `os_widen_texts(texts)` | The copies in UTF-16 of a list of texts of UTF-8. |
+| `os_free_texts(texts)` | The free of such copies. |
 | `os_write_all(handle, bytes, len)` | The write of each byte into a handle. |
 | `os_whole_text(path)` | The whole path of `path` in UTF-8, which `src/windows/path.c` defines. |
 | `os_get_variable(name)` | The value of a variable, which `src/windows/env.c` defines. |
 | `os_remove_entry(whole)` | The remove of the entry of a whole path, which `src/windows/remove.c` defines. |
+| `os_find_text(name)` | The path of a program on the `PATH`, which `src/windows/find.c` defines. |
+| `os_find_program(start)` | The whole path of the program of a process in UTF-16. |
+| `os_prepare_launch(start, launch)` | The texts of a start. |
+| `os_join_line(argv)` | The command line of a process. |
+| `os_build_block(env, unset)` | The environment block of a process. |
+| `os_open_pipe(p, index, inbound, ends)` | The open of a pipe of a process. |
+| `os_make_console(p)` | The pseudo console of a process. |
+| `os_get_wait(deadline)` | The milliseconds of a wait. |
+| `os_close_stream(s)` | The end of a stream, also while a read waits. |
+| `os_drop_process(p)` | The free of each part of a process, which `src/windows/process_end.c` defines. |
