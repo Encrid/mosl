@@ -4,6 +4,7 @@
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
 #include <errno.h>
+#include <poll.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -18,24 +19,33 @@ bool os_is_pipe_waiting(void)
     return (sigismember(&waiting, SIGPIPE) == 1);
 }
 
-static ssize_t write_once(int fd, const char *bytes, size_t len)
+static int wait_room(int fd, int wake)
+{
+    struct pollfd fds[2] = {{fd, POLLOUT, 0}, {wake, POLLIN, 0}};
+    int ready = poll(fds, 2, -1);
+
+    if (ready < 0)
+        return (errno == EINTR ? 0 : -1);
+    return (fds[1].revents ? -1 : 0);
+}
+
+static ssize_t write_once(int fd, int wake, const char *bytes, size_t len)
 {
     ssize_t wrote = write(fd, bytes, len);
 
-    if (wrote < 0) {
-        if (errno != EINTR)
-            return (-1);
-        return (0);
-    }
-    return (wrote);
+    if (wrote >= 0)
+        return (wrote);
+    if (errno == EAGAIN)
+        return (wait_room(fd, wake));
+    return (errno == EINTR ? 0 : -1);
 }
 
-static int write_each(int fd, const char *bytes, size_t len)
+static int write_each(int fd, int wake, const char *bytes, size_t len)
 {
     ssize_t wrote = 0;
 
     while (len) {
-        wrote = write_once(fd, bytes, len);
+        wrote = write_once(fd, wake, bytes, len);
         if (wrote < 0)
             return (-1);
         bytes += wrote;
@@ -44,7 +54,7 @@ static int write_each(int fd, const char *bytes, size_t len)
     return (0);
 }
 
-int os_write_all(int fd, const void *bytes, size_t len)
+int os_write_all(int fd, int wake, const void *bytes, size_t len)
 {
     sigset_t pipe_only;
     sigset_t old;
@@ -55,7 +65,7 @@ int os_write_all(int fd, const void *bytes, size_t len)
     sigaddset(&pipe_only, SIGPIPE);
     pthread_sigmask(SIG_BLOCK, &pipe_only, &old);
     before = os_is_pipe_waiting();
-    wrote = write_each(fd, bytes, len);
+    wrote = write_each(fd, wake, bytes, len);
     if (wrote && errno == EPIPE && !before)
         os_take_pipe_signal(&pipe_only);
     pthread_sigmask(SIG_SETMASK, &old, nullptr);

@@ -9,5 +9,5 @@
 
 int os_output_write(const char *bytes, size_t len)
 {
-    return (os_write_all(STDOUT_FILENO, bytes, len));
+    return (os_write_all(STDOUT_FILENO, -1, bytes, len));
 }
