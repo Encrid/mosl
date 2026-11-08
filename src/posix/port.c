@@ -3,12 +3,12 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
-#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 #include "os.h"
+#include "../common/os_common.h"
 
 int os_get_free_port(void)
 {
@@ -18,10 +18,10 @@ int os_get_free_port(void)
     int port = -1;
 
     at.sin_family = AF_INET;
-    at.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    os_set_loopback(&at.sin_addr);
     if (s >= 0 && !bind(s, (struct sockaddr *)&at, sizeof(at))
         && !getsockname(s, (struct sockaddr *)&at, &size))
-        port = ntohs(at.sin_port);
+        port = os_get_port(&at.sin_port);
     if (s >= 0)
         close(s);
     return (port);
