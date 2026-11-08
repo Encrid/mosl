@@ -52,6 +52,21 @@ The state of the signals: `docs/intern/posix/signal.c.md`, *The state*.
 | `line` | The address of the line that the handler writes at the first signal. |
 | `length` | The number of bytes of `line`. |
 
+## Constants
+
+`OS_PIPE_INPUT`, `OS_PIPE_OUTPUT`, `OS_PIPE_ERRORS`, `OS_PIPE_GATE` and `OS_PIPE_REPORT` are the places of the pipes of a start, 0 to 4. `OS_PIPES` is 5.
+`OS_PROCESS_BYTES` is 65536: the size of the buffer of a read.
+
+### os_launch_t
+
+What the child of a start needs, which the parent makes before `fork`.
+
+| Field | Content |
+| --- | --- |
+| `path` | The path of the program. |
+| `envp` | The environment of the process. |
+| `pipes` | The ends of the 5 pipes of the start, or -1. |
+
 ### struct os_process
 
 A process that `os_process_start` starts.
@@ -80,7 +95,8 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 
 A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_watch_exit` and `os_wait_exit`.
 
-`src/posix/process_env.c` defines `os_build_env`, and `src/posix/process_child.c` defines `os_run_child`.
+`src/posix/process_env.c` defines `os_find_program` and `os_build_env`.
+`src/posix/process_child.c` defines `os_run_child`, `os_close_pipes` and `os_drop_process`.
 
 | Function | Result |
 | --- | --- |
@@ -93,8 +109,13 @@ A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_watch
 | `os_open_pipe(ends)` | The open of a pipe whose ends a child does not get. |
 | `os_watch_exit(p)` | The start of the watch of the end of a process. |
 | `os_wait_exit(p, wait)` | The wait for the end of a process, up to `wait` milliseconds. |
+| `os_pidfd_open(pid)` | The descriptor of a process on Linux, which `src/linux/pidfd.c` defines. |
+| `os_get_wait(deadline)` | The milliseconds of a wait, which `src/posix/process_read.c` defines. |
+| `os_find_program(name)` | The path of the program of a process. |
 | `os_build_env(env, unset)` | The environment of a process. |
-| `os_run_child(p, start, child)` | The steps of a child after `fork`. |
+| `os_run_child(start, launch)` | The steps of a child after `fork`. |
+| `os_close_pipes(pipes, count)` | The close of the pipes of a start. |
+| `os_drop_process(p)` | The free of a process that did not start. |
 | `os_is_pipe_waiting()` | The check of a waiting `SIGPIPE`, which `src/posix/write_all.c` defines. |
 | `os_take_pipe_signal(pipe_only)` | The take of the `SIGPIPE` of a broken write. A file of `src/linux` and a file of `src/macos` define it. |
 | `os_get_online_count()` | The count of the processors that run. |

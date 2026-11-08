@@ -5,15 +5,16 @@ Each function keeps the contract of `docs/extern/os.h.md`, *The processes*, and 
 
 ## The lock
 
-The system can give the number of a process that ended to a new process, after `waitpid` takes the old one.
-So `kill` and `waitpid` take the mutex of the process. `kill` runs only while the process is not taken yet.
+The system can give the number of a process that ended to a new process, after `waitid` takes the old one.
+So `kill` and `waitid` take the mutex of the process. `kill` runs only while the process is not taken yet.
 A wait does not hold the mutex while it waits. Thus a kill from another thread does not wait for the wait.
 
 ## The end
 
 - `os_process_kill` writes a byte into the wake pipe, then sends `SIGKILL`. A read or a write that waits sees the byte first.
-- `os_process_wait` asks `os_wait_exit` for the end, then `waitpid` takes the process with `WNOHANG`.
-- A process that a signal ended gets minus the number of the signal as its status.
+- `os_process_wait` asks `os_wait_exit` for the end, then `waitid` takes the process.
+- `waitid` gives the reason of the end in `si_code`. A process that a signal ended gets minus the number of the signal.
+  The macros of a status of `waitpid` hold `&&` on macOS, which `test --branches` cannot measure.
 - `os_process_signal` sends `SIGINT`, `SIGTERM` or `SIGHUP`. After `SIGHUP`, each signal gives -1.
 - `os_process_free` kills a process that runs, waits for its end, and closes each end.
 
