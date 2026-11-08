@@ -109,24 +109,10 @@ static int child_env(char **argv)
     return (0);
 }
 
-static int child_interrupt(char **)
-{
-#ifdef _WIN32
-    printf("default\n");
-#else
-    struct sigaction old = {};
-
-    sigaction(SIGINT, nullptr, &old);
-    printf("%s\n", old.sa_handler == SIG_IGN ? "ignored" : "default");
-#endif
-    return (0);
-}
-
 static const test_mode_t CHILDREN[] = {
     {"say", 4, child_say}, {"mix", 3, child_mix}, {"drain", 3, child_drain},
     {"hold", 3, child_hold}, {"stall", 3, child_stall},
     {"exit", 4, child_exit}, {"env", 4, child_env},
-    {"interrupt", 3, child_interrupt},
 };
 
 static int run_child(int argc, char **argv)
@@ -363,12 +349,30 @@ static int mode_kill_write(char **argv)
 
 static int mode_interrupt(char **argv)
 {
-    os_process_start_t start = {
+    os_process_start_t start = {.signals = true,
         .ignore_interrupt = !strcmp(argv[3], "ignore")};
+    os_process_t *p = start_with(&start, "hold", nullptr);
+    int64_t status = 0;
+    int waited = -9;
+
+    if (!p)
+        return (printf("interrupt: no start\n"), 1);
+    if (os_process_signal(p, OS_INTERRUPT))
+        printf("interrupt: no signal\n");
+    waited = os_process_wait(p, 500 * BRIEF, &status);
+    os_process_kill(p);
+    end_process(p);
+    printf("interrupt: %s\n", waited == 1 ? "ignored" : "default");
+    return (0);
+}
+
+static int mode_say(char **argv)
+{
+    os_process_start_t start = {};
     reads_t reads = {};
 
-    read_child(&start, "interrupt", nullptr, &reads);
-    return (printf("interrupt: %s\n", reads.out), 0);
+    read_child(&start, "say", argv[3], &reads);
+    return (printf("say: [%s]\n", reads.out), 0);
 }
 
 static int get_which(const char *name)
@@ -477,8 +481,10 @@ static int mode_write_after(char **argv)
 
     if (!p)
         return (printf("write-after: no start\n"), 1);
-    if (!strcmp(argv[3], "input"))
+    if (!strcmp(argv[3], "input")) {
         os_process_close(p, OS_INPUT);
+        os_process_close(p, OS_INPUT);
+    }
     wrote = os_process_write(p, "x", 1);
     os_process_kill(p);
     end_process(p);
@@ -597,20 +603,40 @@ static int mode_late_kill(char **argv)
     return (printf("late-kill: %lld\n", (long long)end_process(p)), 0);
 }
 
-static bool try_once(void)
+static int mode_read_after(char **argv)
 {
-    os_process_start_t start = {.errors_apart = true};
+    os_process_t *p = start_child("exit", argv[3]);
+    const char *bytes = nullptr;
+    size_t len = 0;
+    int64_t status = 0;
+    int got = -9;
+
+    if (!p)
+        return (printf("read-after: no start\n"), 1);
+    if (os_process_wait(p, OS_FOREVER, &status))
+        printf("read-after: no wait\n");
+    got = os_process_read(p, OS_FOREVER, &bytes, &len);
+    end_process(p);
+    return (printf("read-after: %d %lld\n", got, (long long)status), 0);
+}
+
+static bool try_once(bool signals)
+{
+    const char *env[] = {"MOSL_E=1", nullptr};
+    const char *unset[] = {"MOSL_F", nullptr};
+    os_process_start_t start = {.errors_apart = true, .env = env,
+        .unset = unset, .signals = signals};
     reads_t reads = {};
 
     read_child(&start, "say", "hi", &reads);
     return (!strcmp(reads.out, "hi"));
 }
 
-static int mode_again(char **)
+static int mode_again(char **argv)
 {
     int refused = 0;
 
-    while (refused < TRIES && !try_once())
+    while (refused < TRIES && !try_once(!strcmp(argv[3], "signals")))
         refused++;
     if (refused < TRIES)
         printf("again: %d refused, then made\n", refused);
@@ -628,10 +654,11 @@ static const test_mode_t MODES[] = {
     {"interrupt", 4, mode_interrupt}, {"signal", 4, mode_signal},
     {"nosignal", 4, mode_nosignal}, {"hangup", 4, mode_hangup},
     {"free", 4, mode_free}, {"close", 4, mode_close},
-    {"wait", 4, mode_wait}, {"again", 3, mode_again},
+    {"wait", 4, mode_wait}, {"again", 4, mode_again},
+    {"read-after", 4, mode_read_after},
     {"write-after", 4, mode_write_after},
     {"interrupted", 5, mode_interrupted},
-    {"late-kill", 4, mode_late_kill},
+    {"late-kill", 4, mode_late_kill}, {"say", 4, mode_say},
 };
 
 int main(int argc, char **argv)

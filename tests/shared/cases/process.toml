@@ -98,13 +98,13 @@ false = { run = ["{out}/process{exe}", "{case}", "interrupt", "default"] }
 name = "os_process_signal sends the interrupt"
 run = ["{out}/process{exe}", "{case}", "signal", "interrupt"]
 claims = { line = ["signal: 0 {interrupt_status}"] }
-false = { run = ["{out}/process{exe}", "{case}", "signal", "termination"] }
+false = { run = ["{out}/process{exe}", "{case}", "signal", "hang-up"] }
 
 [[case]]
 name = "os_process_signal sends the termination"
 run = ["{out}/process{exe}", "{case}", "signal", "termination"]
 claims = { line = ["signal: 0 {termination_status}"] }
-false = { run = ["{out}/process{exe}", "{case}", "signal", "interrupt"] }
+false = { run = ["{out}/process{exe}", "{case}", "signal", "hang-up"] }
 
 [[case]]
 name = "os_process_signal sends the hang-up"
@@ -144,85 +144,85 @@ false = { run = ["{out}/process{exe}", "{case}", "wait", "exit"] }
 
 [[case]]
 name = "a start is refused when its memory fails, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
 fail = { calloc = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when fork fails, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
 fail = { fork = 1, CreateProcessW = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when a pipe does not open, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
-fail = { pipe2 = 1, pipe = 1 }
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { pipe2 = 1, pipe = 1, CreateNamedPipeW = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when its last pipe does not open, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
-fail = { pipe2 = 6, pipe = 6 }
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { pipe2 = 6, pipe = 6, CreateFileW = 3 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when the watch of the end fails, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
-fail = { os_pidfd_open = 1, kqueue = 1, kevent = 1 }
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { os_pidfd_open = 1, kqueue = 1, kevent = 1, CreateEventW = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a read gives -1 when its wait fails"
-run = ["{out}/process{exe}", "{case}", "again"]
-fail = { poll = 1 }
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { poll = 1, WaitForMultipleObjects = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "os_process_wait gives -1 when the wait of the system fails"
 run = ["{out}/process{exe}", "{case}", "wait", "exit"]
-fail = { waitid = 1 }
+fail = { waitid = 1, GetExitCodeProcess = 1 }
 claims = { line = ["wait: -1"] }
 false = { fail = {} }
 
 [[case]]
 name = "os_process_signal gives -1 when the signal cannot go"
 run = ["{out}/process{exe}", "{case}", "signal", "interrupt"]
-fail = { kill = 1 }
+fail = { kill = 1, WriteFile = 1 }
 claims = { matches = ["signal: -1 "] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when the memory of its environment fails, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
 fail = { malloc = 2 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a read gives -1 when the read of a pipe fails"
-run = ["{out}/process{exe}", "{case}", "again"]
-fail = { read = 2 }
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { read = 2, ReadFile = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "os_process_wait gives -1 when its wait for the end fails"
 run = ["{out}/process{exe}", "{case}", "wait", "exit"]
-fail = { poll = 1, kevent = 2 }
+fail = { poll = 1, kevent = 2, WaitForSingleObject = 1 }
 claims = { line = ["wait: -1"] }
 false = { fail = {} }
 
 [[case]]
 name = "a write gives -1 when its wait for room fails"
 run = ["{out}/process{exe}", "{case}", "full", "1048576"]
-fail = { poll = 1 }
+fail = { poll = 1, WriteFile = 1 }
 claims = { matches = ["full: -1 "] }
 false = { fail = {} }
 
@@ -283,7 +283,130 @@ false = { run = ["{out}/process{exe}", "{case}", "late-kill", "6"] }
 
 [[case]]
 name = "a start is refused when the memory of the path of its program fails, and a later one is made"
-run = ["{out}/process{exe}", "{case}", "again"]
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
 fail = { malloc = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
+
+[[case]]
+name = "an argument with spaces, quotes and backslashes reaches the program as it is"
+run = ["{out}/process{exe}", "{case}", 'say', 'a "b" c\\']
+claims = { line = ['say: [a "b" c\\]'] }
+false = { run = ["{out}/process{exe}", "{case}", 'say', 'a b c'] }
+
+[[case]]
+name = "an empty argument reaches the program as it is"
+run = ["{out}/process{exe}", "{case}", 'say', '']
+claims = { line = ['say: []'] }
+false = { run = ["{out}/process{exe}", "{case}", 'say', 'x'] }
+
+[[case]]
+name = "a start is refused when its list of attributes fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { InitializeProcThreadAttributeList = 2, fork = 1 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the memory of its command line fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { malloc = 6 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the memory of a variable of env fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { malloc = 8 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the memory of the list of env fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { calloc = 2 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the memory of the list of unset fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { calloc = 3 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the environment of the caller cannot be read, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { GetEnvironmentStringsW = 1, fork = 1 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the memory of the environment block fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { malloc = 10 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the memory of its attributes fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { malloc = 11 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the device of its console does not open, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "signals"]
+fail = { CreateFileW = 4, fork = 1 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a start is refused when the input of its console does not open, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again", "signals"]
+fail = { CreatePipe = 1, fork = 1 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a read gives -1 when the result of a read fails"
+run = ["{out}/process{exe}", "{case}", "again", "plain"]
+fail = { GetOverlappedResult = 1, read = 2 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_process_start gives nullptr when the memory of its folder fails"
+run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{case}/bin"]
+folders = { "{case}/bin" = ["process"] }
+fail = { malloc = 9, fork = 1 }
+claims = { line = ["named: none"] }
+false = { fail = {} }
+
+[[case]]
+name = "a path of a program from the root is not joined to the folder"
+run = ["{out}/process{exe}", "{case}", "named", "/mosl_none/process", "{case}/bin"]
+folders = { "{case}/bin" = ["process"] }
+claims = { line = ["named: none"] }
+false = { run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{case}/bin"] }
+
+[[case]]
+name = "a read after the end of the process gives 0"
+run = ["{out}/process{exe}", "{case}", "read-after", "7"]
+claims = { line = ["read-after: 0 7"] }
+false = { run = ["{out}/process{exe}", "{case}", "read-after", "8"] }
+
+[[case]]
+name = "a write of a few bytes into a process that runs gives 0"
+run = ["{out}/process{exe}", "{case}", "write-after", "open"]
+claims = { line = ["write-after: 0"] }
+false = { run = ["{out}/process{exe}", "{case}", "write-after", "input"] }
+
+[[case]]
+name = "a relative path of a program with no folder starts in the folder of the caller"
+run = ["{out}/process{exe}", "{case}", "named", "./mosl_none/process", "-"]
+folders = { "{case}/bin" = ["process"] }
+claims = { line = ["named: none"] }
+false = { run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{case}/bin"] }
