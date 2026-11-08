@@ -280,6 +280,7 @@ Thus one thread reads the two pipes, and no pipe fills while the thread waits fo
 | -2 | `nanos` passed, and no byte came. |
 
 `os_process_wait` waits up to `nanos` nanoseconds for the end of the process. With `OS_FOREVER`, it has no time limit.
+On Linux and macOS, a read and a wait count in whole milliseconds, so `nanos` rounds up to a millisecond.
 
 | Result of `os_process_wait` | Meaning |
 | --- | --- |
