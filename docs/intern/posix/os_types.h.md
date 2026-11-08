@@ -52,6 +52,24 @@ The state of the signals: `docs/intern/posix/signal.c.md`, *The state*.
 | `line` | The address of the line that the handler writes at the first signal. |
 | `length` | The number of bytes of `line`. |
 
+### struct os_process
+
+A process that `os_process_start` starts.
+
+| Field | Content |
+| --- | --- |
+| `pid` | The number of the process. |
+| `input`, `output`, `errors` | The ends of the parent of the 3 pipes, or -1 when closed. Without `errors_apart`, `errors` is -1. |
+| `wake` | A pipe that `os_process_kill` writes into, so a read or a write that waits ends. |
+| `exit` | The descriptor that watches the end: of the process on Linux, of a queue on macOS. |
+| `signals` | `signals` of the start. |
+| `hung` | True after a hang-up. |
+| `taken` | True after `waitpid` took the process. |
+| `status` | The status, after the process was taken. |
+| `turn` | The pipe that the next read asks first. |
+| `lock` | The mutex of `docs/intern/posix/process_end.c.md`, *The lock*. |
+| `bytes` | The 65536 bytes of the last read. |
+
 ## Functions
 
 The header declares the two functions of a condition that `src/posix/event.c` calls.
@@ -60,6 +78,10 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 `src/posix/parent.c` defines `os_open_parent` and `os_close_parent`, and `src/posix/write_all.c` defines `os_write_all`.
 `src/posix/online.c` defines `os_get_online_count`, and `src/posix/remove.c` defines `os_remove_entry`.
 
+A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_watch_exit` and `os_wait_exit`.
+
+`src/posix/process_env.c` defines `os_build_env`, and `src/posix/process_child.c` defines `os_run_child`.
+
 | Function | Result |
 | --- | --- |
 | `os_cond_start(cond)` | Starts the condition of an event. Gives 0 on success. |
@@ -67,7 +89,12 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 | `os_open_search(at, name)` | Opens the folder `name` of the folder `at` for search only, and gives its descriptor, or -1. |
 | `os_open_parent(path, name, make)` | The folder before the last name of `path`. |
 | `os_close_parent(at)` | Closes a folder that `os_open_parent` gave. |
-| `os_write_all(fd, bytes, len)` | Writes each byte into `fd` with `SIGPIPE` blocked. |
+| `os_write_all(fd, wake, bytes, len)` | Writes each byte into `fd` with `SIGPIPE` blocked, and stops at a byte of `wake`. |
+| `os_open_pipe(ends)` | The open of a pipe whose ends a child does not get. |
+| `os_watch_exit(p)` | The start of the watch of the end of a process. |
+| `os_wait_exit(p, wait)` | The wait for the end of a process, up to `wait` milliseconds. |
+| `os_build_env(env, unset)` | The environment of a process. |
+| `os_run_child(p, start, child)` | The steps of a child after `fork`. |
 | `os_is_pipe_waiting()` | The check of a waiting `SIGPIPE`, which `src/posix/write_all.c` defines. |
 | `os_take_pipe_signal(pipe_only)` | The take of the `SIGPIPE` of a broken write. A file of `src/linux` and a file of `src/macos` define it. |
 | `os_get_online_count()` | The count of the processors that run. |
