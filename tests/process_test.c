@@ -42,6 +42,8 @@ typedef struct {
     int result;
 } job_t;
 
+static const char *self;
+
 static int child_say(char **argv)
 {
     printf("%s\n", argv[3]);
@@ -139,17 +141,12 @@ static int run_child(int argc, char **argv)
 static os_process_t *start_with(const os_process_start_t *start,
     const char *what, const char *word)
 {
-    char *self = os_get_program_path();
     const char *argv[5] = {self, "child", what, word, nullptr};
     os_process_start_t mine = *start;
-    os_process_t *p = nullptr;
 
     if (!mine.argv)
         mine.argv = argv;
-    if (self)
-        p = os_process_start(&mine);
-    free(self);
-    return (p);
+    return (os_process_start(&mine));
 }
 
 static os_process_t *start_child(const char *what, const char *word)
@@ -639,6 +636,7 @@ static const test_mode_t MODES[] = {
 
 int main(int argc, char **argv)
 {
+    self = argv[0];
     if (argc >= 3 && !strcmp(argv[1], "child"))
         return (run_child(argc, argv));
     for (size_t i = 0; argc >= 3 && i < sizeof(MODES) / sizeof(MODES[0]);
