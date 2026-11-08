@@ -22,10 +22,11 @@ static void catch_stop([[maybe_unused]] int number)
     struct os_stop *stop = get_stop();
     [[maybe_unused]] ssize_t written;
 
-    if (atomic_exchange(&stop->caught, true))
+    if (atomic_exchange_explicit(&stop->caught, true, memory_order_seq_cst))
         _Exit(1);
-    written = write(STDOUT_FILENO, atomic_load(&stop->line),
-        atomic_load(&stop->length));
+    written = write(STDOUT_FILENO,
+        (const char *)atomic_load_explicit(&stop->line, memory_order_seq_cst),
+        atomic_load_explicit(&stop->length, memory_order_seq_cst));
 }
 
 static int catch_one(int number, const struct sigaction *act)
@@ -43,8 +44,8 @@ int os_signal_catch(const char *line)
     struct os_stop *stop = get_stop();
     struct sigaction act = {};
 
-    atomic_store(&stop->line, line);
-    atomic_store(&stop->length, strlen(line));
+    atomic_store_explicit(&stop->line, (uintptr_t)line, memory_order_seq_cst);
+    atomic_store_explicit(&stop->length, strlen(line), memory_order_seq_cst);
     act.sa_handler = catch_stop;
     act.sa_flags = SA_RESTART | SA_NODEFER;
     sigemptyset(&act.sa_mask);
@@ -54,5 +55,5 @@ int os_signal_catch(const char *line)
 
 bool os_signal_is_caught(void)
 {
-    return (atomic_load(&get_stop()->caught));
+    return (atomic_load_explicit(&get_stop()->caught, memory_order_seq_cst));
 }

@@ -33,7 +33,7 @@ For example, this line of a document matches the format `"no file %s\n"`:
 ```
 
 The own characters of a format are the characters that are not in a conversion.
-`said.py` does not check a format with less than 6 own characters, for example `"%s\n"`. Such a format has no words to find.
+`said.py` does not check a format with fewer own characters than `[said] own` of `.toolchain/toolchain.toml`, for example `"%s\n"`. Such a format has no words to find.
 
 ## Output
 

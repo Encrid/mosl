@@ -25,3 +25,17 @@ void os_mark_whole(wchar_t *whole, size_t size)
     if (whole[end - 1] == L'\\')
         whole[end - 1] = L'\0';
 }
+
+size_t os_get_root_end(const wchar_t *whole)
+{
+    int left = wcsncmp(whole, L"\\\\?\\UNC\\", 8) ? 4 : 6;
+    size_t at = 0;
+
+    for (at = 0; whole[at]; at++) {
+        if (whole[at] == L'\\')
+            left--;
+        if (!left)
+            break;
+    }
+    return (at);
+}

@@ -5,7 +5,8 @@
 ## The calls
 
 `listed` gives the functions that can fail, each with its failure value.
-`malloc`, `calloc` and `realloc` are always in the list, with the value `nullptr`.
+`malloc`, `calloc` and `realloc` are always in the list, with the value `nullptr`, and so are the two loaders,
+`GetProcAddress` and `dlsym`, with `nullptr`.
 `[fail.calls]` adds more functions, and each file of `[fail] with` adds more: `.toolchain/docs/project.toml.md`, *[fail]*.
 A failure value is a text of C, for example `nullptr`, `-1` or `false`. Each file that calls the function must compile it.
 
@@ -28,6 +29,22 @@ For each call that the key `fail` of the case states, `C23_FAIL` holds a space, 
 It also stops where `signed` of `rewrite.py` stops: `.toolchain/docs/rewrite.py.md`, *The rename*.
 `listed` stops if a file of `[fail] with` is not there: `[fail] with: <file> is not there`.
 
+## The loaded calls
+
+A loader gives a pointer for the name of its second argument: `GetProcAddress` on Windows, and `dlsym` on Linux and macOS.
+A **loaded call** of a file is a listed function that the file names in a text literal, and does not call by its name.
+For each loaded call, the layer adds to the end of the file:
+
+- the count and the number of `C23_FAIL`, as for a listed call;
+- a pointer `typeof(&<function>) c23b_fp_<function>`;
+- a stand-in `c23b_ft_<function>` with the parameters of its declaration. It counts the call,
+  gives the failure value at its number, and else calls the pointer.
+
+The function of the new name of the loader counts as always, then calls the loader.
+If the name is a loaded call, it keeps the pointer, and gives the stand-in in its place.
+Thus `fail = { socket = 1 }` fails the first call of `socket` through its pointer, with the value of `[fail.calls]`.
+A loaded call that no case states calls its function as always.
+
 ## The runs
 
 | Run | The copy of the code |
@@ -49,5 +66,6 @@ It also stops where `signed` of `rewrite.py` stops: `.toolchain/docs/rewrite.py.
 | Function | Result |
 | --- | --- |
 | `listed(config, values)` | Gives each function that can fail, with its failure value. It reads the files of `[fail] with`. |
+| `loaded_calls(calls, used, source, declared)` | Gives the loaded calls of a file: the listed functions that the text `source` names, and that the file does not call. |
 | `layer(text, used, declared, calls)` | Gives the layer of a file: the byte where its block starts, the block, and the end of the file. `used` names the functions of `calls` that the file uses, and `declared` gives their declarations. |
 | `failed(config, values)` | Writes the copy of the run `fail`, as *The runs* tells. |

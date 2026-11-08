@@ -1,0 +1,289 @@
+[[case]]
+name = "os_env_get gives a copy of the value of a variable"
+run = ["{out}/environment{exe}", "{case}", "get", "MOSL_TEST"]
+env = { MOSL_TEST = "a b" }
+claims = { line = ["get: a b"] }
+false = { env = { MOSL_TEST = false } }
+
+[[case]]
+name = "os_env_get gives nullptr for a variable that is not there"
+run = ["{out}/environment{exe}", "{case}", "get", "MOSL_TEST"]
+env = { MOSL_TEST = false }
+claims = { line = ["get: none"] }
+false = { env = { MOSL_TEST = "a b" } }
+
+[[case]]
+name = "os_path_find finds a program in a folder of PATH"
+run = ["{out}/environment{exe}", "{case}", "find", "environment", "{case}/bin/environment{exe}"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { line = ["find: the program of PATH"] }
+false = { env = { PATH = "{case}/none", PATHEXT = ".EXE" } }
+
+[[case]]
+name = "os_path_find gives a name with a separator as a path"
+run = ["{out}/environment{exe}", "{case}", "find", "{case}/bin/environment{exe}", "{case}/bin/environment{exe}"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/none" }
+claims = { line = ["find: the program of PATH"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find", "{case}/bin/none{exe}", "{case}/bin/environment{exe}"] }
+
+[[case]]
+name = "os_path_find looks in the current folder only if PATH names it"
+run = ["{out}/environment{exe}", "{case}", "find-here", "environment", "{case}/bin/environment{exe}"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/none", PATHEXT = ".EXE" }
+claims = { line = ["find-here: none"] }
+false = { env = { PATH = ".", PATHEXT = ".EXE" } }
+
+[[case]]
+name = "os_path_find needs an execute bit, and on Windows a file"
+run = ["{out}/environment{exe}", "{case}", "find-plain", "-"]
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { line = ["plain: {plain_dash}"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find-plain", "x"] }
+
+[[case]]
+name = "os_path_find tries the extensions of PATHEXT in order before the name alone"
+run = ["{out}/environment{exe}", "{case}", "find-ext"]
+env = { PATH = "{case}/bin", PATHEXT = ".BAT;.EXE" }
+claims = { line = ["find-ext: the program of PATH"] }
+false = { env = { PATH = "{case}/none", PATHEXT = ".BAT;.EXE" } }
+
+[[case]]
+name = "os_path_find tries no extension when PATHEXT is not there"
+run = ["{out}/environment{exe}", "{case}", "find-ext"]
+env = { PATH = "{case}/bin", PATHEXT = false }
+claims = { line = ["find-ext: the program of PATH"] }
+false = { env = { PATH = "{case}/none", PATHEXT = false } }
+
+[[case]]
+name = "os_get_program_path gives the path of the program"
+run = ["{out}/environment{exe}", "{case}", "program", "{out}/environment{exe}"]
+folders = { "{case}/copy" = ["environment"] }
+claims = { line = ["program: the path of the program"] }
+false = { run = ["{case}/copy/environment{exe}", "{case}", "program", "{out}/environment{exe}"] }
+
+[[case]]
+name = "os_get_processor_count counts the processors that the process can use"
+run = ["{out}/environment{exe}", "{case}", "cpus"]
+claims = { line = ["cpus: as The environment tells"] }
+false = { fail = { sched_getaffinity = 1, sysconf = 1, GetProcessAffinityMask = 1, GetActiveProcessorCount = 1 } }
+
+[[case]]
+name = "os_output_write keeps each line end as it is"
+run = ["{out}/environment{exe}", "{case}", "out", "lines"]
+claims = { line = ["out: as The output tells"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out", "line"] }
+
+[[case]]
+name = "os_output_write gives -1 for a closed output, and the process goes on"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "closed"]
+claims = { line = ["out-closed: -1"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
+
+[[case]]
+name = "os_output_write writes a text of UTF-8 to a console of Windows in UTF-16"
+run = ["{out}/environment{exe}", "{case}", "console"]
+claims = { line = ["console: as The output tells"] }
+false = { fail = { WriteConsoleW = 1, write = 1 } }
+
+[[case]]
+name = "os_get_free_port gives a port that a socket can bind"
+run = ["{out}/environment{exe}", "{case}", "port"]
+claims = { line = ["port: free"] }
+false = { fail = { socket = 1, LoadLibraryW = 1 } }
+
+[[case]]
+name = "os_path_find skips an empty item of PATH and goes to the next folder"
+run = ["{out}/environment{exe}", "{case}", "find", "environment", "{case}/bin/environment{exe}"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/none{list_separator}{list_separator}{case}/bin", PATHEXT = ".COM;.EXE" }
+claims = { line = ["find: the program of PATH"] }
+false = { env = { PATH = "{case}/none{list_separator}{list_separator}{case}/other", PATHEXT = ".COM;.EXE" } }
+
+[[case]]
+name = "os_path_find finds nothing with no PATH"
+run = ["{out}/environment{exe}", "{case}", "find", "environment", "{case}/bin/environment{exe}"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = false, PATHEXT = ".EXE" }
+claims = { line = ["find: none"] }
+false = { env = { PATH = "{case}/bin", PATHEXT = ".EXE" } }
+
+[[case]]
+name = "os_path_find gives nullptr for a path that is not a program"
+run = ["{out}/environment{exe}", "{case}", "find", "{case}/bin/none{exe}", "{case}/bin/environment{exe}"]
+folders = { "{case}/bin" = ["environment"] }
+claims = { line = ["find: none"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find", "{case}/bin/environment{exe}", "{case}/bin/environment{exe}"] }
+
+[[case]]
+name = "os_get_processor_count counts each processor of a process with no limit"
+run = ["{out}/environment{exe}", "{case}", "cpus-free"]
+claims = { line = ["cpus-free: as The environment tells"] }
+false = { fail = { sched_getaffinity = 1, sysconf = 1, GetProcessAffinityMask = 1, GetActiveProcessorCount = 1 } }
+
+[[case]]
+name = "os_output_write gives -1 when the process has no output"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "none"]
+claims = { line = ["out-closed: -1"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
+
+[[case]]
+name = "os_output_write gives -1 when the handle of the output or the write fails"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "open"]
+fail = { GetStdHandle = 1, write = 1 }
+claims = { line = ["out-closed: -1"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_output_write gives -1 when a write to a console fails"
+run = ["{out}/environment{exe}", "{case}", "console"]
+fail = { WriteConsoleW = 1, write = 1 }
+claims = { matches = ["console: -1"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_output_write gives -1 when the memory of a console fails"
+run = ["{out}/environment{exe}", "{case}", "console"]
+fail = { malloc = 1, write = 1 }
+claims = { matches = ["console: -1"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_env_get is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/environment{exe}", "{case}", "again", "get"]
+fail = { malloc = 1, GetEnvironmentVariableW = 2, strdup = 1 }
+env = { MOSL_TEST = "a b" }
+claims = { matches = ["get: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_env_get is refused when its memory 2 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "get"]
+fail = { malloc = 2, strdup = 1 }
+env = { MOSL_TEST = "a b" }
+claims = { matches = ["get: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_env_get is refused when its memory 3 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "get"]
+fail = { malloc = 3, strdup = 1 }
+env = { MOSL_TEST = "a b" }
+claims = { matches = ["get: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find is refused when its memory 3 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+fail = { malloc = 3, realpath = 1 }
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find is refused when its memory 6 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+fail = { malloc = 6, realpath = 1 }
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find is refused when its memory 7 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+fail = { malloc = 7, realpath = 1 }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find is refused when its memory 8 fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+fail = { malloc = 8, realpath = 1 }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_path_find takes no PATHEXT for a name with an extension"
+run = ["{out}/environment{exe}", "{case}", "find-none", "plain.txt"]
+folders = { "{case}/bin" = ["environment"] }
+files = { "{case}/bin/plain.txt" = "" }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { line = ["find-none: {find_dot}"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find-none", "{find_dot_false}"] }
+
+[[case]]
+name = "os_get_program_path is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/environment{exe}", "{case}", "again", "program"]
+fail = { malloc = 1, realloc = 1, GetModuleFileNameW = 1, readlink = 1, realpath = 1, _NSGetExecutablePath = 2 }
+claims = { matches = ["program: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_get_free_port is refused when a call that it needs fails, and a later one is made"
+run = ["{out}/environment{exe}", "{case}", "again", "port"]
+fail = { LoadLibraryW = 1, GetProcAddress = 1, WSAStartup = 1, socket = 1, bind = 1, getsockname = 1 }
+claims = { matches = ["port: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_get_processor_count is refused when the calls that it needs fail, and a later one is made"
+run = ["{out}/environment{exe}", "{case}", "again", "cpus"]
+fail = { sched_getaffinity = 1, sysconf = 1, GetProcessAffinityMask = 1, GetActiveProcessorCount = 1 }
+claims = { matches = ["cpus: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_folder_set gives -1 when the memory of its path fails"
+run = ["{out}/environment{exe}", "{case}", "again", "set"]
+fail = { malloc = 1, chdir = 1 }
+claims = { matches = ["set: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "a folder that has the name of the program is not a program"
+run = ["{out}/environment{exe}", "{case}", "find-plain", "folder"]
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+claims = { line = ["plain-folder: none"] }
+false = { run = ["{out}/environment{exe}", "{case}", "find-plain", "x"] }
+
+[[case]]
+name = "os_get_processor_count gives the online count when the affinity of the process fails"
+run = ["{out}/environment{exe}", "{case}", "cpus-free"]
+fail = { sched_getaffinity = 1, GetProcessAffinityMask = 1 }
+claims = { line = ["cpus-free: as The environment tells"] }
+false = { fail = { sched_getaffinity = 1, GetProcessAffinityMask = 1, GetActiveProcessorCount = 1, sysconf = 1 } }
+
+[[case]]
+name = "os_output_write takes no signal of the layer when the output is closed"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "catch"]
+claims = { line = ["out-closed: -1"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
+
+[[case]]
+name = "a write into a closed output does not take a signal that the caller left pending"
+run = ["{out}/environment{exe}", "{case}", "out-closed", "pending"]
+claims = { line = ["{closed_pending}"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
+
+[[case]]
+name = "os_path_find is refused when the memory of its path fails"
+run = ["{out}/environment{exe}", "{case}", "again", "find"]
+folders = { "{case}/bin" = ["environment"] }
+env = { PATH = "{case}/bin", PATHEXT = ".EXE" }
+fail = { malloc = 1 }
+claims = { matches = ["find: [1-9] refused, then made"] }
+false = { fail = {} }
+
+[[case]]
+name = "os_output_write gives -1 with no signal when the layer ignores the signal of the pipe"
+run = ["{out}/environment{exe}", "{case}", "out-ignored"]
+claims = { matches = ["out-ignored: -1($|, pending 0)"] }
+false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }

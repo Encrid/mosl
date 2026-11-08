@@ -15,4 +15,8 @@ char *os_read_stream(FILE *file, size_t size, char **kept, size_t *len);
 
 bool os_is_within(const char *name, uint32_t depth);
 
+void os_set_loopback(void *address);
+
+int os_get_port(const void *port);
+
 #endif

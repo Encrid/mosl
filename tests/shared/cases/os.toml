@@ -322,3 +322,15 @@ run = ["{out}/watch{exe}", "{case}", "refuse"]
 fail = { calloc = 2, malloc = 2, inotify_add_watch = 2, os_core_create = 1, ReadDirectoryChangesW = 2 }
 claims = { matches = ["refuse: [1-9][0-9]* refused, then made"] }
 false = { fail = {} }
+
+[[case]]
+name = 'the root of a whole network path ends after its share'
+run = ["{out}/whole{exe}", "root", '\\?\UNC\server\share\x']
+claims = { line = ["root ends at 20"] }
+false = { run = ["{out}/whole{exe}", "root", '\\?\UNC\server\x\y\z'] }
+
+[[case]]
+name = 'the root of a whole path of a drive ends after the drive, also at the end of the path'
+run = ["{out}/whole{exe}", "root", '\\?\C:']
+claims = { line = ["root ends at 6"] }
+false = { run = ["{out}/whole{exe}", "root", '\\?\UNC\a\b'] }

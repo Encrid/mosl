@@ -59,6 +59,36 @@ struct os_watch {
     char name[OS_NAME_BYTES];
 };
 
+constexpr size_t OS_PROCESS_BYTES = 65536;
+
+typedef struct {
+    HANDLE pipe;
+    OVERLAPPED read;
+    bool pending;
+    char bytes[OS_PROCESS_BYTES];
+} os_stream_t;
+
+struct os_process {
+    HANDLE process;
+    HANDLE input;
+    HANDLE stop;
+    HANDLE writing;
+    HANDLE console_input;
+    HPCON console;
+    bool signals;
+    bool hung;
+    unsigned turn;
+    os_stream_t streams[2];
+};
+
+typedef struct {
+    wchar_t *program;
+    wchar_t *line;
+    wchar_t *block;
+    wchar_t *folder;
+    HANDLE child[3];
+} os_launch_t;
+
 struct os_stop {
     atomic_bool caught;
     const char *line;
@@ -74,5 +104,41 @@ bool os_is_in_place(os_watch_t *w);
 int os_finish_read(os_watch_t *w);
 
 void os_end_read(HANDLE handle, OVERLAPPED *overlapped);
+
+wchar_t *os_widen(const char *text);
+
+char *os_narrow(const wchar_t *wide);
+
+wchar_t **os_widen_texts(const char *const *texts);
+
+void os_free_texts(wchar_t **texts);
+
+int os_write_all(HANDLE handle, const void *bytes, size_t len);
+
+char *os_whole_text(const char *path);
+
+char *os_get_variable(const char *name);
+
+int os_remove_entry(const wchar_t *whole);
+
+char *os_find_text(const char *name);
+
+wchar_t *os_find_program(const os_process_start_t *start);
+
+bool os_prepare_launch(const os_process_start_t *start, os_launch_t *launch);
+
+wchar_t *os_join_line(const char *const *argv);
+
+wchar_t *os_build_block(const char *const *env, const char *const *unset);
+
+int os_open_pipe(os_process_t *p, int index, bool inbound, HANDLE ends[2]);
+
+int os_make_console(os_process_t *p);
+
+DWORD os_get_wait(uint64_t deadline);
+
+void os_close_stream(os_stream_t *s);
+
+void os_drop_process(os_process_t *p);
 
 #endif

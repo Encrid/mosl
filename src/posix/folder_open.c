@@ -6,54 +6,27 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include "os_types.h"
 
 constexpr int FOLDER = O_RDONLY | O_DIRECTORY | O_CLOEXEC;
 
-static int step(int at, const char *name, bool last)
-{
-    int next = last ? openat(at, name, FOLDER) : os_open_search(at, name);
-
-    close(at);
-    return (next);
-}
-
-static int open_path(const char *path)
-{
-    size_t size = strlen(path) + 1;
-    char *names = malloc(size);
-    char *place = nullptr;
-    char *name = nullptr;
-    char *after = nullptr;
-    int at = -1;
-
-    if (names) {
-        memcpy(names, path, size);
-        at = os_open_search(AT_FDCWD, *path == '/' ? "/" : ".");
-        name = strtok_r(names, "/", &place);
-    }
-    while (name && at >= 0) {
-        after = strtok_r(nullptr, "/", &place);
-        at = step(at, name, !after);
-        name = after;
-    }
-    free(names);
-    return (at);
-}
-
 os_folder_t *os_folder_open(const char *path)
 {
     os_folder_t *f = calloc(1, sizeof(*f));
+    const char *name = nullptr;
+    int at = -1;
     int fd = -1;
 
     if (!f)
         return (nullptr);
     f->dir = opendir(path);
     if (!f->dir && errno == ENAMETOOLONG)
-        fd = open_path(path);
+        at = os_open_parent(path, &name, false);
+    if (at >= 0)
+        fd = openat(at, name, FOLDER);
+    os_close_parent(at);
     if (fd >= 0)
         f->dir = fdopendir(fd);
     if (f->dir)

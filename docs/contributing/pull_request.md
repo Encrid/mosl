@@ -27,6 +27,15 @@ git tag -a v0.1.1 -m v0.1.1 <commit>
 git push origin v0.1.1
 ```
 
+In a project with parts, each part has its own releases and its own numbers: `.toolchain/docs/project.toml.md`, *[parts]*.
+The tag of a release of a part is `<part>-v<major>.<minor>.<patch>`, for example `video-v0.1.1`.
+Such a project makes no tag `v<major>.<minor>.<patch>`. A release of a part comes when the package of the part changes.
+
+```sh
+git tag -a video-v0.1.1 -m video-v0.1.1 <commit>
+git push origin video-v0.1.1
+```
+
 The workflow `release` then makes the release. `.toolchain/docs/workflows.py.md`, *The release*, tells its steps.
 
 ## Before you open a pull request

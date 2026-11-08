@@ -120,3 +120,27 @@ test = true
 sources = ["tests/stack_left_test.c", "src/{system}/*.c", "{system_sources}"]
 include = ["include"]
 flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
+
+[[artifact]]
+name = "files"
+kind = "program"
+test = true
+sources = ["tests/files_test.c", "src/{system}/*.c", "{system_sources}"]
+include = ["include"]
+flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
+
+[[artifact]]
+name = "environment"
+kind = "program"
+test = true
+sources = ["tests/environment_test.c", "src/{system}/*.c", "{system_sources}"]
+include = ["include"]
+flags = ["{quiet}", "{system_defines}", "{system_libraries}", "{socket_libraries}"]
+
+[[artifact]]
+name = "process"
+kind = "program"
+test = true
+sources = ["tests/process_test.c", "src/{system}/*.c", "{system_sources}"]
+include = ["include"]
+flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
