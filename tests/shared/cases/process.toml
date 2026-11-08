@@ -30,7 +30,7 @@ false = { run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{ca
 [[case]]
 name = "the process gets the variables of env, and not the names of unset"
 run = ["{out}/process{exe}", "{case}", "env", "unset"]
-env = { MOSL_B = "2" }
+env = { MOSL_A = "0", MOSL = "x", MOSL_B = "2" }
 claims = { line = ["env: 1 none"] }
 false = { run = ["{out}/process{exe}", "{case}", "env", "keep"] }
 
@@ -255,3 +255,35 @@ name = "a signal that the caller catches does not end a write"
 run = ["{out}/process{exe}", "{case}", "interrupted", "write", "stall"]
 claims = { line = ["interrupted: -1"] }
 false = { run = ["{out}/process{exe}", "{case}", "interrupted", "write", "drain"] }
+
+[[case]]
+name = "os_process_start gives nullptr when the folder of the process is not there"
+run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{case}/none"]
+folders = { "{case}/bin" = ["process"] }
+claims = { line = ["named: none"] }
+false = { run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{case}/bin"] }
+
+[[case]]
+name = "a free of no process does nothing"
+run = ["{out}/process{exe}", "{case}", "free", "none"]
+claims = { line = ["free: none"] }
+false = { run = ["{out}/process{exe}", "{case}", "free", "hold"] }
+
+[[case]]
+name = "a read waits a time of more than 24 days, and gives the bytes that come"
+run = ["{out}/process{exe}", "{case}", "timeout", "say", "10000000000000000"]
+claims = { line = ["timeout: 2"] }
+false = { run = ["{out}/process{exe}", "{case}", "timeout", "hold", "0"] }
+
+[[case]]
+name = "a kill of a process that ended does nothing"
+run = ["{out}/process{exe}", "{case}", "late-kill", "5"]
+claims = { line = ["late-kill: 5"] }
+false = { run = ["{out}/process{exe}", "{case}", "late-kill", "6"] }
+
+[[case]]
+name = "a start is refused when the memory of the path of its program fails, and a later one is made"
+run = ["{out}/process{exe}", "{case}", "again"]
+fail = { malloc = 2 }
+claims = { matches = ["again: [1-9] refused, then made"] }
+false = { fail = {} }
