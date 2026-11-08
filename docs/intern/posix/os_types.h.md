@@ -68,5 +68,7 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 | `os_open_parent(path, name, make)` | The folder before the last name of `path`. |
 | `os_close_parent(at)` | Closes a folder that `os_open_parent` gave. |
 | `os_write_all(fd, bytes, len)` | Writes each byte into `fd` with `SIGPIPE` blocked. |
+| `os_is_pipe_waiting()` | The check of a waiting `SIGPIPE`, which `src/posix/write_all.c` defines. |
+| `os_take_pipe_signal(pipe_only)` | The take of the `SIGPIPE` of a broken write. A file of `src/linux` and a file of `src/macos` define it. |
 | `os_get_online_count()` | The count of the processors that run. |
 | `os_remove_entry(at, name)` | The remove of the entry `name` of the folder `at`. |

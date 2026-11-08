@@ -8,6 +8,7 @@
 
     #include <dirent.h>
     #include <pthread.h>
+    #include <signal.h>
     #include <stdatomic.h>
 
     #include "os.h"
@@ -50,6 +51,10 @@ int os_open_parent(const char *path, const char **name, bool make);
 void os_close_parent(int at);
 
 int os_write_all(int fd, const void *bytes, size_t len);
+
+bool os_is_pipe_waiting(void);
+
+void os_take_pipe_signal(const sigset_t *pipe_only);
 
 uint32_t os_get_online_count(void);
 
