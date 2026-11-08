@@ -5,7 +5,8 @@ On macOS, this file asks the system for the path of the program, and for the pro
 ## The program
 
 `_NSGetExecutablePath` gives the size that the path needs, then writes the path. That path can be relative, or hold a link.
-`realpath` then makes it whole, into a buffer of `PATH_MAX` bytes that `malloc` gives. A path of a program keeps that limit on macOS.
+One `malloc` gives `PATH_MAX` bytes for the whole path, and after them the bytes of that first path.
+`realpath` then makes the path whole at the start of the buffer. A path of a program keeps that limit on macOS.
 
 ## The processors
 
