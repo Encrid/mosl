@@ -239,6 +239,8 @@ Windows has no `SIGPIPE`: a write to a closed output fails.
 - On Linux and macOS, it sends `SIGINT`, `SIGTERM` or `SIGHUP` to the process only.
 - On Windows, the process runs on a pseudo console of its own, of 80 columns and 25 lines.
 - The interrupt writes Ctrl-C into the input of that console, and the termination writes the key Ctrl-Break. The hang-up closes the console.
+- Some versions of Windows end the processes of a console at its close, and others do not. So after the close, the hang-up waits up to 1 second for the end of the process.
+- If the process still runs, the layer ends it with the status 3221225794, the status that Windows gives when the close ends it. Thus a hang-up ends the process on each version.
 - On Windows, a signal reaches each process on that console: the process, and each process that it started there.
 - The console drops what is written to it, because the process writes into its pipes.
 
