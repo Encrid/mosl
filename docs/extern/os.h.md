@@ -301,7 +301,7 @@ The signals of the process at its start:
 
 - On Linux and macOS, the process starts with no blocked signal, and with the default action of `SIGINT`, `SIGTERM`, `SIGHUP` and `SIGPIPE`.
 - With `ignore_interrupt`, it starts with `SIGINT` ignored.
-- On Windows, a process gets an ignored Ctrl-C from its parent. So the first start with `signals` and no `ignore_interrupt` calls `SetConsoleCtrlHandler(nullptr, false)` in the caller.
+- On Windows, a process gets an ignored Ctrl-C from its parent. So each start with `signals` and no `ignore_interrupt` calls `SetConsoleCtrlHandler(nullptr, false)` in the caller.
 - With `ignore_interrupt`, the process starts in a new process group of Windows, which ignores Ctrl-C.
 
 ## The files
