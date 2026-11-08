@@ -5,10 +5,10 @@
 */
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/event.h>
 #include <unistd.h>
 
 #include "../posix/os_types.h"
+#include "os_events.h"
 
 int os_open_pipe(int ends[2])
 {
@@ -21,18 +21,21 @@ int os_open_pipe(int ends[2])
 
 int os_watch_exit(os_process_t *p)
 {
-    struct kevent change = {};
+    os_kevent_t change = {};
 
     p->exit = kqueue();
     if (p->exit < 0)
         return (-1);
-    EV_SET(&change, p->pid, EVFILT_PROC, EV_ADD, NOTE_EXIT, 0, nullptr);
+    change.ident = (uintptr_t)p->pid;
+    change.filter = EVFILT_PROC;
+    change.flags = EV_ADD;
+    change.fflags = NOTE_EXIT;
     return (kevent(p->exit, &change, 1, nullptr, 0, nullptr) ? -1 : 0);
 }
 
 static int wait_once(os_process_t *p, uint64_t deadline)
 {
-    struct kevent event = {};
+    os_kevent_t event = {};
     int wait = os_get_wait(deadline);
     struct timespec limit = {wait / 1000, (long)(wait % 1000) * 1'000'000};
 

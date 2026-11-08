@@ -9,6 +9,7 @@ macOS has no `pipe2`. So `os_open_pipe` calls `pipe`, then `fcntl` with `FD_CLOE
 ## The end
 
 `os_watch_exit` makes a queue with `kqueue`, and adds a filter `EVFILT_PROC` with `NOTE_EXIT` for the process.
+The events have the type `os_kevent_t`: `docs/intern/macos/os_events.h.md`.
 `os_wait_exit` waits with `kevent` on the queue, which gives an event at the end of the process.
 With no deadline, `kevent` gets no time. `EINTR` makes it wait again: `docs/intern/posix/process_read.c.md`, *The read*.
 
