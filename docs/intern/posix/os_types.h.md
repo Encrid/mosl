@@ -79,7 +79,8 @@ A process that `os_process_start` starts.
 | `exit` | The descriptor that watches the end: of the process on Linux, of a queue on macOS. |
 | `signals` | `signals` of the start. |
 | `hung` | True after a hang-up. |
-| `taken` | True after `waitpid` took the process. |
+| `ended` | True after the watch told the end of the process. |
+| `taken` | True after `waitid` took the process. |
 | `status` | The status, after the process was taken. |
 | `turn` | The pipe that the next read asks first. |
 | `lock` | The mutex of `docs/intern/posix/process_end.c.md`, *The lock*. |
@@ -93,7 +94,7 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 `src/posix/parent.c` defines `os_open_parent` and `os_close_parent`, and `src/posix/write_all.c` defines `os_write_all`.
 `src/posix/online.c` defines `os_get_online_count`, and `src/posix/remove.c` defines `os_remove_entry`.
 
-A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_watch_exit` and `os_wait_exit`.
+A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_quiet_pipe`, `os_watch_exit` and `os_wait_exit`.
 
 `src/posix/process_env.c` defines `os_find_program` and `os_build_env`.
 `src/posix/process_child.c` defines `os_run_child`, `os_close_pipes` and `os_drop_process`.
@@ -107,6 +108,7 @@ A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_watch
 | `os_close_parent(at)` | Closes a folder that `os_open_parent` gave. |
 | `os_write_all(fd, wake, bytes, len)` | Writes each byte into `fd` with `SIGPIPE` blocked, and stops at a byte of `wake`. |
 | `os_open_pipe(ends)` | The open of a pipe whose ends a child does not get. |
+| `os_quiet_pipe(fd)` | The end of the signal of a broken write into `fd`, where the system needs it. |
 | `os_watch_exit(p)` | The start of the watch of the end of a process. |
 | `os_wait_exit(p, wait)` | The wait for the end of a process, up to `wait` milliseconds. |
 | `os_pidfd_open(pid)` | The descriptor of a process on Linux, which `src/linux/pidfd.c` defines. |

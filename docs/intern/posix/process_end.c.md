@@ -13,6 +13,7 @@ A wait does not hold the mutex while it waits. Thus a kill from another thread d
 
 - `os_process_kill` writes a byte into the wake pipe, then sends `SIGKILL`. A read or a write that waits sees the byte first.
 - `os_process_wait` asks `os_wait_exit` for the end, then `waitid` takes the process.
+  The field `ended` keeps that the end came. On macOS, the queue gives the event of the end only once, so a wait after a failed `waitid` does not ask it again.
 - `waitid` gives the reason of the end in `si_code`. A process that a signal ended gets minus the number of the signal.
   The macros of a status of `waitpid` hold `&&` on macOS, which `test --branches` cannot measure.
 - `os_process_signal` sends `SIGINT`, `SIGTERM` or `SIGHUP`. After `SIGHUP`, each signal gives -1.

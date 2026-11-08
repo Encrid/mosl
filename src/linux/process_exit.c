@@ -15,6 +15,10 @@ int os_open_pipe(int ends[2])
     return (pipe2(ends, O_CLOEXEC));
 }
 
+void os_quiet_pipe([[maybe_unused]] int fd)
+{
+}
+
 int os_watch_exit(os_process_t *p)
 {
     p->exit = os_pidfd_open(p->pid);

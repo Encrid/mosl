@@ -16,6 +16,7 @@ Each function keeps the contract of `docs/extern/os.h.md`, *The processes*.
 
 After a failure, `waitid` takes the child, and the start gives `nullptr`.
 Else `keep_ends` keeps the ends of the parent, and gives them `O_NONBLOCK`, so a read and a write can wait for the wake pipe too.
+It also gives the input to `os_quiet_pipe`, so a broken write gives no signal on macOS.
 `fcntl` and `dup2` on an open descriptor fail only for a bad descriptor, so the file does not ask their result.
 
 ## The gate

@@ -19,6 +19,11 @@ int os_open_pipe(int ends[2])
     return (0);
 }
 
+void os_quiet_pipe(int fd)
+{
+    fcntl(fd, F_SETNOSIGPIPE, 1);
+}
+
 int os_watch_exit(os_process_t *p)
 {
     os_kevent_t change = {};
