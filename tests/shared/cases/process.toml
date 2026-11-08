@@ -201,7 +201,7 @@ false = { fail = {} }
 [[case]]
 name = "a start is refused when the memory of its environment fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again"]
-fail = { malloc = 3 }
+fail = { malloc = 2 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
@@ -284,6 +284,6 @@ false = { run = ["{out}/process{exe}", "{case}", "late-kill", "6"] }
 [[case]]
 name = "a start is refused when the memory of the path of its program fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again"]
-fail = { malloc = 2 }
+fail = { malloc = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
