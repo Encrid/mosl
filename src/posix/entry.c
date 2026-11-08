@@ -46,7 +46,7 @@ int os_link_make(const char *path, const char *target)
 {
     const char *name = nullptr;
     int at = os_open_parent(path, &name, false);
-    int linked = at == -1 ? -1 : symlinkat(target, at, name);
+    int linked = at == -1 || !*target ? -1 : symlinkat(target, at, name);
 
     os_close_parent(at);
     return (linked ? -1 : 0);

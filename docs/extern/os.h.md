@@ -334,6 +334,7 @@ The two paths must be on one volume, else the move fails.
 - After a failure, some entries can be gone.
 
 `os_link_make` makes `path` a symbolic link to `target`. A relative `target` starts in the folder of `path`.
+An empty `target` gives -1 on each system, because a link to no path is of no use.
 On Windows, a link needs the Developer Mode or the rights of an administrator.
 On Windows, the link is a link to a folder if `target` is a folder at the call.
 

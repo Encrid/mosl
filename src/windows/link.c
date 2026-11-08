@@ -52,7 +52,8 @@ int os_link_make(const char *path, const char *target)
         flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
     for (size_t i = 0; aim && aim[i]; i++)
         aim[i] = aim[i] == L'/' ? L'\\' : aim[i];
-    if (whole && aim && kind >= 0 && CreateSymbolicLinkW(whole, aim, flags))
+    if (whole && aim && *target && kind >= 0
+        && CreateSymbolicLinkW(whole, aim, flags))
         linked = 0;
     free(whole);
     free(aim);
