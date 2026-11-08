@@ -310,28 +310,28 @@ false = { fail = {} }
 [[case]]
 name = "a start is refused when the memory of its command line fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again", "plain"]
-fail = { malloc = 6 }
+fail = { malloc = 6, fork = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when the memory of a variable of env fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again", "plain"]
-fail = { malloc = 8 }
+fail = { malloc = 8, fork = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when the memory of the list of env fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again", "plain"]
-fail = { calloc = 2 }
+fail = { calloc = 2, fork = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when the memory of the list of unset fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again", "plain"]
-fail = { calloc = 3 }
+fail = { calloc = 3, fork = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
@@ -345,14 +345,14 @@ false = { fail = {} }
 [[case]]
 name = "a start is refused when the memory of the environment block fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again", "plain"]
-fail = { malloc = 10 }
+fail = { malloc = 10, fork = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 
 [[case]]
 name = "a start is refused when the memory of its attributes fails, and a later one is made"
 run = ["{out}/process{exe}", "{case}", "again", "plain"]
-fail = { malloc = 11 }
+fail = { malloc = 11, fork = 1 }
 claims = { matches = ["again: [1-9] refused, then made"] }
 false = { fail = {} }
 

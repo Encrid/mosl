@@ -394,13 +394,17 @@ static os_process_t *start_signals(bool signals)
 static int mode_signal(char **argv)
 {
     os_process_t *p = start_signals(true);
+    int64_t status = 0;
     int sent = -9;
 
     if (!p)
         return (printf("signal: no start\n"), 1);
     sent = os_process_signal(p, get_which(argv[3]));
+    fprintf(stderr, "step: sent %d\n", sent);
     if (sent)
         os_process_kill(p);
+    if (os_process_wait(p, 10000 * BRIEF, &status) == 1)
+        fprintf(stderr, "step: still runs after 10 s\n");
     printf("signal: %d %lld\n", sent, (long long)end_process(p));
     return (0);
 }
