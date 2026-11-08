@@ -14,4 +14,6 @@ No result of `os_watch_take` is 3.
 | Function | Result |
 | --- | --- |
 | `os_read_stream(file, size, kept, len)` | Reads a stream whole into the buffer of a folder: `docs/intern/common/read_stream.c.md`, *The buffer*. |
+| `os_set_loopback(address)` | Writes the address of the loopback: `docs/intern/common/port_bytes.c.md`, *The order*. |
+| `os_get_port(port)` | Reads a port: `docs/intern/common/port_bytes.c.md`, *The order*. |
 | `os_is_within(name, depth)` | Tells if a name of a watch is within its depth: `docs/intern/common/watch_depth.c.md`, *The depth*. |

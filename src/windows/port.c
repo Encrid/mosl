@@ -3,16 +3,13 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
-#include <string.h>
-
 #include "os_sockets.h"
+#include "../common/os_common.h"
 
 static const char *const NAMES[] = {
     "WSAStartup", "socket", "bind", "getsockname", "closesocket", "WSACleanup"
 };
 constexpr size_t COUNT = sizeof(NAMES) / sizeof(NAMES[0]);
-
-constexpr uint8_t LOOPBACK[] = {127, 0, 0, 1};
 
 static bool load_calls(HMODULE library, sockets_t *calls)
 {
@@ -37,14 +34,13 @@ static int get_port(const sockets_t *calls)
     struct sockaddr_in at = {};
     int size = sizeof(at);
     SOCKET s = calls->socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    const uint8_t *bytes = (const uint8_t *)&at.sin_port;
     int port = -1;
 
     at.sin_family = AF_INET;
-    memcpy(&at.sin_addr, LOOPBACK, sizeof(LOOPBACK));
+    os_set_loopback(&at.sin_addr);
     if (s != INVALID_SOCKET && !calls->bind(s, (struct sockaddr *)&at,
         sizeof(at)) && !calls->name(s, (struct sockaddr *)&at, &size))
-        port = bytes[0] << 8 | bytes[1];
+        port = os_get_port(&at.sin_port);
     if (s != INVALID_SOCKET)
         calls->close(s);
     return (port);
