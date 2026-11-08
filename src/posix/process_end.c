@@ -40,11 +40,12 @@ void os_process_kill(os_process_t *p)
 int os_process_wait(os_process_t *p, uint64_t nanos, int64_t *status)
 {
     uint64_t deadline = nanos == OS_FOREVER ? OS_FOREVER : os_get_now() + nanos;
-    int ended = p->taken ? 0 : os_wait_exit(p, deadline);
+    int ended = p->taken || p->ended ? 0 : os_wait_exit(p, deadline);
     siginfo_t info = {};
 
     if (ended)
         return (ended);
+    p->ended = true;
     pthread_mutex_lock(&p->lock);
     if (!p->taken && !waitid(P_PID, (id_t)p->pid, &info, WEXITED)) {
         p->taken = true;

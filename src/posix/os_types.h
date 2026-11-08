@@ -51,6 +51,7 @@ struct os_process {
     int exit;
     bool signals;
     bool hung;
+    bool ended;
     bool taken;
     int64_t status;
     unsigned turn;
@@ -87,6 +88,8 @@ bool os_is_pipe_waiting(void);
 void os_take_pipe_signal(const sigset_t *pipe_only);
 
 int os_open_pipe(int ends[2]);
+
+void os_quiet_pipe(int fd);
 
 int os_watch_exit(os_process_t *p);
 

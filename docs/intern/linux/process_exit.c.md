@@ -5,6 +5,7 @@ This file gives the parts of a process that only Linux has: `pipe2`, and a descr
 ## The pipes
 
 `os_open_pipe` calls `pipe2` with `O_CLOEXEC`, so no other child gets a copy of the ends.
+`os_quiet_pipe` does nothing. On Linux, the signal of a broken write goes to the writer thread, which `os_write_all` keeps from it.
 
 ## The end
 
@@ -17,5 +18,6 @@ A cut of `EINTR` is handled as in `docs/intern/posix/process_read.c.md`, *The re
 | Function | Result |
 | --- | --- |
 | `os_open_pipe(ends)` | Opens a pipe with `O_CLOEXEC`. Gives 0, or -1. |
+| `os_quiet_pipe(fd)` | Does nothing, as *The pipes* tells. |
 | `os_watch_exit(p)` | Opens the descriptor of the process. Gives 0, or -1. |
 | `os_wait_exit(p, deadline)` | Gives the result of `poll` on the descriptor: 0 at the end, 1 at the deadline, -1 on a failure. |

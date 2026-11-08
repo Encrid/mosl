@@ -40,6 +40,7 @@ static void keep_ends(os_process_t *p, const os_process_start_t *start,
     fcntl(p->output, F_SETFL, O_NONBLOCK);
     fcntl(p->errors, F_SETFL, O_NONBLOCK);
     fcntl(p->wake[1], F_SETFL, O_NONBLOCK);
+    os_quiet_pipe(p->input);
     p->signals = start->signals;
     pthread_mutex_init(&p->lock, nullptr);
 }
