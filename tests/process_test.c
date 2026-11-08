@@ -403,9 +403,11 @@ static int mode_signal(char **argv)
     fprintf(stderr, "step: sent %d\n", sent);
     if (sent)
         os_process_kill(p);
-    if (os_process_wait(p, 10000 * BRIEF, &status) == 1)
-        fprintf(stderr, "step: still runs after 10 s\n");
+    fprintf(stderr, "step: waited %d, %lld\n",
+        os_process_wait(p, 10000 * BRIEF, &status), (long long)status);
     printf("signal: %d %lld\n", sent, (long long)end_process(p));
+    fflush(stdout);
+    fprintf(stderr, "step: freed\n");
     return (0);
 }
 
