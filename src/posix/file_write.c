@@ -48,7 +48,7 @@ int os_file_write(const char *path, const void *bytes, size_t len,
     const char *name = nullptr;
     int at = os_open_parent(path, &name, false);
     int fd = at == -1 ? -1 : open_file(at, name, executable);
-    int wrote = fd < 0 ? -1 : os_write_all(fd, bytes, len);
+    int wrote = fd < 0 ? -1 : os_write_all(fd, -1, bytes, len);
 
     os_close_parent(at);
     if (fd >= 0 && close(fd))
