@@ -28,3 +28,31 @@ char *os_narrow(const wchar_t *wide)
             nullptr);
     return (text);
 }
+
+void os_free_texts(wchar_t **texts)
+{
+    for (size_t i = 0; texts && texts[i]; i++)
+        free(texts[i]);
+    free(texts);
+}
+
+wchar_t **os_widen_texts(const char *const *texts)
+{
+    size_t count = 0;
+    wchar_t **wide = nullptr;
+    bool failed = false;
+
+    while (texts && texts[count])
+        count++;
+    wide = calloc(count + 1, sizeof(*wide));
+    for (size_t i = 0; wide && i < count; i++) {
+        wide[i] = os_widen(texts[i]);
+        failed |= !wide[i];
+    }
+    if (!failed)
+        return (wide);
+    for (size_t i = 0; i < count; i++)
+        free(wide[i]);
+    free(wide);
+    return (nullptr);
+}

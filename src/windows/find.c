@@ -60,7 +60,7 @@ static char *find_in(const char *folders, const char *name, const char *exts)
     return (found);
 }
 
-char *os_path_find(const char *name)
+char *os_find_text(const char *name)
 {
     char *folders = os_get_variable("PATH");
     char *exts = strchr(name, '.') ? nullptr : os_get_variable("PATHEXT");
@@ -73,4 +73,9 @@ char *os_path_find(const char *name)
     free(folders);
     free(exts);
     return (found);
+}
+
+char *os_path_find(const char *name)
+{
+    return (os_find_text(name));
 }
