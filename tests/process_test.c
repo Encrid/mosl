@@ -587,6 +587,19 @@ static int mode_interrupted(char **argv)
     return (printf("interrupted: %d\n", got), 0);
 }
 
+static int mode_late_kill(char **argv)
+{
+    os_process_t *p = start_child("exit", argv[3]);
+    int64_t status = -1;
+
+    if (!p)
+        return (printf("late-kill: no start\n"), 1);
+    if (os_process_wait(p, OS_FOREVER, &status))
+        printf("late-kill: no wait\n");
+    os_process_kill(p);
+    return (printf("late-kill: %lld\n", (long long)end_process(p)), 0);
+}
+
 static bool try_once(void)
 {
     os_process_start_t start = {.errors_apart = true};
@@ -621,6 +634,7 @@ static const test_mode_t MODES[] = {
     {"wait", 4, mode_wait}, {"again", 3, mode_again},
     {"write-after", 4, mode_write_after},
     {"interrupted", 5, mode_interrupted},
+    {"late-kill", 4, mode_late_kill},
 };
 
 int main(int argc, char **argv)
