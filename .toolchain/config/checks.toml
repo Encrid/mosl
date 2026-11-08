@@ -21,21 +21,25 @@ why = "Each coding guide states each of its rules in full, for a reader of one l
 [[leaks.exception]]
 case = "os_env_get*"
 kind = "memory"
+system = "windows"
 why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
 
 [[leaks.exception]]
 case = "os_path_find*"
 kind = "memory"
+system = "windows"
 why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
 
 [[leaks.exception]]
 case = "os_path_whole*"
 kind = "memory"
+system = "windows"
 why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
 
 [[leaks.exception]]
 case = "os_link_make takes a link with no folder*"
 kind = "memory"
+system = "windows"
 why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
 
 [[leaks.exception]]
@@ -46,6 +50,7 @@ why = "The test frees the memory that the call gives to it, and the count does n
 [[leaks.exception]]
 case = "the os layer runs every call and its error paths"
 kind = "memory"
+system = "windows"
 why = "The test frees the memory that os_path_whole gives to it, and the count does not see the code of tests."
 
 [[branches.exception]]
