@@ -88,6 +88,9 @@ void os_event_wait(os_event_t *e, uint64_t nanos);
 [[nodiscard]] char *os_folder_read_file(os_folder_t *f, const char *name,
     size_t *len);
 
+[[nodiscard]] int os_folder_entry_size(os_folder_t *f, const char *name,
+    uint64_t *size);
+
 void os_folder_close(os_folder_t *f);
 
 [[nodiscard]] os_watch_t *os_watch_start(const char *folder, uint32_t depth);

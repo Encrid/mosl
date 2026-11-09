@@ -371,3 +371,30 @@ name = "os_path_remove gives 1 for a deep path with no folder"
 run = ["{out}/files{exe}", "{case}", "deep-remove"]
 claims = { line = ["deep-remove: 1"] }
 false = { run = ["{out}/files{exe}", "{case}", "deep-move"] }
+
+[[case]]
+name = "os_folder_entry_size gives the size of a file of a folder"
+run = ["{out}/files{exe}", "{case}", "size", "f"]
+files = { "{case}/f" = "hello" }
+claims = { line = ["size: 0 5"] }
+false = { files = { "{case}/f" = "hell" } }
+
+[[case]]
+name = "os_folder_entry_size gives -1 for a name that is not there"
+run = ["{out}/files{exe}", "{case}", "size", "none"]
+claims = { line = ["size: -1 0"] }
+false = { files = { "{case}/none" = "" } }
+
+[[case]]
+name = "os_folder_entry_size gives -1 for a folder"
+run = ["{out}/files{exe}", "{case}", "size", "d"]
+files = { "{case}/d/x" = "x" }
+claims = { line = ["size: -1 0"] }
+false = { run = ["{out}/files{exe}", "{case}/d", "size", "x"] }
+
+[[case]]
+name = "os_folder_entry_size follows a link, and gives the size of its target"
+run = ["{out}/files{exe}", "{case}", "size-link", "t"]
+files = { "{case}/t" = "four" }
+claims = { line = ["size-link: 0 4"] }
+false = { run = ["{out}/files{exe}", "{case}", "size-link", "none"] }

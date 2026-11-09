@@ -121,6 +121,8 @@ char *os_get_variable(const char *name);
 
 int os_remove_entry(const wchar_t *whole);
 
+int os_get_whole_info(const wchar_t *whole, BY_HANDLE_FILE_INFORMATION *info);
+
 char *os_find_text(const char *name);
 
 wchar_t *os_find_program(const os_process_start_t *start);
