@@ -12,30 +12,32 @@
 constexpr DWORD SHARE_ALL = FILE_SHARE_READ | FILE_SHARE_WRITE
     | FILE_SHARE_DELETE;
 
-static int get_whole_entry(const wchar_t *whole)
+int os_get_whole_info(const wchar_t *whole, BY_HANDLE_FILE_INFORMATION *info)
 {
     HANDLE file = CreateFileW(whole, 0, SHARE_ALL, nullptr, OPEN_EXISTING,
         FILE_FLAG_BACKUP_SEMANTICS, nullptr);
     DWORD error = GetLastError();
-    BY_HANDLE_FILE_INFORMATION info = {};
-    int kind = -1;
+    int found = -1;
 
     if (file == INVALID_HANDLE_VALUE)
         return (error == ERROR_FILE_NOT_FOUND
             || error == ERROR_PATH_NOT_FOUND ? 0 : -1);
-    if (GetFileInformationByHandle(file, &info))
-        kind = info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? 3 : 1;
+    if (GetFileInformationByHandle(file, info))
+        found = 1;
     CloseHandle(file);
-    return (kind);
+    return (found);
 }
 
 int os_path_entry(const char *path)
 {
     wchar_t *whole = os_get_whole(path);
-    int kind = whole ? get_whole_entry(whole) : -1;
+    BY_HANDLE_FILE_INFORMATION info = {};
+    int found = whole ? os_get_whole_info(whole, &info) : -1;
 
     free(whole);
-    return (kind);
+    if (found != 1)
+        return (found);
+    return (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? 3 : 1);
 }
 
 int os_path_move(const char *from, const char *to)

@@ -148,6 +148,7 @@ The files of a process define the other functions of the table.
 | `os_whole_text(path)` | The whole path of `path` in UTF-8, which `src/windows/path.c` defines. |
 | `os_get_variable(name)` | The value of a variable, which `src/windows/env.c` defines. |
 | `os_remove_entry(whole)` | The remove of the entry of a whole path, which `src/windows/remove.c` defines. |
+| `os_get_whole_info(whole, info)` | The attributes and the size of what is at a whole path, which `src/windows/entry.c` defines. |
 | `os_find_text(name)` | The path of a program on the `PATH`, which `src/windows/find.c` defines. |
 | `os_find_program(start)` | The whole path of the program of a process in UTF-16. |
 | `os_prepare_launch(start, launch)` | The texts of a start. |
