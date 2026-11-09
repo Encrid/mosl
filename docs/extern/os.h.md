@@ -66,7 +66,7 @@ The function that a thread runs: `void (*)(void *arg)`.
 ### os_folder_t
 
 An open folder: `struct os_folder`, which each platform defines.
-It lists the entries of the folder, and reads its files by their names.
+It lists the entries of the folder, reads its files by their names, and gives their sizes.
 
 ### os_watch_t
 
@@ -123,6 +123,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_folder_open` | Opens the folder `path`, so that the caller can list it and read its files, as *The folders* tells. Gives `nullptr` if no folder of `path` opens. |
 | `os_folder_read_entry` | Gives the name of the next entry of the folder, and sets `*is_folder` to true if the entry is a folder. It skips `.` and `..`. The name stays valid until the next call. Gives `nullptr` after the last entry. |
 | `os_folder_read_file` | Reads the whole file `name` of the folder. It gives the bytes, then one zero byte, and sets `*len` to the count of the bytes. The bytes belong to the folder: they stay valid until its next read or its close, and the caller does not free them. `name` is one name of the folder, with no separator. Gives `nullptr` if the file does not open or read, or if it is a folder. |
+| `os_folder_entry_size` | Gives 0, and sets `*size` to the size in bytes of the file `name`, as *The folders* tells. It reads no byte of the file. `name` is one name of the folder, with no separator. Gives -1 and keeps `*size` if no file of `name` is there, if it is a folder, or if the call fails. |
 | `os_folder_close` | Closes a folder, and frees its bytes. A null `f` does nothing. |
 | `os_watch_start` | Starts a watch of the entries of `folder`, down to `depth` levels of folders, as *The watch* tells. Gives `nullptr` if `depth` is 0, if no folder of `folder` opens, or if a call that it needs fails. |
 | `os_watch_take` | Gives the next change of a watch, and does not wait. It gives 1 and sets `*name`, or it gives 0, 2 or -1, as *The watch* tells. |
@@ -169,6 +170,7 @@ The count is for the stack that the system gave the thread, on the first thread 
 A folder opens by its path, and `os_folder_read_file` reads a file of it by its name. Thus a file can be past the path limit of the system:
 
 - On Linux and macOS, `os_folder_read_file` opens the name from the folder with `openat`, so the path of the file is never joined.
+- `os_folder_entry_size` takes the name in the same way. It follows a link, and gives the size of its target. A link to a folder or to nothing gives -1.
 - A path of a folder past `PATH_MAX` opens one name at a time with `openat`. `PATH_MAX` is 4096 bytes on Linux, and 1024 on macOS.
 - Each folder of that path before the last opens for search only: with `O_PATH` on Linux, and with `O_SEARCH` on macOS. Thus a long path needs the same rights as a short one.
 - On Windows, `GetFullPathNameW` makes the path whole, from the current folder for a relative path. The layer then gives it the form `\\?\`, and joins the name of a file to it.

@@ -547,6 +547,28 @@ static int big(char **)
     return (0);
 }
 
+static int show_size(const char *mode, const char *name)
+{
+    os_folder_t *f = os_folder_open(folder);
+    uint64_t bytes = 0;
+    int got = f ? os_folder_entry_size(f, name, &bytes) : -2;
+
+    os_folder_close(f);
+    printf("%s: %d %llu\n", mode, got, (unsigned long long)bytes);
+    return (0);
+}
+
+static int size(char **argv)
+{
+    return (show_size("size", argv[3]));
+}
+
+static int size_link(char **argv)
+{
+    setup(os_link_make(in("l"), argv[3]));
+    return (show_size("size-link", "l"));
+}
+
 typedef struct {
     const char *name;
     int count;
@@ -565,7 +587,8 @@ static const test_mode_t MODES[] = {
     {"remove-of", 4, remove_of}, {"locked-folder", 3, locked_folder},
     {"make-file", 3, make_file}, {"make-link", 3, make_link_none},
     {"deep-remake", 3, deep_remake}, {"deep-move", 3, deep_move_none},
-    {"deep-remove", 3, deep_remove_none},
+    {"deep-remove", 3, deep_remove_none}, {"size", 4, size},
+    {"size-link", 4, size_link},
 };
 
 int main(int argc, char **argv)

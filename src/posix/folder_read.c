@@ -45,3 +45,13 @@ char *os_folder_read_file(os_folder_t *f, const char *name, size_t *len)
     fclose(file);
     return (bytes);
 }
+
+int os_folder_entry_size(os_folder_t *f, const char *name, uint64_t *size)
+{
+    struct stat st = {};
+
+    if (fstatat(dirfd(f->dir), name, &st, 0) || !S_ISREG(st.st_mode))
+        return (-1);
+    *size = (uint64_t)st.st_size;
+    return (0);
+}

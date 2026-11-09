@@ -89,6 +89,21 @@ static int list_folder(os_folder_t *f)
     return (0);
 }
 
+static int size_folder(os_folder_t *f, const char *longname)
+{
+    uint64_t size = 0;
+
+    if (os_folder_entry_size(f, "small.txt", &size) || size != 5)
+        return (printf("FAIL: give the size of a file of a folder\n"), 1);
+    if (os_folder_entry_size(f, "sub", &size) != -1)
+        return (printf("FAIL: give the size of a folder\n"), 1);
+    if (os_folder_entry_size(f, "missing.txt", &size) != -1)
+        return (printf("FAIL: give the size of a file that is not there\n"), 1);
+    if (os_folder_entry_size(f, longname, &size) != -1 || size != 5)
+        return (printf("FAIL: give the size of a name that is too long\n"), 1);
+    return (0);
+}
+
 static int read_folder(os_folder_t *f, const char *longname)
 {
     size_t len = 0;
@@ -102,7 +117,7 @@ static int read_folder(os_folder_t *f, const char *longname)
         return (printf("FAIL: read a file that is not there\n"), 1);
     if (os_folder_read_file(f, longname, &len))
         return (printf("FAIL: read a name that is too long\n"), 1);
-    return (0);
+    return (size_folder(f, longname));
 }
 
 static int refuse_folders(const char *dir)
