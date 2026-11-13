@@ -50,18 +50,14 @@ static int finish_start(os_process_t *p, const os_process_start_t *start,
 {
     siginfo_t info = {};
     int code = 0;
-    bool failed = false;
+    bool failed = os_watch_exit(p) != 0;
+    [[maybe_unused]] ssize_t wrote = 0;
 
-    for (int i = 0; i < OS_PIPES; i++) {
-        close(pipes[i][CHILD_END[i]]);
-        pipes[i][CHILD_END[i]] = -1;
-    }
-    if (os_watch_exit(p)) {
+    if (failed)
         kill(p->pid, SIGKILL);
-        failed = true;
-    }
-    close(pipes[OS_PIPE_GATE][1]);
-    pipes[OS_PIPE_GATE][1] = -1;
+    else
+        wrote = write(pipes[OS_PIPE_GATE][1], "", 1);
+    os_close_pipes(&pipes[OS_PIPE_GATE], 1);
     failed |= read(pipes[OS_PIPE_REPORT][0], &code, sizeof(code)) > 0;
     if (failed)
         waitid(P_PID, (id_t)p->pid, &info, WEXITED);
@@ -84,6 +80,12 @@ static int start_child(os_process_t *p, const os_process_start_t *start,
     pthread_sigmask(SIG_SETMASK, &old, nullptr);
     if (p->pid < 0)
         return (-1);
+    for (int i = 0; i < OS_PIPES; i++) {
+        if (i == OS_PIPE_GATE)
+            continue;
+        close(launch->pipes[i][CHILD_END[i]]);
+        launch->pipes[i][CHILD_END[i]] = -1;
+    }
     return (finish_start(p, start, launch->pipes));
 }
 
