@@ -410,3 +410,9 @@ run = ["{out}/process{exe}", "{case}", "named", "./mosl_none/process", "-"]
 folders = { "{case}/bin" = ["process"] }
 claims = { line = ["named: none"] }
 false = { run = ["{out}/process{exe}", "{case}", "named", "./process{exe}", "{case}/bin"] }
+
+[[case]]
+name = "threads start processes at one time"
+run = ["{out}/process{exe}", "{case}", "crowd", "8"]
+claims = { line = ["crowd: 800 ended"] }
+false = { run = ["{out}/process{exe}", "{case}", "crowd", "1"] }

@@ -23,6 +23,8 @@ constexpr size_t TEXT = 256;
 constexpr size_t STACK = 1u << 20;
 constexpr int TRIES = 9;
 constexpr uint64_t BRIEF = 1'000'000;
+constexpr int CROWD = 8;
+constexpr int STARTS = 100;
 
 typedef struct {
     const char *name;
@@ -645,6 +647,35 @@ static int mode_again(char **argv)
     return (0);
 }
 
+static void crowd_job(void *arg)
+{
+    int *ended = arg;
+
+    for (int i = 0; i < STARTS; i++) {
+        reads_t reads = {};
+
+        read_child(&(os_process_start_t){}, "say", "hi", &reads);
+        *ended += !strcmp(reads.out, "hi");
+    }
+}
+
+static int mode_crowd(char **argv)
+{
+    int count = atoi(argv[3]);
+    os_thread_t *threads[CROWD] = {};
+    int ended[CROWD] = {};
+    int sum = 0;
+
+    for (int i = 0; i < count && i < CROWD; i++)
+        threads[i] = os_thread_start(crowd_job, &ended[i], STACK);
+    for (int i = 0; i < count && i < CROWD; i++) {
+        if (threads[i])
+            os_thread_join(threads[i]);
+        sum += ended[i];
+    }
+    return (printf("crowd: %d ended\n", sum), 0);
+}
+
 static const test_mode_t MODES[] = {
     {"named", 5, mode_named}, {"env", 4, mode_env},
     {"streams", 4, mode_streams}, {"full", 4, mode_full},
@@ -659,6 +690,7 @@ static const test_mode_t MODES[] = {
     {"write-after", 4, mode_write_after},
     {"interrupted", 5, mode_interrupted},
     {"late-kill", 4, mode_late_kill}, {"say", 4, mode_say},
+    {"crowd", 4, mode_crowd},
 };
 
 int main(int argc, char **argv)
