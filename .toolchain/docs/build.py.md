@@ -320,7 +320,7 @@ The release of a part puts the zips of all the targets into one zip: `.toolchain
 3. It writes `<build>/<name>.zip`. Each file of `<build>/<name>-<target>.zip` goes into the folder `<target>`, with its mode.
 4. It writes the path of `<build>/<name>.zip`.
 
-The targets are the targets of the toolchain. With no `--part`, `joined` joins nothing and writes nothing.
+The targets are the targets of the project, from `[project] targets`. With no `--part`, `joined` joins nothing and writes nothing.
 
 ## Limits
 

@@ -55,7 +55,7 @@ def merged(into, more, name, whence, above=()):
     return into
 
 
-def config(root):
+def config(root, every=False):
     whole, whence = {}, {}
     own = root / '.toolchain' / 'project.toml'
     files = [('toolchain.toml', HERE / '.toolchain' / 'toolchain.toml')] + ([('project.toml', own)] if own.is_file() else [])
@@ -63,7 +63,21 @@ def config(root):
     files += [('config/' + path.relative_to(where).as_posix(), path) for path in sorted(where.rglob('*.toml'))]
     for name, path in files:
         merged(whole, tomllib.loads(path.read_text(encoding='utf-8')), name, whence)
+    if own.is_file() and not every:
+        whole['targets'] = picked(whole)
     return whole
+
+
+def picked(whole):
+    names = whole.get('project', {}).get('targets')
+    if names is None:
+        die('.toolchain/project.toml: write the targets of the project in [project] targets')
+    for name in names:
+        if name not in whole['targets']:
+            die('[project] targets: %s is not a target of the toolchain' % name)
+        if names.count(name) > 1:
+            die('[project] targets: %s comes 2 times' % name)
+    return {name: row for name, row in whole['targets'].items() if name in names}
 
 
 def tables(config, values, name):

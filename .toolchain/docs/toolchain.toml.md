@@ -31,7 +31,7 @@ It is the same in each project, and a project does not change it.
 
 ## [targets.\<target\>]
 
-There are six targets: three operating systems on two types of processor.
+There are six targets: three operating systems on two types of processor. Each project picks its targets with `[project] targets`: `.toolchain/docs/project.toml.md`, *[project]*.
 
 | Key | Value |
 | --- | --- |

@@ -465,7 +465,7 @@ def joined(args):
 
 
 def prepared(args, here=False):
-    config = shared.config(args.root)
+    config = shared.config(args.root, getattr(args, 'toolchain', False))
     home = shared.this_target(config['targets'])
     target = args.target or home or die('no target runs on %s %s: name one' % (platform.system(), platform.machine()))
     if target not in config['targets']:

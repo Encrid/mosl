@@ -21,7 +21,8 @@ The tools import it. It does not run alone.
 | `die(why)` | Stops the tool with the message `<tool>: <why>`, where `<tool>` is the file name of the tool. |
 | `known(table, what, where)` | Gives `table`. It stops if `table` has a key that `KEYS[what]` does not have. |
 | `merged(into, more, name, whence, above)` | Adds the keys of `more`, the file `name`, to `into`, as the section *The configuration* tells. `whence` gives the file of each key. |
-| `config(root)` | Gives the configuration of the project in `root`. |
+| `config(root, every)` | Gives the configuration of the project in `root`. It keeps only the targets of `[project] targets`, unless `every` is set. |
+| `picked(whole)` | Gives the targets of `[project] targets`, or stops with a fault of `.toolchain/docs/project.toml.md`, *[project]*. |
 | `tables(config, values, name)` | Gives the table `[<name>]` of the configuration, then the table `[<name>]` of each file of its key `with`. It replaces the variables in each path, and stops if a file is not there. |
 | `located(text, values)` | Gives the path of `text` in the root, after it replaces the variables. |
 | `expand(text, values)` | Gives `text` with the value of each variable in place of the variable. |
