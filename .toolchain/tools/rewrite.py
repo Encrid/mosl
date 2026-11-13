@@ -153,7 +153,9 @@ def sources(config, values):
         mine['inputs'] = stood_in(artifact, mine)
         for source in mine['sources']:
             if source.startswith('src/') and source.endswith('.c') and source not in jobs:
-                jobs[source] = expanded(config['rewrite']['dump'], dict(mine, source=source))
+                jobs[source] = expanded(config['rewrite']['dump'], dict(mine, source=source)), set()
+            if source in jobs and 'part' in artifact:
+                jobs[source][1].add(artifact['part'])
     return jobs
 
 
@@ -161,7 +163,8 @@ def each(config, values, use):
     root = Path(values['root'])
     jobs = sources(config, values)
     with concurrent.futures.ThreadPoolExecutor(min(8, os.cpu_count() or 1)) as pool:
-        return list(pool.map(lambda job: use(root, job[0], dumped(job[1], root)), jobs.items()))
+        return list(pool.map(lambda job: (use(root, job[0], dumped(job[1][0], root)), sorted(job[1][1])),
+                             jobs.items()))
 
 
 def copied(root, where):

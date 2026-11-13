@@ -23,9 +23,12 @@ Each function is in the list one time. `listed` stops if a table names a functio
 - When the count is the number that the case states, that function gives the failure value, and does not call its function. Else it calls its function.
 - The count is a `[[gnu::weak]]` variable with hidden visibility. Thus the files of one program or of one library share one count, on each system.
 - A `[[gnu::constructor]]` reads the number of each such function from the variable `C23_FAIL` of the environment. A function with no number never fails.
+- The layer holds the parts of the artifacts that compile the file, as a text with a space before and after each name.
+  The constructor reads `C23_FAIL` only if the variable `C23_FAIL_PART` is not set, or if the text holds its value. Else no call of the file fails.
 
 For each call that the key `fail` of the case states, `C23_FAIL` holds a space, then `<function>=<number>`.
-`test.py` gives the variable to the command of the case: `.toolchain/docs/test.py.md`, *A case*.
+`C23_FAIL_PART` holds the part of the case, with a space before and after it. Thus a case refuses calls only in the programs of its own part, in each run.
+`test.py` gives the variables to the command of the case: `.toolchain/docs/test.py.md`, *A case*.
 
 `layer` stops if a listed function that a file uses has no result: `<name> gives no result`.
 It also stops where `signed` of `rewrite.py` stops: `.toolchain/docs/rewrite.py.md`, *The rename*.
@@ -70,5 +73,5 @@ A loaded call that no case states calls its function as always.
 | --- | --- |
 | `listed(config, values)` | Gives each function that can fail, with its failure value. It reads the files of `[fail] with`. |
 | `loaded_calls(calls, used, source, declared)` | Gives the loaded calls of a file: the listed functions that the text `source` names, and that the file does not call. |
-| `layer(text, used, declared, calls)` | Gives the layer of a file: the byte where its block starts, the block, and the end of the file. `used` names the functions of `calls` that the file uses, and `declared` gives their declarations. |
+| `layer(text, used, declared, calls, parts)` | Gives the layer of a file: the byte where its block starts, the block, and the end of the file. `used` names the functions of `calls` that the file uses, and `declared` gives their declarations. `parts` names the parts of the file. |
 | `failed(config, values)` | Writes the copy of the run `fail`, as *The runs* tells. |
