@@ -51,7 +51,7 @@ def loader_wrap(name, call, result, loaded, declared):
            '    c23b_fp = (void *)(%s);' % call]
     for item in loaded:
         out += ['    if (a1 && !strcmp((const char *)a1, "%s")) {' % item,
-                '        %s%s = (typeof(&%s))c23b_fp;' % (POINT, item, item),
+                '        %s%s = (typeof(*%s) *)c23b_fp;' % (POINT, item, item),
                 '        if (c23b_fp)',
                 '            return ((%s)%s%s);' % (result, STAND, item),
                 '    }']
@@ -64,14 +64,14 @@ def layer(text, used, declared, calls):
         return 0, '', ''
     at = rewrite.included(text)
     source = text.decode('utf-8', 'replace')
-    loaded = loaded_calls(calls, used, source, declared)
+    loaded = loaded_calls(calls, used, source, declared) if any(name in LOADERS for name in used) else []
     every = list(used) + loaded
     block = ''.join(rewrite.RENAME % {'p': PREFIX, 'n': name} for name in used)
     tail = ''.join('#pragma pop_macro("%s")\n' % name for name in used) + STATE
     tail += ''.join(COUNT % {'n': name} for name in every)
     tail += '[[gnu::constructor]] static void c23b_fread(void)\n{\n%s}\n' % ''.join(READ % {'n': name} for name in every)
     for name in loaded:
-        tail += 'static typeof(&%s) %s%s;\n' % (name, POINT, name)
+        tail += 'static typeof(*%s) *%s%s;\n' % (name, POINT, name)
         head, call = rewrite.signed(name, declared[name], STAND)
         aim = call.replace('(%s)' % name, '(%s%s)' % (POINT, name), 1)
         tail += head + WRAP % {'n': name, 'v': calls[name], 'c': aim}
