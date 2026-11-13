@@ -9,7 +9,7 @@ After `fork` in a program with threads, the child can call only the functions th
 So the parent makes the path, the arguments and the environment before `fork`, and the child makes no allocation.
 
 1. `sigaction` gives `SIGINT`, `SIGTERM`, `SIGHUP` and `SIGPIPE` their default action. With `ignore_interrupt`, `SIGINT` is ignored.
-2. `read` of the gate waits until the parent closes it.
+2. `read` of the gate waits for the byte of the parent. If the parent ended, the end of the gate stops the wait.
 3. `dup2` puts the input on 0, the output on 1, and the errors on 2. Without `errors_apart`, the output goes on 2 too.
 4. `chdir` goes into `folder`, if the start gives one.
 5. `sigprocmask` unblocks each signal, and `execve` starts the program.
