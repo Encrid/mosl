@@ -49,7 +49,7 @@ def checked(root, out):
     written = said.read_text(encoding='utf-8')
     files = sorted(ours(root))
     quoted = '\n'.join((root / path).read_text(encoding='utf-8') for path in files
-                       if path == 'readme.md' or path.startswith('docs/extern/'))
+                       if path == 'readme.md' or path.startswith(('docs/extern/', 'docs/usage/')))
     settings = config(root)
     writers = settings.get('test', {}).get('writers', [])
     code = [path for path in files if writers and path.startswith(('src/', 'include/')) and path.endswith(('.c', '.h'))]

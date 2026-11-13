@@ -23,6 +23,8 @@ pub fn build(b: *std.Build) void {
                 run.addPrefixedFileArg(prefix, .{ .cwd_relative = value });
             } else if (std.mem.eql(u8, kind, "made")) {
                 run.addPrefixedFileArg(prefix, made.get(value).?);
+            } else if (std.mem.eql(u8, kind, "folder")) {
+                run.addPrefixedDirectoryArg(prefix, made.get(value).?.dirname());
             } else if (std.mem.eql(u8, kind, "output")) {
                 made.put(name, run.addPrefixedOutputFileArg(prefix, value)) catch @panic("out of memory");
             } else if (std.mem.eql(u8, kind, "deps")) {

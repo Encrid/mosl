@@ -19,6 +19,7 @@ from shared import die, expand, expanded, files, known, located, run, sha256
 CACHES = {'ZIG_GLOBAL_CACHE_DIR': 'global', 'ZIG_LOCAL_CACHE_DIR': 'local'}
 RUNNERS = ('mpbt', 'zig')
 MARKS = {'source': '\x01source\x01', 'object': '\x01object\x01', 'deps': '\x01deps\x01'}
+INPUT = '\x01input\x01'
 
 
 def tools(config, values):
@@ -93,13 +94,21 @@ def planned(config, values, artifact, tree=None):
                 include=['-I' + moved(folder, tree) for folder in expanded(artifact.get('include', []), mine)],
                 link=expanded(artifact.get('link', []), mine), manifest=expanded(artifact.get('manifest', []), mine),
                 objects=[])
+    mine['inputs'] = ['--embed-dir=' + folder for folder in dict.fromkeys(Path(file).parent.as_posix() for file in read(artifact, mine))]
     mine['flags'] = expanded(kind.get('flags', []) + artifact.get('flags', []), mine)
     return kind, mine
+
+
+def read(artifact, mine):
+    return expanded(artifact.get('inputs', []), mine)
 
 
 def built(config, values, artifact, tree=None):
     kind, mine = planned(config, values, artifact, tree)
     name, output, work = mine['name'], Path(mine['output']), Path(mine['work'])
+    for file in read(artifact, mine):
+        if not Path(file).is_file():
+            die('%s is not there, and %s reads it' % (file, name))
     output.parent.mkdir(parents=True, exist_ok=True)
     work.parent.mkdir(parents=True, exist_ok=True)
     missing = [file for file in mine['link'] if not Path(file).is_file()]
@@ -150,7 +159,8 @@ def specified(config, values, artifact, tree=None):
     spec.parent.mkdir(parents=True, exist_ok=True)
     Path(mine['output']).parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps({'kind': kind, 'kind_name': artifact['kind'], 'values': mine, 'unset': shared.UNSET,
-                       'unstamped': artifact.get('unstamped', False)}, sort_keys=True)
+                       'unstamped': artifact.get('unstamped', False), 'inputs': len(read(artifact, mine))},
+                      sort_keys=True)
     if not spec.is_file() or spec.read_text(encoding='utf-8') != text:
         spec.write_text(text, encoding='utf-8')
     Path(mine['work'] + '.said').unlink(missing_ok=True)
@@ -165,7 +175,19 @@ def marked(item, source, number):
     for mark, kind, value in (('source', 'file', source), ('object', 'output', '%d.o' % number), ('deps', 'deps', '%d.d' % number)):
         if item.endswith(MARKS[mark]):
             return arg(kind, value, item[:-len(MARKS[mark])])
+    if INPUT in item:
+        return arg('folder', item.split(INPUT)[1], item.split(INPUT)[0])
     return arg('text', item)
+
+
+def makers_of(artifact, mine, makers, index):
+    found = []
+    for file in read(artifact, mine):
+        maker = makers.get(Path(file).resolve())
+        if maker is None or int(maker[1:]) >= index:
+            die('%s is not there, and %s reads it' % (file, mine['name']))
+        found.append(maker)
+    return list(dict.fromkeys(found))
 
 
 def graphed(config, values, chosen, tree=None):
@@ -183,15 +205,17 @@ def graphed(config, values, chosen, tree=None):
             die('%s is not there, and %s is linked with it' % (missing[0], name))
         if missing:
             print('compiled, not linked: %s: %s is not there' % (name, missing[0]))
-        objects = []
+        objects, inputs = [], makers_of(artifact, mine, makers, index)
+        marks = dict(mine, inputs=['--embed-dir=' + INPUT + maker for maker in inputs], **MARKS)
         for number, source in enumerate(mine['sources'] if 'each' in kind else []):
-            argv = expanded(kind['each']['run'], dict(mine, **MARKS))
+            argv = expanded(kind['each']['run'], marks)
             steps.append({'name': 'c%d_%d' % (index, number), 'program': argv[0], 'cwd': root.as_posix(),
                           'args': [marked(item, source, number) for item in argv[1:]]})
             objects.append(arg('made', 'c%d_%d' % (index, number)))
         args = [arg('text', Path(__file__).resolve().as_posix()), arg('text', '--one'), arg('file', spec.resolve().as_posix())]
         args += objects
         args += [arg('made', makers[path]) if path in makers else arg('file', path.as_posix()) for path in ([] if missing else links)]
+        args += [arg('folder', maker) for maker in inputs]
         inputs = [(root / source).as_posix() for source in mine['sources']] + expanded(mine.get('runtime', []), mine)
         args += [arg('file', Path(root / item).as_posix()) for item in inputs]
         args += [arg('text', 'unlinked' if missing else 'steps'), arg('output', Path(mine['output']).name)]
@@ -231,7 +255,9 @@ def one(spec, files):
     sys.stdout = open(mine['work'] + '.said', 'w', encoding='utf-8')
     count = len(mine['sources']) if 'each' in kind else 0
     linked = 0 if files[-2] == 'unlinked' else len(mine['link'])
-    mine.update(objects=files[:count], link=files[count:count + linked], output=files[-1])
+    folders = files[count + linked:count + linked + held['inputs']]
+    mine.update(objects=files[:count], link=files[count:count + linked], output=files[-1],
+                inputs=['--embed-dir=' + folder for folder in folders])
     for step in kind[files[-2]]:
         do(known(step, 'step', held['kind_name']), mine, held['unstamped'])
     if files[-2] == 'steps':
@@ -410,7 +436,7 @@ def kept(config, parts):
 def viewed(config, part):
     table = part_table(config, part)
     return dict(kept(config, {part}), project={'name': table['name']}, package=table.get('package', {}),
-                third_party=table['third_party'], readme='docs/extern/%s/readme.md' % table['folder'])
+                third_party=table['third_party'], readme='docs/usage/%s.md' % table['folder'])
 
 
 def views(config, parts):

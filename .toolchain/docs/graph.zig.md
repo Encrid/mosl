@@ -24,6 +24,7 @@ Each argument has a `kind`, a `value`, and a `prefix`, the text before the value
 | `text` | A text, as it is. |
 | `file` | The path of an input file. zig hashes its content. |
 | `made` | The name of an earlier step. Its output is an input of this step, so this step waits for it. |
+| `folder` | The name of an earlier step. Its output is an input of this step as a folder, with the text before the value as the prefix of the argument. |
 | `output` | The name of the output file of the step, in the cache of zig. |
 | `deps` | The name of the dependency file of the step. zig takes each header that it names as an input. |
 

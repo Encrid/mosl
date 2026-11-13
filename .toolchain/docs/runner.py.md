@@ -1,11 +1,14 @@
 # .toolchain/tools/runner.py
 
 `runner.py` writes the commands that give a runner of GitHub what the cases of the project need, for example a display or a graphics driver.
-The workflows `ci` and `release` give these commands to `bash`, before the step `Fetch`:
+The workflows `ci` and `release` write these commands to a file, and run the file with `bash`, before the step `Fetch`:
 
 ```sh
-python .toolchain/tools/runner.py --target <target> | bash -e
+python .toolchain/tools/runner.py --target <target> > "$RUNNER_TEMP/runner.sh"
+bash -e "$RUNNER_TEMP/runner.sh"
 ```
+
+A pipe into `bash` is not safe: a command that reads its input, such as `brew install`, takes the commands after it, and they never run.
 
 The tool knows only the mechanism. What a need gives is data of the project, so the toolchain of a project holds no field of another project.
 

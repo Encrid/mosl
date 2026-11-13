@@ -97,7 +97,7 @@ def main():
     root = arguments().root
     settings = config(root)
     read = documents(root)
-    parts = {'docs/extern/%s/readme.md' % part['folder']: part['name'] for part in settings.get('parts', {}).values()
+    parts = {'docs/usage/%s.md' % part['folder']: part['name'] for part in settings.get('parts', {}).values()
              if 'folder' in part and 'name' in part}
     tags = settings['prose']['tags'] + settings.get('check', {}).get('tags', [])
     found = []

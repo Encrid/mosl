@@ -301,6 +301,8 @@ It ends only the process, and not the processes that it started. A kill of a pro
 `os_process_kill` can come from another thread, also while a read or a write of the process waits. That read or write then ends, as at the end of the process.
 Each other call of one process comes from one thread at a time.
 
+Threads can start processes at one time.
+
 The signals of the process at its start:
 
 - On Linux and macOS, the process starts with no blocked signal, and with the default action of `SIGINT`, `SIGTERM`, `SIGHUP` and `SIGPIPE`.
