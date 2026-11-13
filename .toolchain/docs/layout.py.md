@@ -23,10 +23,12 @@ The layout allows only the paths of this table.
 | `.gitattributes`, `.gitignore`, `cla.md`, `license` | Needed. |
 | `project.py`, `.toolchain/project.toml`, `readme.md` | Needed. |
 | `architecture.md` | The map of the project. |
+| `toolchain.yml` in `.github/workflows` | The workflow of the template, which runs the cases of the toolchain. A project does not need it, so this document names no path of it. |
 | `docs/contributing/<name>.md`, for each name of `GUIDES`: `agreement`, `coding_style`, `coding_style_cxx`, `commits`, `decisions`, `documentation_style`, `needs`, `pull_request` and `tests` | Needed. |
 | `docs/contributing/<name>`, for each name of `[check] guides` | A guide of the project. |
-| `docs/extern/<folder>/readme.md`, for the `folder` of each part of `[parts]` | Needed. The readme of the part. |
+| `docs/usage/<folder>.md`, for the `folder` of each part of `[parts]` | Needed. The readme of the part. |
 | `docs/extern/**.md`, `docs/intern/**.md`, `docs/tools/**.md` | The documents of the files. The section *The documents* gives their rules. |
+| `docs/<folder>/**`, for a `<folder>` that is not `contributing`, `extern`, `intern` or `tools` | Any file. A project organizes its other documents as it wants. |
 | `include/**.h`, `include/**.hpp` | The public headers: a `.h` for C, or for C and C++, and a `.hpp` for C++ only. |
 | `src/**` | The sources, the private headers and the other inputs of a build. |
 | `tools/**` | The tools of the project. |
@@ -57,7 +59,7 @@ For example, the document of `include/<folder>/<name>.h` is `docs/extern/<folder
 
 The first line of a document is `#`, a space, and the path of its file.
 A document of `docs/extern`, of `docs/intern` or of `docs/tools` is a fault if its file is not there.
-The readme of a part is a document of the part, and not of a file. Thus it needs no file.
+The readme of a part is in `docs/usage`, outside these 3 folders. Thus it needs no file.
 
 The messages are:
 

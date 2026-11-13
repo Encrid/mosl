@@ -63,7 +63,7 @@ Standard Readme is a specification of the readme of a project: https://github.co
 4. The sections follow the order of Standard Readme. A section starts with `##`.
 5. The readme has the sections Install, Usage, Contributing and License.
 
-The readme of a part, `docs/extern/<folder>/readme.md`, follows the same rules, with 2 changes.
+The readme of a part, `docs/usage/<folder>.md`, follows the same rules, with 2 changes.
 Its title is `# <name>` with the `name` of the part. It needs only the sections Install and Usage.
 Its messages start with its path in place of `readme.md`.
 

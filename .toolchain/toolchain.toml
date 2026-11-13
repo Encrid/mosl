@@ -117,21 +117,21 @@ runtime = []
 
 [kinds.program]
 output = "{name}{exe}"
-each = { run = ["{zig}", "cc", "-c", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{flags}", "{source}", "-MD", "-MF", "{deps}", "-o", "{object}"] }
+each = { run = ["{zig}", "cc", "-c", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{inputs}", "{flags}", "{source}", "-MD", "-MF", "{deps}", "-o", "{object}"] }
 steps = [
     { run = ["{zig}", "cc", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{objects}", "{link}", "{flags}", "{rpath}", "-o", "{output}", "{stack}"] },
 ]
 
 [kinds.library]
 output = "{name}{library}"
-each = { run = ["{zig}", "cc", "-c", "-target", "{triple}", "-mcpu={cpu}", "{pic}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{flags}", "{source}", "-MD", "-MF", "{deps}", "-o", "{object}"] }
+each = { run = ["{zig}", "cc", "-c", "-target", "{triple}", "-mcpu={cpu}", "{pic}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{inputs}", "{flags}", "{source}", "-MD", "-MF", "{deps}", "-o", "{object}"] }
 steps = [
-    { run = ["{zig}", "cc", "-target", "{triple}", "-mcpu={cpu}", "-shared", "{pic}", "{soname}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{objects}", "{runtime}", "{link}", "{flags}", "-o", "{output}"] },
+    { run = ["{zig}", "cc", "-target", "{triple}", "-mcpu={cpu}", "-shared", "{pic}", "{soname}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{inputs}", "{objects}", "{runtime}", "{link}", "{flags}", "-o", "{output}"] },
 ]
 
 [kinds.archive]
 output = "{name}.a"
-each = { run = ["{zig}", "cc", "-c", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{flags}", "{source}", "-MD", "-MF", "{deps}", "-o", "{object}"] }
+each = { run = ["{zig}", "cc", "-c", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{inputs}", "{flags}", "{source}", "-MD", "-MF", "{deps}", "-o", "{object}"] }
 steps = [
     { run = ["{zig}", "build-lib", "-static", "-target", "{triple}", "-mcpu={cpu}", "{strip}", "-femit-bin={output}", "{objects}"] },
 ]
@@ -143,7 +143,7 @@ steps = [
 ]
 
 [rewrite]
-dump =["{zig}", "cc", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{flags}", "-U_FORTIFY_SOURCE", "-D_FORTIFY_SOURCE=0", "-fsyntax-only", "-Xclang", "-ast-dump=json", "-o", "{work}.dump", "{source}"]
+dump =["{zig}", "cc", "-target", "{triple}", "-mcpu={cpu}", "{optimize}", "{float}", "{errno}", "{language}", "-Wno-unused-command-line-argument", "{define}", "{defines}", "{include}", "{inputs}", "{flags}", "-U_FORTIFY_SOURCE", "-D_FORTIFY_SOURCE=0", "-fsyntax-only", "-Xclang", "-ast-dump=json", "-o", "{work}.dump", "{source}"]
 
 [style]
 columns = 80
