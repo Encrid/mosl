@@ -52,7 +52,7 @@ The workflow `release` then makes the release. `.toolchain/docs/workflows.py.md`
 6. Make sure that the documents describe the change, and that a case checks each new behavior.
 
 The 4 commands run for the whole project when `dev` goes into `main`.
-The workflow `ci` runs `check` and the 4 commands again on a machine of each target of the project: `[project] targets` of `.toolchain/project.toml`.
+The workflow `ci` runs `check` and the 4 commands again on each host of the project: `.toolchain/docs/project.toml.md`, *[project]*.
 On a pull request into `dev`, it runs the 4 commands only for the parts of the change and their users: `.toolchain/docs/scope.py.md`.
 A change of a file of no part runs them for the whole project there.
 Then it runs `python project.py pack`, which refuses a package that holds a path of the machine that built it.
