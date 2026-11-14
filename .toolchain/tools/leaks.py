@@ -146,11 +146,11 @@ def counted(config, values):
                                                                               callbacks))
     rewrite.copied(root, where)
     counting = []
-    for path, used, declared, ends in files:
+    for (path, used, declared, ends), parts in files:
         if not used:
             continue
         text = (root / path).read_bytes()
-        outer = fail.layer(text, [name for name in used if name in calls], declared, calls)
+        outer = fail.layer(text, [name for name in used if name in calls], declared, calls, parts)
         (where / path).write_bytes(rewritten(text, path, [name for name in used if name in names], ends, declared,
                                              names, kinds, outer))
         counting.append(path)

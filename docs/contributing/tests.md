@@ -40,6 +40,10 @@ For example, the name of the group `tests/cases/<folder>/<name>.toml` is `<folde
 If `tests/cases` holds no case, `test` writes `no case: tests/cases holds no case`.
 In a project with parts, the groups of a part are in `tests/cases/<folder>`, with the folder of the part: `.toolchain/docs/project.toml.md`, *[parts]*.
 
+A group states the code that it tests with the key `code`, a list of patterns at the top of its file. A group with no `code` tests the code of its part, or of its project if the project has no part.
+A group that tests the project as a whole states `whole = true`, and runs when `dev` goes into `main`.
+A change runs only the groups that test a changed file: `.toolchain/docs/scope.py.md`.
+
 ## The keys of a case
 
 | Key | Value |
@@ -194,6 +198,8 @@ false = { fail = {} }
 `malloc`, `calloc` and `realloc` can always fail, and so can the two loaders `GetProcAddress` and `dlsym`, with `nullptr`.
 `fail.toml` of `.toolchain/config` names more functions, each with the value that a failed call gives.
 `.toolchain/docs/project.toml.md`, *[fail]*, gives its keys. Only the calls of the code of `src` count, and the files of one program share one count.
+
+A case refuses the calls only in the programs of its part, in each run. A case in no part refuses them in each program.
 The false variant states no `fail`, or a different number.
 
 `test` runs each case that states `fail` on a copy of the code in which these calls can fail. It judges the claims of the case.
@@ -213,6 +219,7 @@ For example, `"socket"` is a text of a call of `GetProcAddress`, and `fail = { s
 | `python project.py test --branches` | Runs each case one time on a build with probes. Each branch must run. |
 | `python project.py test --leaks` | Runs each case one time on a build with counts. Each case must give back what the code takes. |
 | `python project.py test -k <text>` | Runs only the cases whose name contains `<text>`. |
+| `python project.py test --group <group>` | Runs only the named group. You can use this option more than one time. |
 | `python project.py test --part <part>` | Builds the part and the parts that it uses, then runs only the groups in `tests/cases/<folder>`, with the folder of the part. |
 | `python project.py test --copies <number>` | Runs this number of copies of each case at the same time. Each copy must pass. |
 | `python project.py test --rounds <number>` | Runs all the cases this number of times, one round after the other. |

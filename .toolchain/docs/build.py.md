@@ -156,9 +156,9 @@ An artifact that is not linked gives no file. `built` writes `compiled, not link
 Each module is an artifact over the defaults of `[module]`. A row states only what differs: a `name`, and `sources` or `defines` when they are not the defaults.
 A row can carry `variants`, like an artifact.
 
-`path_defines` makes the variable `paths`: a `*_PATH` macro for each test library, and `BUILT_DIR` and `BUILT_SUFFIX`.
-A built module gets a macro only with `path = true`; a backend always gets one.
-The macro is the name in upper case, without a `bridge_` prefix, with `-` as `_`, and `_PATH` at the end.
+`path_defines` makes the variable `paths`: a `*_PATH` macro for each library with `path = true`, and `BUILT_DIR` and `BUILT_SUFFIX`.
+The library can be in any `folder`, or in none.
+The macro is the name of the artifact in upper case, with `-` as `_`, and `_PATH` at the end.
 Its value is the output path of the artifact. An artifact's `defines` splices `{paths}` to get every macro.
 
 ## Each source
@@ -320,7 +320,7 @@ The release of a part puts the zips of all the targets into one zip: `.toolchain
 3. It writes `<build>/<name>.zip`. Each file of `<build>/<name>-<target>.zip` goes into the folder `<target>`, with its mode.
 4. It writes the path of `<build>/<name>.zip`.
 
-The targets are the targets of the toolchain. With no `--part`, `joined` joins nothing and writes nothing.
+The targets are the targets of the project, from `[project] targets`. With no `--part`, `joined` joins nothing and writes nothing.
 
 ## Limits
 

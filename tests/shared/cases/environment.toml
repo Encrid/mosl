@@ -1,3 +1,5 @@
+code = ["include/**", "src/common/**", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/env.c", "src/windows/file_write.c", "src/windows/find.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/output.c", "src/windows/path.c", "src/windows/port.c", "src/windows/program.c", "src/windows/signal.c", "src/windows/whole_form.c", "src/windows/wide.c", "src/windows/write_all.c", "tests/.gitkeep", "tests/environment_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/package/**", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+
 [[case]]
 name = "os_env_get gives a copy of the value of a variable"
 run = ["{out}/environment{exe}", "{case}", "get", "MOSL_TEST"]

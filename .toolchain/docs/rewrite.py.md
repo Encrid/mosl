@@ -8,7 +8,8 @@ It holds the parts that these runs share.
 
 1. `sources` finds each artifact that the build makes for this target.
 2. It takes each file `.c` of `src` that such an artifact compiles. It uses the flags of the first such artifact and of its kind.
-3. `each` runs the command `[rewrite] dump` of `toolchain.toml` for each file, 8 files at the same time. It gives each syntax tree to the run.
+   It also keeps the parts of all the artifacts that compile the file. A file of a project with no parts has no part.
+3. `each` runs the command `[rewrite] dump` of `toolchain.toml` for each file, 8 files at the same time. It gives each syntax tree to the run, and gives the parts of the file with its result.
 4. `copied` copies `src` and `include` into `<build>/<run>/tree`. The run then writes its changes into the copies.
 
 `test.py` then builds the copies, and runs the cases: `.toolchain/docs/test.py.md`.
@@ -104,8 +105,8 @@ The build of the copies embeds the files that the run builds.
 | `owned(loc, root)` | Gives the path of a location in `src` or in `include`, or `None`. |
 | `dumped(command, root)` | Runs the command `dump`, and gives the syntax tree, with the file of each location. |
 | `stood_in(artifact, mine)` | Writes a file of 1 zero byte for each file of `inputs`, and gives the flag `--embed-dir` of their folder, or no flag. |
-| `sources(config, values)` | Gives each file `.c` of `src` that an artifact of this target compiles, with its command `dump`. |
-| `each(config, values, use)` | Gives the result of `use(root, path, tree)` for each file of `sources`, 8 files at the same time. |
+| `sources(config, values)` | Gives each file `.c` of `src` that an artifact of this target compiles, with its command `dump` and the set of its parts. |
+| `each(config, values, use)` | Gives the result of `use(root, path, tree)` and the sorted parts of the file, for each file of `sources`, 8 files at the same time. |
 | `copied(root, where)` | Empties `where`, and copies `src` and `include` into it. |
 | `plain(kind)` | Gives a type of the syntax tree with each `typedef` replaced, if the dump gives it. The checks of `leaks.py` read it, for example to find a pointer. |
 | `spelled(text)` | Gives a type as the declaration spells it, with no nullability mark and no calling convention that *The rename* names. |
