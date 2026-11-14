@@ -39,9 +39,10 @@ static char *join(const char *a, const char *b)
     return (path);
 }
 
+static char *paths[8];
+
 static char *in(const char *name)
 {
-    static char *paths[8];
     static int next;
 
     free(paths[next]);
@@ -591,6 +592,13 @@ static const test_mode_t MODES[] = {
     {"size-link", 4, size_link},
 };
 
+static int end(int status)
+{
+    for (size_t i = 0; i < sizeof(paths) / sizeof(paths[0]); i++)
+        free(paths[i]);
+    return (status);
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 3)
@@ -598,7 +606,7 @@ int main(int argc, char **argv)
     folder = argv[1];
     for (size_t i = 0; i < sizeof(MODES) / sizeof(MODES[0]); i++) {
         if (!strcmp(argv[2], MODES[i].name) && argc == MODES[i].count)
-            return (MODES[i].run(argv));
+            return (end(MODES[i].run(argv)));
     }
     return (printf("usage: files <folder> <mode> [arguments]\n"), 2);
 }
