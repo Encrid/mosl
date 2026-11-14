@@ -194,6 +194,8 @@ false = { fail = {} }
 `malloc`, `calloc` and `realloc` can always fail, and so can the two loaders `GetProcAddress` and `dlsym`, with `nullptr`.
 `fail.toml` of `.toolchain/config` names more functions, each with the value that a failed call gives.
 `.toolchain/docs/project.toml.md`, *[fail]*, gives its keys. Only the calls of the code of `src` count, and the files of one program share one count.
+
+A case refuses the calls only in the programs of its part, in each run. A case in no part refuses them in each program.
 The false variant states no `fail`, or a different number.
 
 `test` runs each case that states `fail` on a copy of the code in which these calls can fail. It judges the claims of the case.
