@@ -22,36 +22,36 @@ why = "Each coding guide states each of its rules in full, for a reader of one l
 case = "os_env_get*"
 kind = "memory"
 system = "windows"
-why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+why = "The test frees the memory that the call gives to it. The count takes that memory 2 times: at the call in the test, and at the malloc inside the layer."
 
 [[leaks.exception]]
 case = "os_path_find*"
 kind = "memory"
 system = "windows"
-why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+why = "The test frees the memory that the call gives to it. The count takes that memory 2 times: at the call in the test, and at the malloc inside the layer."
 
 [[leaks.exception]]
 case = "os_path_whole*"
 kind = "memory"
 system = "windows"
-why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+why = "The test frees the memory that the call gives to it. The count takes that memory 2 times: at the call in the test, and at the malloc inside the layer."
 
 [[leaks.exception]]
 case = "os_link_make takes a link with no folder*"
 kind = "memory"
 system = "windows"
-why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+why = "The test frees the memory that the call gives to it. The count takes that memory 2 times: at the call in the test, and at the malloc inside the layer."
 
 [[leaks.exception]]
 case = "os_get_program_path*"
 kind = "memory"
-why = "The test frees the memory that the call gives to it, and the count does not see the code of tests."
+why = "The test frees the memory that the call gives to it. The count takes that memory 2 times: at the call in the test, and at the malloc inside the layer."
 
 [[leaks.exception]]
 case = "the os layer runs every call and its error paths"
 kind = "memory"
 system = "windows"
-why = "The test frees the memory that os_path_whole gives to it, and the count does not see the code of tests."
+why = "The test frees the memory that os_path_whole gives to it. The count takes that memory 2 times: at the call in the test, and at the malloc inside the layer."
 
 [[branches.exception]]
 path = "src/posix/write_all.c"
