@@ -1,3 +1,5 @@
+code = ["include/**", "src/common/**", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/file_write.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/link.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/remove.c", "src/windows/whole_form.c", "src/windows/wide.c", "src/windows/write_all.c", "tests/.gitkeep", "tests/files_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/package/**", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+
 [[case]]
 name = "os_folder_make makes each folder above the folder"
 run = ["{out}/files{exe}", "{case}", "make", "a/b/c"]

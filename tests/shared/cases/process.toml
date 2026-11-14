@@ -1,3 +1,5 @@
+code = ["include/**", "src/common/**", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/env.c", "src/windows/event.c", "src/windows/find.c", "src/windows/folder_open.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/process_block.c", "src/windows/process_console.c", "src/windows/process_end.c", "src/windows/process_line.c", "src/windows/process_pipes.c", "src/windows/process_program.c", "src/windows/process_read.c", "src/windows/process_start.c", "src/windows/process_stream.c", "src/windows/thread.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/fixture.c", "tests/fixture_two.c", "tests/package/**", "tests/process_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+
 [[case]]
 name = "os_process_start finds a program on the PATH"
 run = ["{out}/process{exe}", "{case}", "named", "process", "-"]
