@@ -3,11 +3,10 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
-#include <stdio.h>
-#include <string.h>
 #include <wchar.h>
 
 #include "os_whole.h"
+#include "rows.h"
 
 constexpr size_t MOST = 512;
 
@@ -24,7 +23,7 @@ static int show_root(const char *text)
     return (0);
 }
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     wchar_t whole[OS_PLACE + MOST + 1] = {};
     char out[OS_PLACE + MOST + 1] = {};
@@ -43,4 +42,9 @@ int main(int argc, char **argv)
         out[i] = (char)whole[i];
     printf("%s\n", out);
     return (0);
+}
+
+int main(void)
+{
+    return (rows_run(run));
 }

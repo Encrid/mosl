@@ -12,11 +12,8 @@
     #include <sys/stat.h>
     #include <unistd.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr int LEVELS = 22;
 constexpr int TRIES = 4;
@@ -282,10 +279,10 @@ static int run_mode(const char *mode, const char *base, const char *whole,
     }
     if (!strcmp(mode, "middle") || !strcmp(mode, "last"))
         return (read_locked(base, whole, !strcmp(mode, "last")));
-    if (!strcmp(mode, "slash") || !strcmp(mode, "slash file"))
-        return (read_slash(base, whole, !strcmp(mode, "slash file")));
-    if (!strcmp(mode, "root") || !strcmp(mode, "root missing"))
-        return (read_root(base, !strcmp(mode, "root missing")));
+    if (!strcmp(mode, "slash") || !strcmp(mode, "slash-file"))
+        return (read_slash(base, whole, !strcmp(mode, "slash-file")));
+    if (!strcmp(mode, "root") || !strcmp(mode, "root-missing"))
+        return (read_root(base, !strcmp(mode, "root-missing")));
     if (!read_deep(whole, &refused, text) || os_folder_set(base)
         || !read_deep(relative, &refused, text))
         return (1);
@@ -296,7 +293,7 @@ static int run_mode(const char *mode, const char *base, const char *whole,
 static bool known(const char *mode)
 {
     const char *modes[] = {"deep", "joined", "current", "base", "middle",
-        "last", "slash", "slash file", "root", "root missing"};
+        "last", "slash", "slash-file", "root", "root-missing"};
 
     for (size_t i = 0; i < sizeof(modes) / sizeof(*modes); i++)
         if (!strcmp(mode, modes[i]))
@@ -304,7 +301,7 @@ static bool known(const char *mode)
     return (false);
 }
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     const char *mode = argc == 3 ? argv[2] : "";
     char *whole = nullptr;
@@ -325,4 +322,9 @@ int main(int argc, char **argv)
     free(whole);
     free(relative);
     return (status);
+}
+
+int main(int argc, char **argv)
+{
+    return (argc > 1 ? run(argc, argv) : rows_run(run));
 }
