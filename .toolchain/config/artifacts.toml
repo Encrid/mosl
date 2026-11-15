@@ -8,7 +8,7 @@ flags = ["{quiet}", "{system_defines}"]
 [[artifact]]
 name = "leaks.toml"
 kind = "file"
-sources = [".toolchain/config/leaks.toml"]
+sources = ["src/leaks.toml"]
 
 [[artifact]]
 name = "fail.toml"
