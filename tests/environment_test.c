@@ -18,11 +18,8 @@
 #ifdef __linux__
     #include <sched.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr char TOLD[] = "as The environment tells";
 constexpr char LINES[] = "x\ny\n";
@@ -541,7 +538,7 @@ static const test_mode_t MODES[] = {
     {"again", 4, again},
 };
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     if (argc < 3)
         return (printf("usage: environment <folder> <mode> [arguments]\n"), 2);
@@ -551,4 +548,9 @@ int main(int argc, char **argv)
             return (MODES[i].run(argv));
     }
     return (printf("usage: environment <folder> <mode> [arguments]\n"), 2);
+}
+
+int main(int argc, char **argv)
+{
+    return (argc > 1 ? run(argc, argv) : rows_run(run));
 }
