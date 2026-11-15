@@ -5,16 +5,21 @@ Each function keeps the contract of `docs/extern/os.h.md`, *The processes*.
 
 ## The start
 
-1. `os_find_program` gives the path of the program, and `os_build_env` the environment: `src/posix/process_env.c`.
-2. `open_pipes` opens the pipes of `os_launch_t`: input, output, errors if `errors_apart`, a gate and a report. Then the wake pipe.
-3. `pthread_sigmask` blocks each signal, so no handler of the caller runs in the child.
-4. `fork` makes the child, which runs `os_run_child` of `src/posix/process_child.c`.
-5. The parent gives back its mask, and closes the ends of the child, except the end of the gate.
-6. `os_watch_exit` starts the watch of the end of the process. If it fails, `kill` ends the child.
-7. Else the parent writes 1 byte into the gate, so the child goes on to `execve`. Then the parent closes both ends of the gate.
-8. `read` of the report gives no byte if `execve` passed. A byte tells that it failed.
+1. `os_make_process` of `src/posix/process_pipes.c` gives a process with no descriptor.
+2. `os_find_program` gives the path of the program, and `os_build_env` the environment: `src/posix/process_env.c`.
+3. `open_pipes` opens the pipes of `os_launch_t`: input, output, errors if `errors_apart`, a gate and a report. Then the wake pipe.
+4. `pthread_sigmask` blocks each signal, so no handler of the caller runs in the child.
+5. `fork` makes the child, which runs `os_run_child` of `src/posix/process_child.c`.
+6. The parent gives back its mask, and closes the ends of the child, except the end of the gate.
+7. `os_watch_exit` starts the watch of the end of the process. If it fails, `kill` ends the child.
+8. Else the parent writes 1 byte into the gate, so the child goes on to `execve`. Then the parent closes both ends of the gate.
+9. `read` of the report gives no byte if `execve` passed. A byte tells that it failed.
 
 After a failure, `waitid` takes the child, and the start gives `nullptr`.
+
+A start can fail before step 3, for example when the program is not there. `os_drop_process` then closes no descriptor, because of step 1.
+A zero in their place would be the standard input of the caller.
+
 Else `keep_ends` keeps the ends of the parent, and gives them `O_NONBLOCK`, so a read and a write can wait for the wake pipe too.
 It also gives the input to `os_quiet_pipe`, so a broken write gives no signal on macOS.
 `fcntl` and `dup2` on an open descriptor fail only for a bad descriptor, so the file does not ask their result.
@@ -44,6 +49,6 @@ After such a cut, a failed `execve` looks like a start: the read gives 0, and th
 | --- | --- |
 | `open_pipes(p, start, pipes)` | Opens the pipes of *The start*. Gives 0, or -1. |
 | `keep_ends(p, start, pipes)` | Keeps the ends of the parent in the process, as *The start* tells. |
-| `finish_start(p, start, pipes)` | Does steps 6 to 8 of *The start*. Gives 0 if `execve` passed, else -1. |
-| `start_child(p, start, launch)` | Does steps 3 to 5 of *The start*, then `finish_start`. Gives 0, or -1. |
+| `finish_start(p, start, pipes)` | Does steps 7 to 9 of *The start*. Gives 0 if `execve` passed, else -1. |
+| `start_child(p, start, launch)` | Does steps 4 to 6 of *The start*, then `finish_start`. Gives 0, or -1. |
 | `os_process_start(start)` | Starts the process as *The start* tells. Gives the process, or `nullptr`. |

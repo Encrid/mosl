@@ -3,9 +3,22 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "os_types.h"
+
+os_process_t *os_make_process(void)
+{
+    os_process_t *p = calloc(1, sizeof(*p));
+
+    if (!p)
+        return (nullptr);
+    memset(p->wake, -1, sizeof(p->wake));
+    p->exit = -1;
+    return (p);
+}
 
 int os_process_write(os_process_t *p, const void *bytes, size_t len)
 {

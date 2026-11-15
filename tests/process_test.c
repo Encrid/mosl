@@ -9,6 +9,7 @@
     #include <io.h>
     #include <windows.h>
 #else
+    #include <fcntl.h>
     #include <signal.h>
     #include <sys/time.h>
     #include <unistd.h>
@@ -377,6 +378,26 @@ static int mode_say(char **argv)
     return (printf("say: [%s]\n", reads.out), 0);
 }
 
+static int mode_kept(char **argv)
+{
+    const char *args[] = {argv[3], nullptr};
+    os_process_start_t start = {.argv = args};
+    os_process_t *p = os_process_start(&start);
+#ifdef _WIN32
+    bool open = _get_osfhandle(0) != -1;
+#else
+    bool open = fcntl(STDIN_FILENO, F_GETFD) != -1;
+#endif
+
+    if (p) {
+        os_process_kill(p);
+        end_process(p);
+    }
+    printf("kept: %s, input %s\n", p ? "started" : "none",
+        open ? "open" : "closed");
+    return (0);
+}
+
 static int get_which(const char *name)
 {
     if (!strcmp(name, "interrupt"))
@@ -690,7 +711,7 @@ static const test_mode_t MODES[] = {
     {"write-after", 4, mode_write_after},
     {"interrupted", 5, mode_interrupted},
     {"late-kill", 4, mode_late_kill}, {"say", 4, mode_say},
-    {"crowd", 4, mode_crowd},
+    {"crowd", 4, mode_crowd}, {"kept", 4, mode_kept},
 };
 
 int main(int argc, char **argv)

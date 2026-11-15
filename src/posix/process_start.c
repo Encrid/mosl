@@ -16,8 +16,6 @@ constexpr int CHILD_END[OS_PIPES] = {0, 1, 1, 0, 1};
 static int open_pipes(os_process_t *p, const os_process_start_t *start,
     int pipes[][2])
 {
-    memset(p->wake, -1, sizeof(p->wake));
-    p->exit = -1;
     for (int i = 0; i < OS_PIPES; i++) {
         if (i == OS_PIPE_ERRORS && !start->errors_apart)
             continue;
@@ -91,7 +89,7 @@ static int start_child(os_process_t *p, const os_process_start_t *start,
 
 os_process_t *os_process_start(const os_process_start_t *start)
 {
-    os_process_t *p = calloc(1, sizeof(*p));
+    os_process_t *p = os_make_process();
     os_launch_t launch = {};
     int started = -1;
 
