@@ -14,11 +14,8 @@
     #include <sys/time.h>
     #include <unistd.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr size_t TEXT = 256;
 constexpr size_t STACK = 1u << 20;
@@ -714,15 +711,20 @@ static const test_mode_t MODES[] = {
     {"crowd", 4, mode_crowd}, {"kept", 4, mode_kept},
 };
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
-    self = argv[0];
-    if (argc >= 3 && !strcmp(argv[1], "child"))
-        return (run_child(argc, argv));
     for (size_t i = 0; argc >= 3 && i < sizeof(MODES) / sizeof(MODES[0]);
         i++) {
         if (!strcmp(argv[2], MODES[i].name) && argc == MODES[i].count)
             return (MODES[i].run(argv));
     }
     return (printf("usage: process <folder> <mode> [arguments]\n"), 2);
+}
+
+int main(int argc, char **argv)
+{
+    self = argv[0];
+    if (argc >= 3 && !strcmp(argv[1], "child"))
+        return (run_child(argc, argv));
+    return (argc > 1 ? run(argc, argv) : rows_run(run));
 }
