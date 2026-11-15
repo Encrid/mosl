@@ -45,7 +45,7 @@ name = "clock"
 kind = "program"
 test = true
 sources = ["tests/clock_test.c", "src/{system}/*.c", "{system_sources}"]
-include = ["include"]
+include = ["include", "{toolchain}/runtime"]
 flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
 
 [[artifact]]
@@ -86,7 +86,7 @@ name = "refuse"
 kind = "program"
 test = true
 sources = ["tests/refuse_test.c", "src/{system}/*.c", "{system_sources}"]
-include = ["include"]
+include = ["include", "{toolchain}/runtime"]
 flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
 
 [[artifact]]
@@ -94,7 +94,7 @@ name = "folders"
 kind = "program"
 test = true
 sources = ["tests/folders_test.c", "src/{system}/*.c", "{system_sources}"]
-include = ["include"]
+include = ["include", "{toolchain}/runtime"]
 flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
 
 [[artifact]]
@@ -102,7 +102,7 @@ name = "watch"
 kind = "program"
 test = true
 sources = ["tests/watch_test.c", "src/{system}/*.c", "{system_sources}"]
-include = ["include"]
+include = ["include", "{toolchain}/runtime"]
 flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
 
 [[artifact]]
@@ -110,7 +110,7 @@ name = "whole"
 kind = "program"
 test = true
 sources = ["tests/whole_test.c", "src/windows/whole_form.c"]
-include = ["src/windows"]
+include = ["src/windows", "{toolchain}/runtime"]
 flags = ["{quiet}"]
 
 [[artifact]]

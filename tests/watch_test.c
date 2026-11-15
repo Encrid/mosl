@@ -9,11 +9,8 @@
     #include <sys/stat.h>
     #include <unistd.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr int WAITS = 10000;
 constexpr int BURST = 100;
@@ -475,7 +472,7 @@ static bool run_place(const char *mode, bool other)
     return (true);
 }
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     static char run[1024];
     char name[64];
@@ -493,5 +490,11 @@ int main(int argc, char **argv)
     if (!run_mode(argv[2], other) && !run_place(argv[2], other))
         printf("watch: no mode %s\n", argv[2]);
     os_event_free(pause_event);
+    pause_event = nullptr;
     return (0);
+}
+
+int main(int argc, char **argv)
+{
+    return (argc > 1 ? run(argc, argv) : rows_run(run));
 }

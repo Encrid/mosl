@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "os.h"
+#include "rows.h"
 
 static uint64_t get_step(void)
 {
@@ -18,7 +19,7 @@ static uint64_t get_step(void)
     return (after - before);
 }
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     uint64_t least = UINT64_MAX;
     uint64_t bound;
@@ -35,4 +36,9 @@ int main(int argc, char **argv)
     printf("step %s %llu ns\n", least < bound ? "below" : "not below",
         (unsigned long long)bound);
     return (0);
+}
+
+int main(void)
+{
+    return (rows_run(run));
 }
