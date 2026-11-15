@@ -418,3 +418,9 @@ name = "threads start processes at one time"
 run = ["{out}/process{exe}", "{case}", "crowd", "8"]
 claims = { line = ["crowd: 800 ended"] }
 false = { run = ["{out}/process{exe}", "{case}", "crowd", "1"] }
+
+[[case]]
+name = "a start that fails leaves the standard input of the caller open"
+run = ["{out}/process{exe}", "{case}", "kept", "mosl_none"]
+claims = { line = ["kept: none, input open"] }
+false = { run = ["{out}/process{exe}", "{case}", "kept", "{out}/process{exe}"] }
