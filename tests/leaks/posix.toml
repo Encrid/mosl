@@ -1,0 +1,2 @@
+[leaks]
+memory = ["os_env_get", "os_path_find", "os_path_whole"]
