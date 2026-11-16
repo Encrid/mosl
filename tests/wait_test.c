@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "os.h"
+#include "rows.h"
 
 static long long step;
 
@@ -43,7 +44,7 @@ static unsigned count_short(os_event_t *e, uint64_t nanos, unsigned waits)
     return (short_waits);
 }
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     os_event_t *e = os_event_create();
     uint64_t nanos;
@@ -51,15 +52,22 @@ int main(int argc, char **argv)
     unsigned short_waits;
 
     if (argc < 4 || argc > 5 || !e)
-        return (printf("usage: wait <nanoseconds> <seconds back> <waits> [set]\n"), 2);
+        return (printf("usage: wait <nanoseconds> <seconds back> <waits> [set|taken]\n"), 2);
     nanos = strtoull(argv[1], nullptr, 10);
     step = strtoll(argv[2], nullptr, 10);
     waits = (unsigned)strtoul(argv[3], nullptr, 10);
     if (argc == 5)
         os_event_set(e);
+    if (argc == 5 && !strcmp(argv[4], "taken"))
+        os_event_wait(e, 0);
     short_waits = count_short(e, nanos, waits);
     printf("%u of %u waits took less than %llu ns\n", short_waits, waits,
         (unsigned long long)nanos);
     os_event_free(e);
     return (0);
+}
+
+int main(int argc, char **argv)
+{
+    return (argc > 1 ? run(argc, argv) : rows_run(run));
 }
