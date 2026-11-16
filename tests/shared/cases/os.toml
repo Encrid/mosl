@@ -22,6 +22,14 @@ claims = { line = ["0 of 20 waits took less than 50000000 ns"] }
 false = { run = ["{out}/wait{exe}", "50000000", "3600", "20", "set"] }
 
 [[case]]
+name = "wait"
+run = ["{out}/wait{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "a wait of no time consumes a set", in = "20000000 0 3 taken", claims = { line = ["0 of 3 waits took less than 20000000 ns", "status 0"] }, false = "20000000 0 3 set" },
+]
+
+[[case]]
 name = "a thread gets the stack that its start asks for"
 process = "status"
 run = ["{out}/stack{exe}", "4194304", "3145728"]
