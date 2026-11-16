@@ -4,7 +4,7 @@
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
 #include <errno.h>
-#include <stdlib.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "os_types.h"
@@ -30,6 +30,14 @@ static void set_signals(bool ignore)
     _exit(127);
 }
 
+static void put_end(int end, int stream)
+{
+    if (end == stream)
+        fcntl(end, F_SETFD, 0);
+    else
+        dup2(end, stream);
+}
+
 void os_run_child(const os_process_start_t *start, const os_launch_t *launch)
 {
     int output = launch->pipes[OS_PIPE_OUTPUT][1];
@@ -42,31 +50,13 @@ void os_run_child(const os_process_start_t *start, const os_launch_t *launch)
     set_signals(start->ignore_interrupt);
     close(launch->pipes[OS_PIPE_GATE][1]);
     got = read(launch->pipes[OS_PIPE_GATE][0], &gate, 1);
-    dup2(launch->pipes[OS_PIPE_INPUT][0], STDIN_FILENO);
-    dup2(output, STDOUT_FILENO);
-    dup2(errors < 0 ? output : errors, STDERR_FILENO);
+    put_end(launch->pipes[OS_PIPE_INPUT][0], STDIN_FILENO);
+    put_end(output, STDOUT_FILENO);
+    put_end(errors < 0 ? output : errors, STDERR_FILENO);
     if (start->folder && chdir(start->folder))
         fail_child(report);
     sigemptyset(&none);
     sigprocmask(SIG_SETMASK, &none, nullptr);
     execve(launch->path, (char *const *)start->argv, launch->envp);
     fail_child(report);
-}
-
-void os_close_pipes(int pipes[][2], int count)
-{
-    int *ends = &pipes[0][0];
-
-    for (int i = 0; i < count * 2; i++) {
-        if (ends[i] >= 0)
-            close(ends[i]);
-        ends[i] = -1;
-    }
-}
-
-void os_drop_process(os_process_t *p)
-{
-    os_close_pipes(&p->wake, 1);
-    close(p->exit);
-    free(p);
 }

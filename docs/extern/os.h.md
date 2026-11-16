@@ -267,6 +267,7 @@ On Windows, a name has no case, so `Path` and `PATH` name one variable.
 The pipes:
 
 - The process has a pipe for its input and a pipe for its output.
+- The process gets these pipes as its 3 streams, also when a stream of the caller is closed.
 - With `errors_apart`, the errors have a pipe of their own. Else they go into the output, in the order that the process writes them.
 - `os_process_write` waits while the pipe is full. A write into a closed input gives -1, and does not end the caller.
 - After the close of the input, the process reads the end of its input. After the close of the output or of the errors, each later write of the process into that pipe fails.

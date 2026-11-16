@@ -34,3 +34,21 @@ void os_process_close(os_process_t *p, int stream)
     close(*ends[stream]);
     *ends[stream] = -1;
 }
+
+void os_close_pipes(int pipes[][2], int count)
+{
+    int *ends = &pipes[0][0];
+
+    for (int i = 0; i < count * 2; i++) {
+        if (ends[i] >= 0)
+            close(ends[i]);
+        ends[i] = -1;
+    }
+}
+
+void os_drop_process(os_process_t *p)
+{
+    os_close_pipes(&p->wake, 1);
+    close(p->exit);
+    free(p);
+}
