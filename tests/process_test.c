@@ -23,6 +23,7 @@ constexpr int TRIES = 9;
 constexpr uint64_t BRIEF = 1'000'000;
 constexpr int CROWD = 8;
 constexpr int STARTS = 100;
+constexpr int STREAMS = 3;
 
 typedef struct {
     const char *name;
@@ -694,6 +695,70 @@ static int mode_crowd(char **argv)
     return (printf("crowd: %d ended\n", sum), 0);
 }
 
+#ifdef _WIN32
+static int copy_stream(int stream)
+{
+    return (_dup(stream));
+}
+
+static void close_stream(int stream)
+{
+    _close(stream);
+}
+
+static void move_stream(int from, int to)
+{
+    _dup2(from, to);
+    _close(from);
+}
+#else
+static int copy_stream(int stream)
+{
+    return (fcntl(stream, F_DUPFD_CLOEXEC, STREAMS));
+}
+
+static void close_stream(int stream)
+{
+    close(stream);
+}
+
+static void move_stream(int from, int to)
+{
+    dup2(from, to);
+    close(from);
+}
+#endif
+
+static void hide_streams(int kept[STREAMS], int count)
+{
+    fflush(stdout);
+    for (int i = 0; i < count; i++)
+        kept[i] = copy_stream(i);
+    for (int i = 0; i < count; i++)
+        close_stream(i);
+}
+
+static int mode_low(char **argv)
+{
+    int count = atoi(argv[3]) > STREAMS ? STREAMS : atoi(argv[3]);
+    int kept[STREAMS] = {-1, -1, -1};
+    os_process_t *p = nullptr;
+    reads_t reads = {};
+    int wrote = -9;
+
+    hide_streams(kept, count);
+    p = start_child("drain", nullptr);
+    if (p) {
+        wrote = os_process_write(p, argv[4], strlen(argv[4]));
+        os_process_close(p, OS_INPUT);
+        read_all(p, &reads);
+        end_process(p);
+    }
+    for (int i = 0; i < count; i++)
+        move_stream(kept[i], i);
+    return (printf("low: %d %s\n", wrote, p ? reads.out : "none"), 0);
+}
+
 static const test_mode_t MODES[] = {
     {"named", 5, mode_named}, {"env", 4, mode_env},
     {"streams", 4, mode_streams}, {"full", 4, mode_full},
@@ -709,6 +774,7 @@ static const test_mode_t MODES[] = {
     {"interrupted", 5, mode_interrupted},
     {"late-kill", 4, mode_late_kill}, {"say", 4, mode_say},
     {"crowd", 4, mode_crowd}, {"kept", 4, mode_kept},
+    {"low", 5, mode_low},
 };
 
 static int run(int argc, char **argv)

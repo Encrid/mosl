@@ -97,8 +97,8 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_quiet_pipe`, `os_watch_exit` and `os_wait_exit`.
 
 `src/posix/process_env.c` defines `os_find_program` and `os_build_env`.
-`src/posix/process_child.c` defines `os_run_child`, `os_close_pipes` and `os_drop_process`.
-`src/posix/process_pipes.c` defines `os_make_process`.
+`src/posix/process_child.c` defines `os_run_child`.
+`src/posix/process_pipes.c` defines `os_make_process`, `os_close_pipes` and `os_drop_process`.
 
 | Function | Result |
 | --- | --- |
