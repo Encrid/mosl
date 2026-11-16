@@ -1,402 +1,266 @@
-code = ["include/**", "src/common/**", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/file_write.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/link.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/remove.c", "src/windows/whole_form.c", "src/windows/wide.c", "src/windows/write_all.c", "tests/.gitkeep", "tests/files_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/package/**", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/file_write.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/link.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/remove.c", "src/windows/whole_form.c", "src/windows/wide.c", "src/windows/write_all.c", "tests/.gitkeep", "tests/files_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/leaks/**", "tests/package/**", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
 
 [[case]]
-name = "os_folder_make makes each folder above the folder"
-run = ["{out}/files{exe}", "{case}", "make", "a/b/c"]
-claims = { line = ["make: 0 3"] }
-false = { files = { "{case}/a" = "x" } }
+name = "files"
+run = ["{out}/files{exe}"]
+sweep = ["CloseHandle", "CreateDirectoryW", "CreateFileW", "CreateSymbolicLinkW", "DeleteFileW", "FindFirstFileExW", "GetFileAttributesW", "GetFileInformationByHandle", "GetFullPathNameW", "MoveFileExW", "RemoveDirectoryW", "SetCurrentDirectoryW", "SetFileAttributesW", "WriteFile", "chdir", "close", "fchmod", "fchmodat", "fdopendir", "fstat", "fstatat", "malloc", "mkdirat", "realpath", "renameat", "symlinkat", "unlinkat", "write"]
+claims = { status = 0 }
+rows = [
+    { name = "os_folder_make makes each folder above the folder", in = "{case}/r0 make a/b/c", claims = { line = ["make: 0 3"] }, false = "{case}/f0 make a/b/c" },
+    { name = "os_folder_make gives 0 for a folder that is there", in = "{case}/r1 make a", claims = { line = ["make: 0 3"] }, false = "{case}/f1 make a/k" },
+    { name = "each call on a path takes a path past the limit of the system", in = "{case}/r2 deep made", claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, link 0, entry 3, remove 0, entry 0"] }, false = "{case}/f2 deep unmade" },
+    { name = "os_file_write replaces all the bytes of a file", in = "{case}/r3 replace new", claims = { line = ["replace: 0, 3 bytes: new"] }, false = "{case}/f3 replace news" },
+    { name = "a new file with executable gets 0777 less the umask", in = "{case}/r4 mode none x 0755", claims = { line = ["mode: as The files tells"] }, false = "{case}/f4/none mode none x 0755" },
+    { name = "a new file gets 0666 less the umask", in = "{case}/r5 mode none - 0644", claims = { line = ["mode: as The files tells"] }, false = "{case}/f5/none mode none - 0644" },
+    { name = "a file that was there with executable gets an execute bit for each read bit", in = "{case}/r6 mode 0600 x 0700", claims = { line = ["mode: as The files tells"] }, false = "{case}/f6/none mode 0600 x 0700" },
+    { name = "a file that was there loses each execute bit, and keeps its read and write bits", in = "{case}/r7 mode 0755 - 0644", claims = { line = ["mode: as The files tells"] }, false = "{case}/f7/none mode 0755 - 0644" },
+    { name = "os_path_entry tells a file, a folder and nothing", in = "{case}/r8 entry", claims = { line = ["entry: 1 3 0 0"] }, false = "{case}/f8 entry" },
+    { name = "os_path_entry gives 2 for a file with an execute bit, and 1 on Windows", in = "{case}/r9 entry-x", claims = { line = ["entry-x: as The files tells"] }, false = "{case}/f9/none entry-x" },
+    { name = "os_path_entry follows a link to a folder and to a file, and gives 0 for a link with no target", in = "{case}/r10 entry-link", claims = { line = ["entry-link: 3 1 0"] }, false = "{case}/f10/f/x entry-link" },
+    { name = "os_path_move gives a file the path of another file, and replaces it", in = "{case}/r11 move", claims = { line = ["move: 0, a 0, b holds a, none -1"] }, false = "{case}/f11/none move" },
+    { name = "os_path_move moves a folder with its entries", in = "{case}/r12 move-folder", claims = { line = ["move-folder: 0, d 0, e/f 1"] }, false = "{case}/f12/f/x move-folder" },
+    { name = "os_path_remove removes a folder with read-only entries and a link, and keeps the target of the link", in = "{case}/r13 remove", claims = { line = ["remove: 0, d 0, t 3, k 1"] }, false = "{case}/f13/f/x remove" },
+    { name = "os_path_remove gives 1 when nothing is at the path", in = "{case}/r14 remove-none", claims = { line = ["remove-none: 1 1 1"] }, false = "{case}/f14 remove-none" },
+    { name = "a relative target of a link starts in the folder of the link", in = "{case}/r15 link-relative ../f", claims = { line = ["link-relative: 0, reads f"] }, false = "{case}/f15 link-relative f" },
+    { name = "os_path_whole and os_folder_make keep a name of UTF-8", in = "{case}/r16 whole", claims = { line = ["whole: as The folders tells"] }, false = "{case}/f16/f/x whole" },
+    { name = "os_folder_make gives -1 for a file at the path", in = "{case}/r17 make a/k", claims = { line = ["make: -1 1"] }, false = "{case}/f17 make a/x" },
+    { name = "each call on a long path that is not there fails", in = "{case}/r18 deep unmade", claims = { line = ["deep: make 1, write -1, read none, entry 0, move -1, entry 0, link -1, entry 0, remove 1, entry 0"] }, false = "{case}/f18 deep made" },
+    { name = "os_file_write writes a file of 2 MiB", in = "{case}/r19 big", claims = { line = ["big: 0, 2097152 bytes"] }, false = "{case}/f19/none big" },
+    { name = "os_link_make takes a link with no folder, an absolute target and an empty target", in = "{case}/r20 link-forms", claims = { line = ["link-forms: set -1, 0 3 0 3 0 0 0 0 -1"] }, false = "{case}/f20/f/x link-forms" },
+    { name = "a write of a file is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateFileW=1,WriteFile=1,write=1 {case}/r21 again write", claims = { matches = ["write: [1-9] refused, then made"] }, false = "{case}/f21 again write" },
+    { name = "a write of a file is refused when its close fails, and a later one is made", in = "+refuse CloseHandle=1,close=1 {case}/r22 again write-n", claims = { matches = ["write-n: [1-9] refused, then made"] }, false = "{case}/f22 again write-n" },
+    { name = "a write over a file is refused when the memory of its path or its mode fails", in = "+refuse malloc=2,fstat=1 {case}/r23 again write", claims = { matches = ["write: [1-9] refused, then made"] }, false = "{case}/f23 again write" },
+    { name = "a write over a file is refused when its second open or its new mode fails", in = "+refuse GetFullPathNameW=1,fchmod=1 {case}/r24 again write-x", claims = { matches = ["write-x: [1-9] refused, then made"] }, false = "{case}/f24 again write-x" },
+    { name = "os_path_entry is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateFileW=1,GetFileInformationByHandle=1,fstatat=1 {case}/r25 again entry", claims = { matches = ["entry: [1-9] refused, then made"] }, false = "{case}/f25 again entry" },
+    { name = "os_path_move is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,MoveFileExW=1,renameat=1 {case}/r26 again move", claims = { matches = ["move: [1-9] refused, then made"] }, false = "{case}/f26 again move" },
+    { name = "os_path_move is refused when the memory of its second path fails", in = "+refuse malloc=3,renameat=1 {case}/r27 again move", claims = { matches = ["move: [1-9] refused, then made"] }, false = "{case}/f27 again move" },
+    { name = "os_path_remove is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,GetFileAttributesW=1,SetFileAttributesW=1,DeleteFileW=1,RemoveDirectoryW=1,FindFirstFileExW=1,fstatat=1,unlinkat=1,fchmodat=1 {case}/r28 again remove", claims = { matches = ["remove: [1-9] refused, then made"] }, false = "{case}/f28 again remove" },
+    { name = "os_path_remove is refused when the memory of a search or the attributes of an entry fail", in = "+refuse malloc=3,GetFileAttributesW=4,fdopendir=1,fstatat=2 {case}/r29 again remove", claims = { matches = ["remove: [1-9] refused, then made"] }, false = "{case}/f29 again remove" },
+    { name = "os_path_remove is refused when the memory of the path of an entry fails", in = "+refuse malloc=4,unlinkat=3 {case}/r30 again remove", claims = { matches = ["remove: [1-9] refused, then made"] }, false = "{case}/f30 again remove" },
+    { name = "os_link_make is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateSymbolicLinkW=1,symlinkat=1 {case}/r31 again link", claims = { matches = ["link: [1-9] refused, then made"] }, false = "{case}/f31 again link" },
+    { name = "os_link_make is refused when its memory 3 fails", in = "+refuse malloc=3,symlinkat=1 {case}/r32 again link", claims = { matches = ["link: [1-9] refused, then made"] }, false = "{case}/f32 again link" },
+    { name = "os_link_make is refused when its memory 4 fails", in = "+refuse malloc=4,symlinkat=1 {case}/r33 again link", claims = { matches = ["link: [1-9] refused, then made"] }, false = "{case}/f33 again link" },
+    { name = "os_link_make is refused when its memory 5 fails", in = "+refuse malloc=5,symlinkat=1 {case}/r34 again link", claims = { matches = ["link: [1-9] refused, then made"] }, false = "{case}/f34 again link" },
+    { name = "os_folder_make is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateDirectoryW=1,GetFileAttributesW=1,mkdirat=1 {case}/r35 again make", claims = { matches = ["make: [1-9] refused, then made"] }, false = "{case}/f35 again make" },
+    { name = "os_folder_set is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,SetCurrentDirectoryW=1,chdir=1 {case}/r36 again set", claims = { matches = ["set: [1-9] refused, then made"] }, false = "{case}/f36 again set" },
+    { name = "os_path_whole is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,GetFullPathNameW=1,realpath=1 {case}/r37 again whole", claims = { matches = ["whole: [1-9] refused, then made"] }, false = "{case}/f37 again whole" },
+    { name = "os_path_whole is refused when the memory of the whole path or its second call fails", in = "+refuse malloc=2,GetFullPathNameW=3,realpath=1 {case}/r38 again whole", claims = { matches = ["whole: [1-9] refused, then made"] }, false = "{case}/f38 again whole" },
+    { name = "os_path_entry gives -1 for a name that Windows refuses, and 0 on Linux and macOS", in = "{case}/r39 entry-of {case}/r39/a<b", claims = { line = ["entry-of: {invalid_entry}"] }, false = "{case}/f39 entry-of {case}/f39/e" },
+    { name = "os_file_write gives -1 for a file that is read-only", in = "{case}/r40 locked", claims = { line = ["locked: -1"] }, false = "{case}/f40 replace new" },
+    { name = "os_folder_make gives -1 when a folder above it is a file", in = "{case}/r41 make a/k/x", claims = { line = ["make: -1 0"] }, false = "{case}/f41 make a/x/y" },
+    { name = "os_path_move gives -1 when the folder of the path to is not there", in = "{case}/r42 move-args {case}/r42/d {case}/r42/d/k/x", claims = { line = ["move-args: -1"] }, false = "{case}/f42 move-args {case}/f42/d {case}/f42/b" },
+    { name = "os_path_move gives -1 when the folder of the path from is not there", in = "{case}/r43 move-args {case}/r43/d/k/x {case}/r43/b", claims = { line = ["move-args: -1"] }, false = "{case}/f43 move-args {case}/f43/d/k {case}/f43/b" },
+    { name = "os_path_entry gives -1 for a last name past the name limit of the system", in = "{case}/r44 entry-of {case}/r44/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn", claims = { line = ["entry-of: -1"] }, false = "{case}/f44 entry-of {case}/f44/e" },
+    { name = "os_path_remove gives -1 for a last name past the name limit of the system", in = "{case}/r45 remove-of {case}/r45/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn", claims = { line = ["remove-of: -1"] }, false = "{case}/f45 remove-of {case}/f45/none" },
+    { name = "a path of only separators past the path limit names the root folder", in = "{case}/r46 entry-of ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////", claims = { line = ["entry-of: {slash_entry}"] }, false = "{case}/f46 entry-of {case}/f46/e" },
+    { name = "os_file_write gives -1 for a file in a read-only folder", in = "{case}/r47 locked-folder", claims = { line = ["locked-write: {locked_write}"] }, false = "{case}/f47 replace new" },
+    { name = "os_folder_make gives -1 in a read-only folder", in = "{case}/r48 locked-folder", claims = { line = ["locked-make: {locked_make}"] }, false = "{case}/f48 make a/b" },
+    { name = "os_path_remove gives -1 for a folder in a read-only folder", in = "{case}/r49 locked-folder", claims = { line = ["locked-remove: {locked_remove}"] }, false = "{case}/f49 remove" },
+    { name = "os_folder_make gives -1 for a file that took the place of the folder", in = "{case}/r50 make-file", claims = { line = ["make-file: -1"] }, false = "{case}/f50 make a/b" },
+    { name = "os_folder_make gives -1 for a link that hangs", in = "{case}/r51 make-link", claims = { line = ["make-link: -1"] }, false = "{case}/f51 make-file" },
+    { name = "os_folder_make gives 0 for a deep folder that is there already", in = "{case}/r52 deep-remake", claims = { line = ["deep-remake: 0 0"] }, false = "{case}/f52 deep-remove" },
+    { name = "os_path_move gives -1 for a deep path with no folder", in = "{case}/r53 deep-move", claims = { line = ["deep-move: -1"] }, false = "{case}/f53 deep-remake" },
+    { name = "os_path_remove gives 1 for a deep path with no folder", in = "{case}/r54 deep-remove", claims = { line = ["deep-remove: 1"] }, false = "{case}/f54 deep-move" },
+    { name = "os_folder_entry_size gives the size of a file of a folder", in = "{case}/r55 size f", claims = { line = ["size: 0 5"] }, false = "{case}/f55 size f" },
+    { name = "os_folder_entry_size gives -1 for a name that is not there", in = "{case}/r56 size none", claims = { line = ["size: -1 0"] }, false = "{case}/f56 size none" },
+    { name = "os_folder_entry_size gives -1 for a folder", in = "{case}/r57 size d", claims = { line = ["size: -1 0"] }, false = "{case}/f57/d size x" },
+    { name = "os_folder_entry_size follows a link, and gives the size of its target", in = "{case}/r58 size-link t", claims = { line = ["size-link: 0 4"] }, false = "{case}/f58 size-link none" },
+]
 
-[[case]]
-name = "os_folder_make gives 0 for a folder that is there"
-run = ["{out}/files{exe}", "{case}", "make", "a"]
-files = { "{case}/a/k" = "" }
-claims = { line = ["make: 0 3"] }
-false = { run = ["{out}/files{exe}", "{case}", "make", "a/k"] }
+[case.files]
+"{case}/f0/a" = "x"
+"{case}/r1/a/k" = ""
+"{case}/f1/a/k" = ""
+"{case}/r3/f" = "old text"
+"{case}/f3/f" = "old text"
+"{case}/f8/m" = ""
+"{case}/f10/f" = ""
+"{case}/r11/a" = "a"
+"{case}/r11/b" = "b"
+"{case}/f11/a" = "a"
+"{case}/f11/b" = "b"
+"{case}/f12/f" = ""
+"{case}/f13/f" = ""
+"{case}/r14/a/k" = ""
+"{case}/f14/a/k" = ""
+"{case}/f14/none" = ""
+"{case}/f16/f" = ""
+"{case}/r17/a/k" = ""
+"{case}/f17/a/k" = ""
+"{case}/r20/t/k" = ""
+"{case}/r20/f" = ""
+"{case}/f20/t/k" = ""
+"{case}/f20/f" = ""
+"{case}/r23/w" = "old"
+"{case}/f23/w" = "old"
+"{case}/r24/w" = "old"
+"{case}/f24/w" = "old"
+"{case}/r25/e" = ""
+"{case}/f25/e" = ""
+"{case}/r26/a" = "a"
+"{case}/f26/a" = "a"
+"{case}/r27/a" = "a"
+"{case}/f27/a" = "a"
+"{case}/r28/d/f" = ""
+"{case}/r28/d/s/g" = ""
+"{case}/f28/d/f" = ""
+"{case}/f28/d/s/g" = ""
+"{case}/r29/d/f" = ""
+"{case}/r29/d/s/g" = ""
+"{case}/f29/d/f" = ""
+"{case}/f29/d/s/g" = ""
+"{case}/r30/d/f" = ""
+"{case}/r30/d/s/g" = ""
+"{case}/f30/d/f" = ""
+"{case}/f30/d/s/g" = ""
+"{case}/r31/t/k" = ""
+"{case}/f31/t/k" = ""
+"{case}/r32/t/k" = ""
+"{case}/f32/t/k" = ""
+"{case}/r33/t/k" = ""
+"{case}/f33/t/k" = ""
+"{case}/r34/t/k" = ""
+"{case}/f34/t/k" = ""
+"{case}/r39/e" = ""
+"{case}/f39/e" = ""
+"{case}/r40/f" = "old"
+"{case}/f40/f" = "old"
+"{case}/r41/a/k" = ""
+"{case}/f41/a/k" = ""
+"{case}/r42/d/k" = ""
+"{case}/f42/d/k" = ""
+"{case}/r43/d/k" = ""
+"{case}/f43/d/k" = ""
+"{case}/r44/e" = ""
+"{case}/f44/e" = ""
+"{case}/r45/e" = ""
+"{case}/f45/e" = ""
+"{case}/r46/e" = ""
+"{case}/f46/e" = ""
+"{case}/r55/f" = "hello"
+"{case}/f55/f" = "hell"
+"{case}/f56/none" = ""
+"{case}/r57/d/x" = "x"
+"{case}/f57/d/x" = "x"
+"{case}/r58/t" = "four"
+"{case}/f58/t" = "four"
 
-[[case]]
-name = "each call on a path takes a path past the limit of the system"
-run = ["{out}/files{exe}", "{case}", "deep", "made"]
-claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, link 0, entry 3, remove 0, entry 0"] }
-false = { run = ["{out}/files{exe}", "{case}", "deep", "unmade"] }
-
-[[case]]
-name = "os_file_write replaces all the bytes of a file"
-run = ["{out}/files{exe}", "{case}", "replace", "new"]
-files = { "{case}/f" = "old text" }
-claims = { line = ["replace: 0, 3 bytes: new"] }
-false = { run = ["{out}/files{exe}", "{case}", "replace", "news"] }
-
-[[case]]
-name = "a new file with executable gets 0777 less the umask"
-run = ["{out}/files{exe}", "{case}", "mode", "none", "x", "0755"]
-claims = { line = ["mode: as The files tells"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "mode", "none", "x", "0755"] }
-
-[[case]]
-name = "a new file gets 0666 less the umask"
-run = ["{out}/files{exe}", "{case}", "mode", "none", "-", "0644"]
-claims = { line = ["mode: as The files tells"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "mode", "none", "-", "0644"] }
-
-[[case]]
-name = "a file that was there with executable gets an execute bit for each read bit"
-run = ["{out}/files{exe}", "{case}", "mode", "0600", "x", "0700"]
-claims = { line = ["mode: as The files tells"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "mode", "0600", "x", "0700"] }
-
-[[case]]
-name = "a file that was there loses each execute bit, and keeps its read and write bits"
-run = ["{out}/files{exe}", "{case}", "mode", "0755", "-", "0644"]
-claims = { line = ["mode: as The files tells"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "mode", "0755", "-", "0644"] }
-
-[[case]]
-name = "os_path_entry tells a file, a folder and nothing"
-run = ["{out}/files{exe}", "{case}", "entry"]
-claims = { line = ["entry: 1 3 0 0"] }
-false = { files = { "{case}/m" = "" } }
-
-[[case]]
-name = "os_path_entry gives 2 for a file with an execute bit, and 1 on Windows"
-run = ["{out}/files{exe}", "{case}", "entry-x"]
-claims = { line = ["entry-x: as The files tells"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "entry-x"] }
-
-[[case]]
-name = "os_path_entry follows a link to a folder and to a file, and gives 0 for a link with no target"
-run = ["{out}/files{exe}", "{case}", "entry-link"]
-claims = { line = ["entry-link: 3 1 0"] }
-false = { run = ["{out}/files{exe}", "{case}/f/x", "entry-link"], files = { "{case}/f" = "" } }
-
-[[case]]
-name = "os_path_move gives a file the path of another file, and replaces it"
-run = ["{out}/files{exe}", "{case}", "move"]
-files = { "{case}/a" = "a", "{case}/b" = "b" }
-claims = { line = ["move: 0, a 0, b holds a, none -1"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "move"] }
-
-[[case]]
-name = "os_path_move moves a folder with its entries"
-run = ["{out}/files{exe}", "{case}", "move-folder"]
-claims = { line = ["move-folder: 0, d 0, e/f 1"] }
-false = { run = ["{out}/files{exe}", "{case}/f/x", "move-folder"], files = { "{case}/f" = "" } }
-
-[[case]]
-name = "os_path_remove removes a folder with read-only entries and a link, and keeps the target of the link"
-run = ["{out}/files{exe}", "{case}", "remove"]
-claims = { line = ["remove: 0, d 0, t 3, k 1"] }
-false = { run = ["{out}/files{exe}", "{case}/f/x", "remove"], files = { "{case}/f" = "" } }
-
-[[case]]
-name = "os_path_remove gives 1 when nothing is at the path"
-run = ["{out}/files{exe}", "{case}", "remove-none"]
-files = { "{case}/a/k" = "" }
-claims = { line = ["remove-none: 1 1 1"] }
-false = { files = { "{case}/none" = "" } }
-
-[[case]]
-name = "a relative target of a link starts in the folder of the link"
-run = ["{out}/files{exe}", "{case}", "link-relative", "../f"]
-claims = { line = ["link-relative: 0, reads f"] }
-false = { run = ["{out}/files{exe}", "{case}", "link-relative", "f"] }
-
-[[case]]
-name = "os_path_whole and os_folder_make keep a name of UTF-8"
-run = ["{out}/files{exe}", "{case}", "whole"]
-claims = { line = ["whole: as The folders tells"] }
-false = { run = ["{out}/files{exe}", "{case}/f/x", "whole"], files = { "{case}/f" = "" } }
-
-[[case]]
-name = "os_folder_make gives -1 for a file at the path"
-run = ["{out}/files{exe}", "{case}", "make", "a/k"]
-files = { "{case}/a/k" = "" }
-claims = { line = ["make: -1 1"] }
-false = { run = ["{out}/files{exe}", "{case}", "make", "a/x"] }
-
-[[case]]
-name = "each call on a long path that is not there fails"
-run = ["{out}/files{exe}", "{case}", "deep", "unmade"]
-claims = { line = ["deep: make 1, write -1, read none, entry 0, move -1, entry 0, link -1, entry 0, remove 1, entry 0"] }
-false = { run = ["{out}/files{exe}", "{case}", "deep", "made"] }
-
-[[case]]
-name = "os_file_write writes a file of 2 MiB"
-run = ["{out}/files{exe}", "{case}", "big"]
-claims = { line = ["big: 0, 2097152 bytes"] }
-false = { run = ["{out}/files{exe}", "{case}/none", "big"] }
-
-[[case]]
-name = "os_link_make takes a link with no folder, an absolute target and an empty target"
-run = ["{out}/files{exe}", "{case}", "link-forms"]
-files = { "{case}/t/k" = "", "{case}/f" = "" }
-claims = { line = ["link-forms: set -1, 0 3 0 3 0 0 0 0 -1"] }
-false = { run = ["{out}/files{exe}", "{case}/f/x", "link-forms"] }
-
-[[case]]
-name = "a write of a file is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "write"]
-fail = { malloc = 1, CreateFileW = 1, WriteFile = 1, write = 1 }
-claims = { matches = ["write: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "a write of a file is refused when its close fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "write-n"]
-fail = { CloseHandle = 1, close = 1 }
-claims = { matches = ["write-n: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "a write over a file is refused when the memory of its path or its mode fails"
-run = ["{out}/files{exe}", "{case}", "again", "write"]
-fail = { malloc = 2, fstat = 1 }
-files = { "{case}/w" = "old" }
-claims = { matches = ["write: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "a write over a file is refused when its second open or its new mode fails"
-run = ["{out}/files{exe}", "{case}", "again", "write-x"]
-fail = { GetFullPathNameW = 1, fchmod = 1 }
-files = { "{case}/w" = "old" }
-claims = { matches = ["write-x: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_entry is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "entry"]
-fail = { malloc = 1, CreateFileW = 1, GetFileInformationByHandle = 1, fstatat = 1 }
-files = { "{case}/e" = "" }
-claims = { matches = ["entry: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_move is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "move"]
-fail = { malloc = 1, MoveFileExW = 1, renameat = 1 }
-files = { "{case}/a" = "a" }
-claims = { matches = ["move: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_move is refused when the memory of its second path fails"
-run = ["{out}/files{exe}", "{case}", "again", "move"]
-fail = { malloc = 3, renameat = 1 }
-files = { "{case}/a" = "a" }
-claims = { matches = ["move: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_remove is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "remove"]
-fail = { malloc = 1, GetFileAttributesW = 1, SetFileAttributesW = 1, DeleteFileW = 1, RemoveDirectoryW = 1, FindFirstFileExW = 1, fstatat = 1, unlinkat = 1, fchmodat = 1 }
-files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
-claims = { matches = ["remove: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_remove is refused when the memory of a search or the attributes of an entry fail"
-run = ["{out}/files{exe}", "{case}", "again", "remove"]
-fail = { malloc = 3, GetFileAttributesW = 4, fdopendir = 1, fstatat = 2 }
-files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
-claims = { matches = ["remove: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_remove is refused when the memory of the path of an entry fails"
-run = ["{out}/files{exe}", "{case}", "again", "remove"]
-fail = { malloc = 4, unlinkat = 3 }
-files = { "{case}/d/f" = "", "{case}/d/s/g" = "" }
-claims = { matches = ["remove: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_link_make is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "link"]
-fail = { malloc = 1, CreateSymbolicLinkW = 1, symlinkat = 1 }
-files = { "{case}/t/k" = "" }
-claims = { matches = ["link: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_link_make is refused when its memory 3 fails"
-run = ["{out}/files{exe}", "{case}", "again", "link"]
-fail = { malloc = 3, symlinkat = 1 }
-files = { "{case}/t/k" = "" }
-claims = { matches = ["link: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_link_make is refused when its memory 4 fails"
-run = ["{out}/files{exe}", "{case}", "again", "link"]
-fail = { malloc = 4, symlinkat = 1 }
-files = { "{case}/t/k" = "" }
-claims = { matches = ["link: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_link_make is refused when its memory 5 fails"
-run = ["{out}/files{exe}", "{case}", "again", "link"]
-fail = { malloc = 5, symlinkat = 1 }
-files = { "{case}/t/k" = "" }
-claims = { matches = ["link: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_folder_make is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "make"]
-fail = { malloc = 1, CreateDirectoryW = 1, GetFileAttributesW = 1, mkdirat = 1 }
-claims = { matches = ["make: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_folder_set is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "set"]
-fail = { malloc = 1, SetCurrentDirectoryW = 1, chdir = 1 }
-claims = { matches = ["set: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_whole is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/files{exe}", "{case}", "again", "whole"]
-fail = { malloc = 1, GetFullPathNameW = 1, realpath = 1 }
-claims = { matches = ["whole: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_whole is refused when the memory of the whole path or its second call fails"
-run = ["{out}/files{exe}", "{case}", "again", "whole"]
-fail = { malloc = 2, GetFullPathNameW = 3, realpath = 1 }
-claims = { matches = ["whole: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "os_path_entry gives -1 for a name that Windows refuses, and 0 on Linux and macOS"
-run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/a<b"]
-files = { "{case}/e" = "" }
-claims = { line = ["entry-of: {invalid_entry}"] }
-false = { run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/e"] }
-
-[[case]]
-name = "os_file_write gives -1 for a file that is read-only"
-run = ["{out}/files{exe}", "{case}", "locked"]
-files = { "{case}/f" = "old" }
-claims = { line = ["locked: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "replace", "new"] }
-
-[[case]]
-name = "os_folder_make gives -1 when a folder above it is a file"
-run = ["{out}/files{exe}", "{case}", "make", "a/k/x"]
-files = { "{case}/a/k" = "" }
-claims = { line = ["make: -1 0"] }
-false = { run = ["{out}/files{exe}", "{case}", "make", "a/x/y"] }
-
-[[case]]
-name = "os_path_move gives -1 when the folder of the path to is not there"
-run = ["{out}/files{exe}", "{case}", "move-args", "{case}/d", "{case}/d/k/x"]
-files = { "{case}/d/k" = "" }
-claims = { line = ["move-args: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "move-args", "{case}/d", "{case}/b"] }
-
-[[case]]
-name = "os_path_move gives -1 when the folder of the path from is not there"
-run = ["{out}/files{exe}", "{case}", "move-args", "{case}/d/k/x", "{case}/b"]
-files = { "{case}/d/k" = "" }
-claims = { line = ["move-args: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "move-args", "{case}/d/k", "{case}/b"] }
-
-[[case]]
-name = "os_path_entry gives -1 for a last name past the name limit of the system"
-run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"]
-files = { "{case}/e" = "" }
-claims = { line = ["entry-of: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/e"] }
-
-[[case]]
-name = "os_path_remove gives -1 for a last name past the name limit of the system"
-run = ["{out}/files{exe}", "{case}", "remove-of", "{case}/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"]
-files = { "{case}/e" = "" }
-claims = { line = ["remove-of: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "remove-of", "{case}/none"] }
-
-[[case]]
-name = "a path of only separators past the path limit names the root folder"
-run = ["{out}/files{exe}", "{case}", "entry-of", "////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////"]
-files = { "{case}/e" = "" }
-claims = { line = ["entry-of: {slash_entry}"] }
-false = { run = ["{out}/files{exe}", "{case}", "entry-of", "{case}/e"] }
-
-[[case]]
-name = "os_file_write gives -1 for a file in a read-only folder"
-run = ["{out}/files{exe}", "{case}", "locked-folder"]
-claims = { line = ["locked-write: {locked_write}"] }
-false = { run = ["{out}/files{exe}", "{case}", "replace", "new"] }
-
-[[case]]
-name = "os_folder_make gives -1 in a read-only folder"
-run = ["{out}/files{exe}", "{case}", "locked-folder"]
-claims = { line = ["locked-make: {locked_make}"] }
-false = { run = ["{out}/files{exe}", "{case}", "make", "a/b"] }
-
-[[case]]
-name = "os_path_remove gives -1 for a folder in a read-only folder"
-run = ["{out}/files{exe}", "{case}", "locked-folder"]
-claims = { line = ["locked-remove: {locked_remove}"] }
-false = { run = ["{out}/files{exe}", "{case}", "remove"] }
-
-[[case]]
-name = "os_folder_make gives -1 for a file that took the place of the folder"
-run = ["{out}/files{exe}", "{case}", "make-file"]
-claims = { line = ["make-file: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "make", "a/b"] }
-
-[[case]]
-name = "os_folder_make gives -1 for a link that hangs"
-run = ["{out}/files{exe}", "{case}", "make-link"]
-claims = { line = ["make-link: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "make-file"] }
-
-[[case]]
-name = "os_folder_make gives 0 for a deep folder that is there already"
-run = ["{out}/files{exe}", "{case}", "deep-remake"]
-claims = { line = ["deep-remake: 0 0"] }
-false = { run = ["{out}/files{exe}", "{case}", "deep-remove"] }
-
-[[case]]
-name = "os_path_move gives -1 for a deep path with no folder"
-run = ["{out}/files{exe}", "{case}", "deep-move"]
-claims = { line = ["deep-move: -1"] }
-false = { run = ["{out}/files{exe}", "{case}", "deep-remake"] }
-
-[[case]]
-name = "os_path_remove gives 1 for a deep path with no folder"
-run = ["{out}/files{exe}", "{case}", "deep-remove"]
-claims = { line = ["deep-remove: 1"] }
-false = { run = ["{out}/files{exe}", "{case}", "deep-move"] }
-
-[[case]]
-name = "os_folder_entry_size gives the size of a file of a folder"
-run = ["{out}/files{exe}", "{case}", "size", "f"]
-files = { "{case}/f" = "hello" }
-claims = { line = ["size: 0 5"] }
-false = { files = { "{case}/f" = "hell" } }
-
-[[case]]
-name = "os_folder_entry_size gives -1 for a name that is not there"
-run = ["{out}/files{exe}", "{case}", "size", "none"]
-claims = { line = ["size: -1 0"] }
-false = { files = { "{case}/none" = "" } }
-
-[[case]]
-name = "os_folder_entry_size gives -1 for a folder"
-run = ["{out}/files{exe}", "{case}", "size", "d"]
-files = { "{case}/d/x" = "x" }
-claims = { line = ["size: -1 0"] }
-false = { run = ["{out}/files{exe}", "{case}/d", "size", "x"] }
-
-[[case]]
-name = "os_folder_entry_size follows a link, and gives the size of its target"
-run = ["{out}/files{exe}", "{case}", "size-link", "t"]
-files = { "{case}/t" = "four" }
-claims = { line = ["size-link: 0 4"] }
-false = { run = ["{out}/files{exe}", "{case}", "size-link", "none"] }
+[case.folders]
+"{case}/r0" = []
+"{case}/f0" = []
+"{case}/r1" = []
+"{case}/f1" = []
+"{case}/r2" = []
+"{case}/f2" = []
+"{case}/r3" = []
+"{case}/f3" = []
+"{case}/r4" = []
+"{case}/f4" = []
+"{case}/r5" = []
+"{case}/f5" = []
+"{case}/r6" = []
+"{case}/f6" = []
+"{case}/r7" = []
+"{case}/f7" = []
+"{case}/r8" = []
+"{case}/f8" = []
+"{case}/r9" = []
+"{case}/f9" = []
+"{case}/r10" = []
+"{case}/f10" = []
+"{case}/r11" = []
+"{case}/f11" = []
+"{case}/r12" = []
+"{case}/f12" = []
+"{case}/r13" = []
+"{case}/f13" = []
+"{case}/r14" = []
+"{case}/f14" = []
+"{case}/r15" = []
+"{case}/f15" = []
+"{case}/r16" = []
+"{case}/f16" = []
+"{case}/r17" = []
+"{case}/f17" = []
+"{case}/r18" = []
+"{case}/f18" = []
+"{case}/r19" = []
+"{case}/f19" = []
+"{case}/r20" = []
+"{case}/f20" = []
+"{case}/r21" = []
+"{case}/f21" = []
+"{case}/r22" = []
+"{case}/f22" = []
+"{case}/r23" = []
+"{case}/f23" = []
+"{case}/r24" = []
+"{case}/f24" = []
+"{case}/r25" = []
+"{case}/f25" = []
+"{case}/r26" = []
+"{case}/f26" = []
+"{case}/r27" = []
+"{case}/f27" = []
+"{case}/r28" = []
+"{case}/f28" = []
+"{case}/r29" = []
+"{case}/f29" = []
+"{case}/r30" = []
+"{case}/f30" = []
+"{case}/r31" = []
+"{case}/f31" = []
+"{case}/r32" = []
+"{case}/f32" = []
+"{case}/r33" = []
+"{case}/f33" = []
+"{case}/r34" = []
+"{case}/f34" = []
+"{case}/r35" = []
+"{case}/f35" = []
+"{case}/r36" = []
+"{case}/f36" = []
+"{case}/r37" = []
+"{case}/f37" = []
+"{case}/r38" = []
+"{case}/f38" = []
+"{case}/r39" = []
+"{case}/f39" = []
+"{case}/r40" = []
+"{case}/f40" = []
+"{case}/r41" = []
+"{case}/f41" = []
+"{case}/r42" = []
+"{case}/f42" = []
+"{case}/r43" = []
+"{case}/f43" = []
+"{case}/r44" = []
+"{case}/f44" = []
+"{case}/r45" = []
+"{case}/f45" = []
+"{case}/r46" = []
+"{case}/f46" = []
+"{case}/r47" = []
+"{case}/f47" = []
+"{case}/r48" = []
+"{case}/f48" = []
+"{case}/r49" = []
+"{case}/f49" = []
+"{case}/r50" = []
+"{case}/f50" = []
+"{case}/r51" = []
+"{case}/f51" = []
+"{case}/r52" = []
+"{case}/f52" = []
+"{case}/r53" = []
+"{case}/f53" = []
+"{case}/r54" = []
+"{case}/f54" = []
+"{case}/r55" = []
+"{case}/f55" = []
+"{case}/r56" = []
+"{case}/f56" = []
+"{case}/r57" = []
+"{case}/f57" = []
+"{case}/r58" = []
+"{case}/f58" = []

@@ -11,11 +11,8 @@
     #include <sys/stat.h>
     #include <unistd.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr int LEVELS = 22;
 constexpr size_t LEVEL = 200;
@@ -39,9 +36,10 @@ static char *join(const char *a, const char *b)
     return (path);
 }
 
+static char *paths[8];
+
 static char *in(const char *name)
 {
-    static char *paths[8];
     static int next;
 
     free(paths[next]);
@@ -591,14 +589,28 @@ static const test_mode_t MODES[] = {
     {"size-link", 4, size_link},
 };
 
-int main(int argc, char **argv)
+static int end(int status)
+{
+    for (size_t i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
+        free(paths[i]);
+        paths[i] = nullptr;
+    }
+    return (status);
+}
+
+static int run(int argc, char **argv)
 {
     if (argc < 3)
         return (printf("usage: files <folder> <mode> [arguments]\n"), 2);
     folder = argv[1];
     for (size_t i = 0; i < sizeof(MODES) / sizeof(MODES[0]); i++) {
         if (!strcmp(argv[2], MODES[i].name) && argc == MODES[i].count)
-            return (MODES[i].run(argv));
+            return (end(MODES[i].run(argv)));
     }
     return (printf("usage: files <folder> <mode> [arguments]\n"), 2);
+}
+
+int main(void)
+{
+    return (rows_run(run));
 }

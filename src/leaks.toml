@@ -1,0 +1,12 @@
+[leaks]
+memory = ["os_path_whole", "os_env_get", "os_path_find", "os_get_program_path"]
+
+[leaks.pairs]
+os_reserve = "os_release"
+os_lib_open = "os_lib_close"
+os_thread_start = "os_thread_join"
+os_mutex_create = "os_mutex_free"
+os_event_create = "os_event_free"
+os_folder_open = "os_folder_close"
+os_watch_start = "os_watch_stop"
+os_process_start = "os_process_free"

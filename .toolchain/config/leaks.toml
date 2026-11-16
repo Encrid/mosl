@@ -1,5 +1,5 @@
 [leaks]
-memory = ["os_path_whole", "os_env_get", "os_path_find", "os_get_program_path"]
+with = ["tests/leaks/{system}.toml"]
 
 [leaks.pairs]
 os_reserve = "os_release"

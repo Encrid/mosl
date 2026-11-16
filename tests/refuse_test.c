@@ -3,10 +3,8 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
-#include <stdio.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr unsigned TRIES = 8;
 
@@ -42,7 +40,7 @@ static bool make_thread(void)
     return (made);
 }
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
     bool (*make)(void) = nullptr;
     unsigned refused = 0;
@@ -64,4 +62,9 @@ int main(int argc, char **argv)
     else
         printf("%s: always refused\n", argv[1]);
     return (0);
+}
+
+int main(void)
+{
+    return (rows_run(run));
 }

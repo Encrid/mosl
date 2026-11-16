@@ -1,58 +1,44 @@
-code = ["include/**", "src/common/**", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
 
 [[case]]
 name = "the os layer runs every call and its error paths"
+process = "state"
 run = ["{out}/os{exe}", "{case}"]
 claims = { matches = ["os ok"] }
 false = { run = ["{out}/os{exe}", "{case}/none"] }
 
 [[case]]
-name = "an event is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/refuse{exe}", "event"]
-fail = { malloc = 1, pthread_mutex_init = 1, pthread_cond_init = 1, CreateEventA = 1 }
-claims = { matches = ["event: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "a mutex is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/refuse{exe}", "mutex"]
-fail = { malloc = 1, pthread_mutex_init = 1 }
-claims = { matches = ["mutex: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "a thread is refused when a call that it needs fails, and a later one is made"
-run = ["{out}/refuse{exe}", "thread"]
-fail = { malloc = 1, pthread_create = 1 }
-claims = { matches = ["thread: [1-9] refused, then made"] }
-false = { fail = {} }
-
-[[case]]
-name = "the clock of the os layer moves in steps below a microsecond"
-run = ["{out}/clock{exe}", "1000"]
-claims = { line = ["step below 1000 ns"] }
-false = { run = ["{out}/clock{exe}", "1"] }
-
-[[case]]
 name = "a wait of less than a millisecond lasts until its nanoseconds pass"
+process = "state"
 run = ["{python}", "tests/wait_driver.py", "{out}/wait{exe}", "500000", "0", "200"]
 claims = { line = ["0 of 200 first waits of a process took less than 500000 ns"] }
 false = { run = ["{python}", "tests/wait_driver.py", "{out}/wait{exe}", "500000", "0", "200", "set"] }
 
 [[case]]
 name = "a step of the wall clock does not change a wait"
+process = "state"
 run = ["{out}/wait{exe}", "50000000", "3600", "20"]
 claims = { line = ["0 of 20 waits took less than 50000000 ns"] }
 false = { run = ["{out}/wait{exe}", "50000000", "3600", "20", "set"] }
 
 [[case]]
+name = "wait"
+run = ["{out}/wait{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "a wait of no time consumes a set", in = "20000000 0 3 taken", claims = { line = ["0 of 3 waits took less than 20000000 ns", "status 0"] }, false = "20000000 0 3 set" },
+]
+
+[[case]]
 name = "a thread gets the stack that its start asks for"
+process = "status"
 run = ["{out}/stack{exe}", "4194304", "3145728"]
 claims = { status = 0, line = ["a call 3145728 bytes deep returned"] }
 false = { run = ["{out}/stack{exe}", "1048576", "3145728"] }
 
 [[case]]
 name = "each started thread can use the stack that os_thread_stack_left gives, down to its last 4096 bytes"
+process = "status"
 run = ["{out}/stack_left{exe}", "thread", "4194304", "1048576"]
 fail = { pthread_getattr_np = 1 }
 claims = { status = 0, line = ["thread of 4194304 bytes: used down to 4096 bytes", "thread of 1048576 bytes: used down to 4096 bytes"] }
@@ -60,18 +46,21 @@ false = { run = ["{out}/stack_left{exe}", "thread", "4194304", "1048576", "past"
 
 [[case]]
 name = "the first thread of a process can use the stack that os_thread_stack_left gives, down to its last 4096 bytes"
+process = "status"
 run = ["{out}/stack_left{exe}", "main"]
 claims = { status = 0, line = ["main: used down to 4096 bytes"] }
 false = { run = ["{out}/stack_left{exe}", "main", "past"] }
 
 [[case]]
 name = "a process pins any number of libraries"
+process = "state"
 run = ["{out}/pins{exe}", "{case}", "65"]
 claims = { line = ["pinned 65 of 65 libraries"] }
 false = { run = ["{out}/pins{exe}", "{case}", "65", "closed"] }
 
 [[case]]
 name = "an interrupt sets the flag, and the program ends its work"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 script = [{ wait = "ready", signal = "interrupt" }, { wait = "a second signal ends it at once" }]
@@ -80,6 +69,7 @@ false = { script = [{ wait = "ready", signal = "interrupt" }, { wait = "a second
 
 [[case]]
 name = "a termination sets the flag, and the program ends its work"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 script = [{ wait = "ready", signal = "termination" }, { wait = "a second signal ends it at once" }]
@@ -88,6 +78,7 @@ false = { script = [{ wait = "ready", signal = "termination" }, { wait = "a seco
 
 [[case]]
 name = "a hang-up sets the flag, and the program ends its work"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 script = [{ wait = "ready", signal = "hang-up" }, { wait = "a second signal ends it at once" }]
@@ -96,6 +87,7 @@ false = { script = [{ wait = "ready", signal = "interrupt" }, { wait = "a second
 
 [[case]]
 name = "the first signal writes the line at once, while the program hangs"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 script = [{ wait = "ready", signal = "interrupt", pause = 1 }]
@@ -104,6 +96,7 @@ false = { ignore = ["interrupt"] }
 
 [[case]]
 name = "a second signal ends the program at once with status 1"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 script = [{ wait = "ready", signal = "interrupt" }, { wait = "a second signal ends it at once", signal = "interrupt", pause = 1 }]
@@ -112,6 +105,7 @@ false = { script = [{ wait = "ready", signal = "interrupt" }, { wait = "a second
 
 [[case]]
 name = "a second signal ends the program at once while its output is full"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once", "fill"]
 stdin = "\n\n"
 script = [{ wait = "ready", pause = 1 }, { signal = "interrupt", pause = 1 }, { signal = "interrupt", pause = 1 }]
@@ -120,6 +114,7 @@ false = { script = [{ wait = "ready", pause = 1 }, { signal = "interrupt", pause
 
 [[case]]
 name = "a signal that the parent ignores stays ignored"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 ignore = ["interrupt"]
@@ -129,6 +124,7 @@ false = { ignore = [] }
 
 [[case]]
 name = "a write to a closed output does not end the program"
+process = "signal"
 run = ["{out}/signal{exe}", "a second signal ends it at once"]
 stdin = "\n\n"
 script = [{ wait = "ready", close = "output", pause = 1 }, { signal = "interrupt", pause = 1 }]
@@ -137,24 +133,28 @@ false = { script = [{ wait = "ready", close = "output", pause = 1 }, { signal = 
 
 [[case]]
 name = "the zip of a release holds fail.toml"
+process = "command"
 run = ["{python}", "{root}/.toolchain/tools/build.py", "--root", "{root}", "--out", "{case}/out", "--pack"]
 claims = { status = 0, order = ["{case}/out/mosl-{target}.zip", "fail.toml", "package proof: mosl ran"] }
 false = { run = ["{python}", "{root}/.toolchain/tools/build.py", "--root", "{root}", "--out", "{case}/out", "--pack", "--leave", "fail.toml"] }
 
 [[case]]
 name = "a folder past the path limit of the system lists and reads its file, whose name has 255 bytes"
+process = "state"
 run = ["{out}/folders{exe}", "{case}", "deep"]
 claims = { line = ["deep: 0 refused, read 9 bytes: deep file"] }
 false = { run = ["{out}/folders{exe}", "{case}", "joined"] }
 
 [[case]]
 name = "the current folder is refused past the path limit of the system"
+process = "state"
 run = ["{out}/folders{exe}", "{case}", "current"]
 claims = { line = ["current: refused"] }
 false = { run = ["{out}/folders{exe}", "{case}", "base"] }
 
 [[case]]
 name = "an open or a read of a folder is refused when a call that it needs fails, and a later one is made"
+process = "state"
 run = ["{out}/folders{exe}", "{case}", "deep"]
 fail = { calloc = 1, malloc = 1, realloc = 1, ferror = 1 }
 claims = { line = ["deep: 4 refused, read 9 bytes: deep file"] }
@@ -162,157 +162,15 @@ false = { fail = {} }
 
 [[case]]
 name = "an open of a folder is refused when the memory of its path fails, and a later one is made"
+process = "state"
 run = ["{out}/folders{exe}", "{case}", "deep"]
 fail = { malloc = 2 }
 claims = { line = ["deep: 1 refused, read 9 bytes: deep file"] }
 false = { fail = {} }
 
 [[case]]
-name = "a middle folder that grants only the right to search does not stop a long path, as for a short one; Windows opens no middle folder"
-run = ["{out}/folders{exe}", "{case}", "middle"]
-claims = { line = ["search only: read 9 bytes: deep file"] }
-false = { run = ["{out}/folders{exe}", "{case}", "last"] }
-
-[[case]]
-name = 'a whole network path gets the form \\?\UNC\server\share'
-run = ["{out}/whole{exe}", '\\server\share\x']
-claims = { line = ['\\?\UNC\server\share\x'] }
-false = { run = ["{out}/whole{exe}", 'C:\server\share\x'] }
-
-[[case]]
-name = 'a whole path in the form \\?\ stays as it is'
-run = ["{out}/whole{exe}", '\\?\C:\x']
-claims = { line = ['\\?\C:\x'] }
-false = { run = ["{out}/whole{exe}", '\\x\C:\x'] }
-
-[[case]]
-name = 'a whole path in the form \\.\ stays as it is'
-run = ["{out}/whole{exe}", '\\.\C:\x']
-claims = { line = ['\\.\C:\x'] }
-false = { run = ["{out}/whole{exe}", '\\y\C:\x'] }
-
-[[case]]
-name = 'a whole drive path, which GetFullPathNameW makes of a relative path, gets the form \\?\'
-run = ["{out}/whole{exe}", 'C:\dir\x']
-claims = { line = ['\\?\C:\dir\x'] }
-false = { run = ["{out}/whole{exe}", '\\dir\x'] }
-
-[[case]]
-name = 'a whole path that ends with a separator loses one separator'
-run = ["{out}/whole{exe}", 'C:\mods\']
-claims = { line = ['\\?\C:\mods'] }
-false = { run = ["{out}/whole{exe}", 'C:\mods\\'] }
-
-[[case]]
-name = 'the whole root of a drive loses its separator'
-run = ["{out}/whole{exe}", 'C:\']
-claims = { line = ['\\?\C:'] }
-false = { run = ["{out}/whole{exe}", 'C:\\'] }
-
-[[case]]
-name = "a folder path that ends with a separator opens, lists and reads, also past the path limit"
-run = ["{out}/folders{exe}", "{case}", "slash"]
-claims = { line = ["slash: listed, and read 9 bytes: deep file"] }
-false = { run = ["{out}/folders{exe}", "{case}", "slash file"] }
-
-[[case]]
-name = "the root of the drive of a folder, or /, opens and lists"
-run = ["{out}/folders{exe}", "{case}", "root"]
-claims = { line = ["root: listed"] }
-false = { run = ["{out}/folders{exe}", "{case}", "root missing"] }
-
-[[case]]
-name = "a new entry of a watched folder comes as its name"
-run = ["{out}/watch{exe}", "{case}", "new"]
-claims = { line = ["new: a.txt"] }
-false = { run = ["{out}/watch{exe}", "{case}", "new", "beside"] }
-
-[[case]]
-name = "a changed entry of a watched folder comes as its name"
-run = ["{out}/watch{exe}", "{case}", "changed"]
-claims = { line = ["changed: a.txt"] }
-false = { run = ["{out}/watch{exe}", "{case}", "changed", "other"] }
-
-[[case]]
-name = "a removed entry of a watched folder comes as its name"
-run = ["{out}/watch{exe}", "{case}", "removed"]
-claims = { line = ["removed: a.txt"] }
-false = { run = ["{out}/watch{exe}", "{case}", "removed", "other"] }
-
-[[case]]
-name = "a watch gives the names down to its depth, and no deeper name"
-run = ["{out}/watch{exe}", "{case}", "depth"]
-claims = { line = ["depth: sub/b.txt at 2, nothing at 1, nothing at 2"] }
-false = { run = ["{out}/watch{exe}", "{case}", "depth", "flat"] }
-
-[[case]]
-name = "a watch of a depth of 0 is refused"
-run = ["{out}/watch{exe}", "{case}", "zero"]
-claims = { line = ["zero: refused"] }
-false = { run = ["{out}/watch{exe}", "{case}", "zero", "one"] }
-
-[[case]]
-name = "a take with no change gives 0 at once"
-run = ["{out}/watch{exe}", "{case}", "quiet"]
-claims = { line = ["quiet: 1000 of 1000 takes gave 0, at once"] }
-false = { run = ["{out}/watch{exe}", "{case}", "quiet", "busy"] }
-
-[[case]]
-name = "a burst of new entries comes as each of their names"
-run = ["{out}/watch{exe}", "{case}", "burst"]
-claims = { line = ["burst: 100 of 100"] }
-false = { run = ["{out}/watch{exe}", "{case}", "burst", "beside"] }
-
-[[case]]
-name = "changes that do not fit between two takes give 2, and the watch goes on"
-run = ["{out}/watch{exe}", "{case}", "overflow"]
-claims = { line = ["overflow: 2, then after.txt"] }
-false = { run = ["{out}/watch{exe}", "{case}", "overflow", "few"] }
-
-[[case]]
-name = "a removed folder stops its watch, and each later take gives -1"
-run = ["{out}/watch{exe}", "{case}", "gone"]
-claims = { line = ["gone: -1, then -1"] }
-false = { run = ["{out}/watch{exe}", "{case}", "gone", "beside"] }
-
-[[case]]
-name = "a folder moved to a name of the same length or of a different length stops its watch"
-run = ["{out}/watch{exe}", "{case}", "moved"]
-claims = { line = ["moved: -1 and -1"] }
-false = { run = ["{out}/watch{exe}", "{case}", "moved", "beside"] }
-
-[[case]]
-name = "a folder made beside a watched folder does not stop its watch"
-run = ["{out}/watch{exe}", "{case}", "beside"]
-claims = { line = ["beside: marker, still watching"] }
-false = { run = ["{out}/watch{exe}", "{case}", "beside", "moved"] }
-
-[[case]]
-name = "a folder that comes into a watched folder gets its watch before its name comes, down to the depth"
-run = ["{out}/watch{exe}", "{case}", "folders"]
-claims = { line = ["folders: new, new/x.txt, new/inner and sub"] }
-false = { run = ["{out}/watch{exe}", "{case}", "folders", "flat"] }
-
-[[case]]
-name = "a folder renamed in a watched folder comes as its two names, and its entries come with the new name"
-run = ["{out}/watch{exe}", "{case}", "renamed"]
-claims = { line = ["renamed: sub, moved and moved/inner/x.txt"] }
-false = { run = ["{out}/watch{exe}", "{case}", "renamed", "still"] }
-
-[[case]]
-name = "the root of the drive of a folder, or /, can be watched"
-run = ["{out}/watch{exe}", "{case}", "root"]
-claims = { line = ["root: watched"] }
-false = { run = ["{out}/watch{exe}", "{case}", "root", "missing"] }
-
-[[case]]
-name = "a watch of a folder that is not there, or of a file, is refused"
-run = ["{out}/watch{exe}", "{case}", "missing"]
-claims = { line = ["missing: refused, file: refused"] }
-false = { run = ["{out}/watch{exe}", "{case}", "missing", "made"] }
-
-[[case]]
 name = "a watch is refused when a call that it needs fails, and a later one is made"
+process = "state"
 run = ["{out}/watch{exe}", "{case}", "refuse"]
 fail = { calloc = 1, malloc = 1, realloc = 1, inotify_init1 = 1, os_path_whole = 1, os_folder_open = 1, os_mutex_create = 1, os_lib_open = 1, os_lib_get_symbol = 1, os_core_string = 1, os_core_array = 1, os_core_create = 1, os_core_start = 1, GetFinalPathNameByHandleW = 1, CreateFileW = 3, ReadDirectoryChangesW = 1 }
 claims = { matches = ["refuse: [1-9][0-9]* refused, then made"] }
@@ -320,19 +178,114 @@ false = { fail = {} }
 
 [[case]]
 name = "a watch is refused when a later call that it needs fails, and a later one is made"
+process = "state"
 run = ["{out}/watch{exe}", "{case}", "refuse"]
 fail = { calloc = 2, malloc = 2, inotify_add_watch = 2, os_core_create = 1, ReadDirectoryChangesW = 2 }
 claims = { matches = ["refuse: [1-9][0-9]* refused, then made"] }
 false = { fail = {} }
 
 [[case]]
-name = 'the root of a whole network path ends after its share'
-run = ["{out}/whole{exe}", "root", '\\?\UNC\server\share\x']
-claims = { line = ["root ends at 20"] }
-false = { run = ["{out}/whole{exe}", "root", '\\?\UNC\server\x\y\z'] }
+name = "whole"
+run = ["{out}/whole{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "a whole network path gets the form \\\\?\\UNC\\server\\share", in = "\\\\server\\share\\x", claims = { line = ["\\\\?\\UNC\\server\\share\\x"] }, false = "C:\\server\\share\\x" },
+    { name = "a whole path in the form \\\\?\\ stays as it is", in = "\\\\?\\C:\\x", claims = { line = ["\\\\?\\C:\\x"] }, false = "\\\\x\\C:\\x" },
+    { name = "a whole path in the form \\\\.\\ stays as it is", in = "\\\\.\\C:\\x", claims = { line = ["\\\\.\\C:\\x"] }, false = "\\\\y\\C:\\x" },
+    { name = "a whole drive path, which GetFullPathNameW makes of a relative path, gets the form \\\\?\\", in = "C:\\dir\\x", claims = { line = ["\\\\?\\C:\\dir\\x"] }, false = "\\\\dir\\x" },
+    { name = "a whole path that ends with a separator loses one separator", in = "C:\\mods\\", claims = { line = ["\\\\?\\C:\\mods"] }, false = "C:\\mods\\\\" },
+    { name = "the whole root of a drive loses its separator", in = "C:\\", claims = { line = ["\\\\?\\C:"] }, false = "C:\\\\" },
+    { name = "the root of a whole network path ends after its share", in = "root \\\\?\\UNC\\server\\share\\x", claims = { line = ["root ends at 20"] }, false = "root \\\\?\\UNC\\server\\x\\y\\z" },
+    { name = "the root of a whole path of a drive ends after the drive, also at the end of the path", in = "root \\\\?\\C:", claims = { line = ["root ends at 6"] }, false = "root \\\\?\\UNC\\a\\b" },
+]
 
 [[case]]
-name = 'the root of a whole path of a drive ends after the drive, also at the end of the path'
-run = ["{out}/whole{exe}", "root", '\\?\C:']
-claims = { line = ["root ends at 6"] }
-false = { run = ["{out}/whole{exe}", "root", '\\?\UNC\a\b'] }
+name = "refuse"
+run = ["{out}/refuse{exe}"]
+sweep = ["CreateEventA", "malloc", "pthread_cond_init", "pthread_create", "pthread_mutex_init"]
+claims = { status = 0 }
+rows = [
+    { name = "an event is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,pthread_mutex_init=1,pthread_cond_init=1,CreateEventA=1 event", claims = { matches = ["event: [1-9] refused, then made"] }, false = "event" },
+    { name = "a mutex is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,pthread_mutex_init=1 mutex", claims = { matches = ["mutex: [1-9] refused, then made"] }, false = "mutex" },
+    { name = "a thread is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,pthread_create=1 thread", claims = { matches = ["thread: [1-9] refused, then made"] }, false = "thread" },
+]
+
+[[case]]
+name = "clock"
+run = ["{out}/clock{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "the clock of the os layer moves in steps below a microsecond", in = "1000", claims = { line = ["step below 1000 ns"] }, false = "1" },
+]
+
+[[case]]
+name = "watch"
+run = ["{out}/watch{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "a new entry of a watched folder comes as its name", in = "{case}/r0 new", claims = { line = ["new: a.txt"] }, false = "{case}/f0 new beside" },
+    { name = "a changed entry of a watched folder comes as its name", in = "{case}/r1 changed", claims = { line = ["changed: a.txt"] }, false = "{case}/f1 changed other" },
+    { name = "a removed entry of a watched folder comes as its name", in = "{case}/r2 removed", claims = { line = ["removed: a.txt"] }, false = "{case}/f2 removed other" },
+    { name = "a watch gives the names down to its depth, and no deeper name", in = "{case}/r3 depth", claims = { line = ["depth: sub/b.txt at 2, nothing at 1, nothing at 2"] }, false = "{case}/f3 depth flat" },
+    { name = "a watch of a depth of 0 is refused", in = "{case}/r4 zero", claims = { line = ["zero: refused"] }, false = "{case}/f4 zero one" },
+    { name = "a take with no change gives 0 at once", in = "{case}/r5 quiet", claims = { line = ["quiet: 1000 of 1000 takes gave 0, at once"] }, false = "{case}/f5 quiet busy" },
+    { name = "a burst of new entries comes as each of their names", in = "{case}/r6 burst", claims = { line = ["burst: 100 of 100"] }, false = "{case}/f6 burst beside" },
+    { name = "changes that do not fit between two takes give 2, and the watch goes on", in = "{case}/r7 overflow", claims = { line = ["overflow: 2, then after.txt"] }, false = "{case}/f7 overflow few" },
+    { name = "a removed folder stops its watch, and each later take gives -1", in = "{case}/r8 gone", claims = { line = ["gone: -1, then -1"] }, false = "{case}/f8 gone beside" },
+    { name = "a folder moved to a name of the same length or of a different length stops its watch", in = "{case}/r9 moved", claims = { line = ["moved: -1 and -1"] }, false = "{case}/f9 moved beside" },
+    { name = "a folder made beside a watched folder does not stop its watch", in = "{case}/r10 beside", claims = { line = ["beside: marker, still watching"] }, false = "{case}/f10 beside moved" },
+    { name = "a folder that comes into a watched folder gets its watch before its name comes, down to the depth", in = "{case}/r11 folders", claims = { line = ["folders: new, new/x.txt, new/inner and sub"] }, false = "{case}/f11 folders flat" },
+    { name = "a folder renamed in a watched folder comes as its two names, and its entries come with the new name", in = "{case}/r12 renamed", claims = { line = ["renamed: sub, moved and moved/inner/x.txt"] }, false = "{case}/f12 renamed still" },
+    { name = "the root of the drive of a folder, or /, can be watched", in = "{case}/r13 root", claims = { line = ["root: watched"] }, false = "{case}/f13 root missing" },
+    { name = "a watch of a folder that is not there, or of a file, is refused", in = "{case}/r14 missing", claims = { line = ["missing: refused, file: refused"] }, false = "{case}/f14 missing made" },
+]
+
+[case.folders]
+"{case}/r0" = []
+"{case}/f0" = []
+"{case}/r1" = []
+"{case}/f1" = []
+"{case}/r2" = []
+"{case}/f2" = []
+"{case}/r3" = []
+"{case}/f3" = []
+"{case}/r4" = []
+"{case}/f4" = []
+"{case}/r5" = []
+"{case}/f5" = []
+"{case}/r6" = []
+"{case}/f6" = []
+"{case}/r7" = []
+"{case}/f7" = []
+"{case}/r8" = []
+"{case}/f8" = []
+"{case}/r9" = []
+"{case}/f9" = []
+"{case}/r10" = []
+"{case}/f10" = []
+"{case}/r11" = []
+"{case}/f11" = []
+"{case}/r12" = []
+"{case}/f12" = []
+"{case}/r13" = []
+"{case}/f13" = []
+"{case}/r14" = []
+"{case}/f14" = []
+
+[[case]]
+name = "folders"
+run = ["{out}/folders{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "a middle folder that grants only the right to search does not stop a long path, as for a short one; Windows opens no middle folder", in = "{case}/r0 middle", claims = { line = ["search only: read 9 bytes: deep file"] }, false = "{case}/f0 last" },
+    { name = "a folder path that ends with a separator opens, lists and reads, also past the path limit", in = "{case}/r1 slash", claims = { line = ["slash: listed, and read 9 bytes: deep file"] }, false = "{case}/f1 slash-file" },
+    { name = "the root of the drive of a folder, or /, opens and lists", in = "{case}/r2 root", claims = { line = ["root: listed"] }, false = "{case}/f2 root-missing" },
+]
+
+[case.folders]
+"{case}/r0" = []
+"{case}/f0" = []
+"{case}/r1" = []
+"{case}/f1" = []
+"{case}/r2" = []
+"{case}/f2" = []

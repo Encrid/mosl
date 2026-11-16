@@ -6,6 +6,7 @@ targets = ["x86_64-windows-gnu", "x86_64-linux-gnu", "aarch64-macos", "aarch64-l
 cases = "tests/shared/cases"
 timeout = 120
 copies = 1
+tables = true
 
 [[style.exception]]
 rule = "F5"

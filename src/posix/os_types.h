@@ -110,6 +110,8 @@ void os_close_pipes(int pipes[][2], int count);
 
 void os_drop_process(os_process_t *p);
 
+os_process_t *os_make_process(void);
+
 uint32_t os_get_online_count(void);
 
 int os_remove_entry(int at, const char *name);

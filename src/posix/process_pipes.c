@@ -3,9 +3,22 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "os_types.h"
+
+os_process_t *os_make_process(void)
+{
+    os_process_t *p = calloc(1, sizeof(*p));
+
+    if (!p)
+        return (nullptr);
+    memset(p->wake, -1, sizeof(p->wake));
+    p->exit = -1;
+    return (p);
+}
 
 int os_process_write(os_process_t *p, const void *bytes, size_t len)
 {
@@ -20,4 +33,22 @@ void os_process_close(os_process_t *p, int stream)
 
     close(*ends[stream]);
     *ends[stream] = -1;
+}
+
+void os_close_pipes(int pipes[][2], int count)
+{
+    int *ends = &pipes[0][0];
+
+    for (int i = 0; i < count * 2; i++) {
+        if (ends[i] >= 0)
+            close(ends[i]);
+        ends[i] = -1;
+    }
+}
+
+void os_drop_process(os_process_t *p)
+{
+    os_close_pipes(&p->wake, 1);
+    close(p->exit);
+    free(p);
 }

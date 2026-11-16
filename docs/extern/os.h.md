@@ -132,7 +132,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_lock` | Takes an exclusive lock on the file `path`, so that one process at a time holds it. It does not wait: it gives 0 on success, 1 if a lock holds the file already, and -1 if the file does not open. The mode is fixed, and the layer has one implementation of it. |
 | `os_signal_catch` | Catches the signals that stop the process, and writes `line` at the first signal, as *The signals* tells. Gives 0 on success. |
 | `os_signal_is_caught` | Tells if a signal set the flag of `os_signal_catch`. A caller reads it between two parts of its work, and then ends its work. |
-| `os_process_start` | Starts a program with the fields of `start`, as *The processes* tells. Gives `nullptr` if the program does not start. |
+| `os_process_start` | Starts a program with the fields of `start`, as *The processes* tells. Gives `nullptr` if the program does not start. The streams of the caller then stay as they are. |
 | `os_process_write` | Writes all the `len` bytes into the input of the process. Gives 0 on success, and -1 if the input is closed or the write fails. |
 | `os_process_close` | Closes one pipe of the process: `OS_INPUT`, `OS_OUTPUT` or `OS_ERRORS`. |
 | `os_process_read` | Gives the next bytes of the output or of the errors, and waits up to `nanos` nanoseconds for them, as *The processes* tells. |
@@ -267,6 +267,7 @@ On Windows, a name has no case, so `Path` and `PATH` name one variable.
 The pipes:
 
 - The process has a pipe for its input and a pipe for its output.
+- The process gets these pipes as its 3 streams, also when a stream of the caller is closed.
 - With `errors_apart`, the errors have a pipe of their own. Else they go into the output, in the order that the process writes them.
 - `os_process_write` waits while the pipe is full. A write into a closed input gives -1, and does not end the caller.
 - After the close of the input, the process reads the end of its input. After the close of the output or of the errors, each later write of the process into that pipe fails.

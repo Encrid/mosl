@@ -8,7 +8,7 @@ On Windows, `os_env_get` gives a variable of the environment in UTF-8.
 `ERROR_ENVVAR_NOT_FOUND` gives `nullptr`. Else the second call writes the value, and `os_narrow` turns it into UTF-8.
 
 `os_env_get` gives its result, and `os_path_find` of `src/windows/find.c` calls it for `PATH` and `PATHEXT`.
-Thus no call of `src` calls a function of `[leaks] memory` of `.toolchain/config/leaks.toml`, which `test --leaks` would count 2 times.
+Thus the count of `test --leaks` takes that memory 1 time, at its `malloc`: `docs/intern/leaks.toml.md`, *The count of the layer itself*.
 
 The second call must give the length of the value. Another result tells that the call failed, or that the value changed between the calls.
 

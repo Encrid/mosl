@@ -97,7 +97,8 @@ It also declares `os_open_search` for the walk of a long path. A file of `src/li
 A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_quiet_pipe`, `os_watch_exit` and `os_wait_exit`.
 
 `src/posix/process_env.c` defines `os_find_program` and `os_build_env`.
-`src/posix/process_child.c` defines `os_run_child`, `os_close_pipes` and `os_drop_process`.
+`src/posix/process_child.c` defines `os_run_child`.
+`src/posix/process_pipes.c` defines `os_make_process`, `os_close_pipes` and `os_drop_process`.
 
 | Function | Result |
 | --- | --- |
@@ -118,6 +119,7 @@ A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_quiet
 | `os_run_child(start, launch)` | The steps of a child after `fork`. |
 | `os_close_pipes(pipes, count)` | The close of the pipes of a start. |
 | `os_drop_process(p)` | The free of a process that did not start. |
+| `os_make_process()` | The record of a process, with no descriptor. |
 | `os_is_pipe_waiting()` | The check of a waiting `SIGPIPE`, which `src/posix/write_all.c` defines. |
 | `os_take_pipe_signal(pipe_only)` | The take of the `SIGPIPE` of a broken write. A file of `src/linux` and a file of `src/macos` define it. |
 | `os_get_online_count()` | The count of the processors that run. |

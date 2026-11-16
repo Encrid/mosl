@@ -9,15 +9,13 @@
     #include <io.h>
     #include <windows.h>
 #else
+    #include <fcntl.h>
     #include <signal.h>
     #include <sys/time.h>
     #include <unistd.h>
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "os.h"
+#include "rows.h"
 
 constexpr size_t TEXT = 256;
 constexpr size_t STACK = 1u << 20;
@@ -25,6 +23,7 @@ constexpr int TRIES = 9;
 constexpr uint64_t BRIEF = 1'000'000;
 constexpr int CROWD = 8;
 constexpr int STARTS = 100;
+constexpr int STREAMS = 3;
 
 typedef struct {
     const char *name;
@@ -377,6 +376,26 @@ static int mode_say(char **argv)
     return (printf("say: [%s]\n", reads.out), 0);
 }
 
+static int mode_kept(char **argv)
+{
+    const char *args[] = {argv[3], nullptr};
+    os_process_start_t start = {.argv = args};
+    os_process_t *p = os_process_start(&start);
+#ifdef _WIN32
+    bool open = _get_osfhandle(0) != -1;
+#else
+    bool open = fcntl(STDIN_FILENO, F_GETFD) != -1;
+#endif
+
+    if (p) {
+        os_process_kill(p);
+        end_process(p);
+    }
+    printf("kept: %s, input %s\n", p ? "started" : "none",
+        open ? "open" : "closed");
+    return (0);
+}
+
 static int get_which(const char *name)
 {
     if (!strcmp(name, "interrupt"))
@@ -676,6 +695,70 @@ static int mode_crowd(char **argv)
     return (printf("crowd: %d ended\n", sum), 0);
 }
 
+#ifdef _WIN32
+static int copy_stream(int stream)
+{
+    return (_dup(stream));
+}
+
+static void close_stream(int stream)
+{
+    _close(stream);
+}
+
+static void move_stream(int from, int to)
+{
+    _dup2(from, to);
+    _close(from);
+}
+#else
+static int copy_stream(int stream)
+{
+    return (fcntl(stream, F_DUPFD_CLOEXEC, STREAMS));
+}
+
+static void close_stream(int stream)
+{
+    close(stream);
+}
+
+static void move_stream(int from, int to)
+{
+    dup2(from, to);
+    close(from);
+}
+#endif
+
+static void hide_streams(int kept[STREAMS], int count)
+{
+    fflush(stdout);
+    for (int i = 0; i < count; i++)
+        kept[i] = copy_stream(i);
+    for (int i = 0; i < count; i++)
+        close_stream(i);
+}
+
+static int mode_low(char **argv)
+{
+    int count = atoi(argv[3]) > STREAMS ? STREAMS : atoi(argv[3]);
+    int kept[STREAMS] = {-1, -1, -1};
+    os_process_t *p = nullptr;
+    reads_t reads = {};
+    int wrote = -9;
+
+    hide_streams(kept, count);
+    p = start_child("drain", nullptr);
+    if (p) {
+        wrote = os_process_write(p, argv[4], strlen(argv[4]));
+        os_process_close(p, OS_INPUT);
+        read_all(p, &reads);
+        end_process(p);
+    }
+    for (int i = 0; i < count; i++)
+        move_stream(kept[i], i);
+    return (printf("low: %d %s\n", wrote, p ? reads.out : "none"), 0);
+}
+
 static const test_mode_t MODES[] = {
     {"named", 5, mode_named}, {"env", 4, mode_env},
     {"streams", 4, mode_streams}, {"full", 4, mode_full},
@@ -690,18 +773,24 @@ static const test_mode_t MODES[] = {
     {"write-after", 4, mode_write_after},
     {"interrupted", 5, mode_interrupted},
     {"late-kill", 4, mode_late_kill}, {"say", 4, mode_say},
-    {"crowd", 4, mode_crowd},
+    {"crowd", 4, mode_crowd}, {"kept", 4, mode_kept},
+    {"low", 5, mode_low},
 };
 
-int main(int argc, char **argv)
+static int run(int argc, char **argv)
 {
-    self = argv[0];
-    if (argc >= 3 && !strcmp(argv[1], "child"))
-        return (run_child(argc, argv));
     for (size_t i = 0; argc >= 3 && i < sizeof(MODES) / sizeof(MODES[0]);
         i++) {
         if (!strcmp(argv[2], MODES[i].name) && argc == MODES[i].count)
             return (MODES[i].run(argv));
     }
     return (printf("usage: process <folder> <mode> [arguments]\n"), 2);
+}
+
+int main(int argc, char **argv)
+{
+    self = argv[0];
+    if (argc >= 3 && !strcmp(argv[1], "child"))
+        return (run_child(argc, argv));
+    return (argc > 1 ? run(argc, argv) : rows_run(run));
 }
