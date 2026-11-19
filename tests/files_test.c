@@ -88,6 +88,13 @@ static void make_writable(const char *path)
 #endif
 }
 
+static void make_unreadable([[maybe_unused]] const char *path)
+{
+#ifndef _WIN32
+    chmod(path, 0333);
+#endif
+}
+
 static int make(char **argv)
 {
     char *path = in(argv[3]);
@@ -132,7 +139,7 @@ static int deep(char **argv)
     wrote = os_file_write(file, "deep file", 9, false, true);
     printf("deep: make %d, write %d, read %s, entry %d, ", made, wrote,
         show(path, "f"), os_path_entry(file));
-    printf("move %d, entry %d, ", os_path_move(file, moved),
+    printf("move %d, entry %d, ", os_path_move(file, moved, true),
         os_path_entry(moved));
     printf("link %d, entry %d, ", os_link_make(link, "."),
         os_path_entry(link));
@@ -251,11 +258,11 @@ static int entry_link(char **)
 
 static int move(char **)
 {
-    int moved = os_path_move(in("a"), in("b"));
+    int moved = os_path_move(in("a"), in("b"), false);
 
     printf("move: %d, a %d, b holds %s, ", moved, os_path_entry(in("a")),
         show(folder, "b"));
-    return (printf("none %d\n", os_path_move(in("none"), in("c"))), 0);
+    return (printf("none %d\n", os_path_move(in("none"), in("c"), false)), 0);
 }
 
 static int move_folder(char **)
@@ -264,7 +271,7 @@ static int move_folder(char **)
 
     setup(os_folder_make(in("d")));
     setup(os_file_write(in("d/f"), "f", 1, false, false));
-    moved = os_path_move(in("d"), in("e"));
+    moved = os_path_move(in("d"), in("e"), false);
     return (printf("move-folder: %d, d %d, e/f %d\n", moved,
         os_path_entry(in("d")), os_path_entry(in("e/f"))), 0);
 }
@@ -332,7 +339,7 @@ static int deep_move_none(char **)
         return (printf("deep-move: no memory\n"), 1);
     setup(os_folder_make(path));
     setup(os_file_write(file, "f", 1, false, false));
-    moved = os_path_move(file, none);
+    moved = os_path_move(file, none, false);
     printf("deep-move: %d\n", moved);
     setup(os_path_remove(path));
     free(path);
@@ -370,7 +377,28 @@ static int remove_none(char **)
 
 static int move_args(char **argv)
 {
-    return (printf("move-args: %d\n", os_path_move(argv[3], argv[4])), 0);
+    int moved = os_path_move(argv[3], argv[4], false);
+
+    return (printf("move-args: %d\n", moved), 0);
+}
+
+static int move_durable(char **argv)
+{
+    int moved = os_path_move(in(argv[3]), in(argv[4]), true);
+
+    printf("move-d: %d, to %d, ", moved, os_path_entry(in(argv[4])));
+    return (printf("from %d\n", os_path_entry(in(argv[3]))), 0);
+}
+
+static int unread_move(char **argv)
+{
+    int moved = 0;
+
+    make_unreadable(in("u"));
+    moved = os_path_move(in(argv[3]), in(argv[4]), true);
+    make_writable(in("u"));
+    return (printf("unread-move: %d, to %d\n", moved,
+        os_path_entry(in(argv[4]))), 0);
 }
 
 static int remove_of(char **argv)
@@ -472,12 +500,18 @@ static bool try_entry([[maybe_unused]] int attempt)
 
 static bool try_move([[maybe_unused]] int attempt)
 {
-    return (!os_path_move(in("a"), in("b")));
+    return (!os_path_move(in("a"), in("b"), false));
 }
 
 static bool try_write_durable([[maybe_unused]] int attempt)
 {
     return (!os_file_write(in("w"), "w", 1, false, true));
+}
+
+static bool try_move_durable([[maybe_unused]] int attempt)
+{
+    setup(os_file_write(in("a"), "a", 1, false, false));
+    return (!os_path_move(in("a"), in("b"), true));
 }
 
 static bool try_remove([[maybe_unused]] int attempt)
@@ -517,7 +551,7 @@ static const try_t TRIED[] = {
     {"write", try_write}, {"write-n", try_write_n},
     {"write-x", try_write_x}, {"entry", try_entry},
     {"move", try_move}, {"remove", try_remove}, {"link", try_link},
-    {"write-d", try_write_durable},
+    {"write-d", try_write_durable}, {"move-d", try_move_durable},
     {"make", try_make}, {"set", try_set}, {"whole", try_whole},
 };
 
@@ -604,6 +638,7 @@ static const test_mode_t MODES[] = {
     {"deep-remake", 3, deep_remake}, {"deep-move", 3, deep_move_none},
     {"deep-remove", 3, deep_remove_none}, {"size", 4, size},
     {"size-link", 4, size_link}, {"replace-d", 4, replace_durable},
+    {"move-d", 5, move_durable}, {"unread-move", 5, unread_move},
 };
 
 static int end(int status)

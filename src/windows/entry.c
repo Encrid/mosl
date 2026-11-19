@@ -40,14 +40,16 @@ int os_path_entry(const char *path)
     return (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? 3 : 1);
 }
 
-int os_path_move(const char *from, const char *to)
+int os_path_move(const char *from, const char *to, bool durable)
 {
     wchar_t *from_whole = os_get_whole(from);
     wchar_t *to_whole = os_get_whole(to);
+    DWORD flags = MOVEFILE_REPLACE_EXISTING;
     int moved = -1;
 
-    if (from_whole && to_whole
-        && MoveFileExW(from_whole, to_whole, MOVEFILE_REPLACE_EXISTING))
+    if (durable)
+        flags |= MOVEFILE_WRITE_THROUGH;
+    if (from_whole && to_whole && MoveFileExW(from_whole, to_whole, flags))
         moved = 0;
     free(from_whole);
     free(to_whole);

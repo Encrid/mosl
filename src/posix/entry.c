@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -27,7 +28,14 @@ int os_path_entry(const char *path)
     return (kind);
 }
 
-int os_path_move(const char *from, const char *to)
+static bool is_same_folder(const char *a, const char *b)
+{
+    size_t last = os_get_last_start(a);
+
+    return (last == os_get_last_start(b) && !strncmp(a, b, last));
+}
+
+int os_path_move(const char *from, const char *to, bool durable)
 {
     const char *from_name = nullptr;
     const char *to_name = nullptr;
@@ -36,10 +44,14 @@ int os_path_move(const char *from, const char *to)
     int moved = -1;
 
     if (from_at != -1 && to_at != -1)
-        moved = renameat(from_at, from_name, to_at, to_name);
+        moved = renameat(from_at, from_name, to_at, to_name) ? -1 : 0;
+    if (!moved && durable)
+        moved = os_sync_folder(to_at, to_name);
+    if (!moved && durable && !is_same_folder(from, to))
+        moved = os_sync_folder(from_at, from_name);
     os_close_parent(from_at);
     os_close_parent(to_at);
-    return (moved ? -1 : 0);
+    return (moved);
 }
 
 int os_link_make(const char *path, const char *target)

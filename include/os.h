@@ -131,7 +131,8 @@ void os_process_free(os_process_t *p);
 
 [[nodiscard]] int os_path_entry(const char *path);
 
-[[nodiscard]] int os_path_move(const char *from, const char *to);
+[[nodiscard]] int os_path_move(const char *from, const char *to,
+    bool durable);
 
 [[nodiscard]] int os_path_remove(const char *path);
 
