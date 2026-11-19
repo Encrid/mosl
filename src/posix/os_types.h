@@ -77,9 +77,13 @@ void os_cond_wait(os_event_t *e, uint64_t nanos);
 
 int os_open_search(int at, const char *name);
 
+size_t os_get_last_start(const char *path);
+
 int os_open_parent(const char *path, const char **name, bool make);
 
 void os_close_parent(int at);
+
+int os_sync_folder(int at, const char *name);
 
 int os_write_all(int fd, int wake, const void *bytes, size_t len);
 

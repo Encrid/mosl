@@ -27,7 +27,7 @@ static int step(int at, const char *name, bool make)
     return (next);
 }
 
-static size_t get_last_start(const char *path)
+size_t os_get_last_start(const char *path)
 {
     size_t end = strlen(path);
 
@@ -55,7 +55,7 @@ static char *start_copy(const char *path, size_t last, int *at)
 
 int os_open_parent(const char *path, const char **name, bool make)
 {
-    size_t last = get_last_start(path);
+    size_t last = os_get_last_start(path);
     char *names = nullptr;
     char *place = nullptr;
     char *item = nullptr;

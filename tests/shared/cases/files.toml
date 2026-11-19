@@ -66,7 +66,12 @@ rows = [
     { name = "os_folder_entry_size gives -1 for a folder", in = "{case}/r57 size d", claims = { line = ["size: -1 0"] }, false = "{case}/f57/d size x" },
     { name = "os_folder_entry_size follows a link, and gives the size of its target", in = "{case}/r58 size-link t", claims = { line = ["size-link: 0 4"] }, false = "{case}/f58 size-link none" },
     { name = "os_file_write with durable writes the bytes, and flushes them before the close", in = "{case}/r59 replace-d new", claims = { line = ["replace-d: 0, 3 bytes: new"] }, false = "{case}/f59 replace-d news" },
+    { name = "os_path_move with durable moves a file in its folder, and syncs the folder", in = "{case}/r60 move-d a b", claims = { line = ["move-d: 0, to 1, from 0"] }, false = "{case}/f60 move-d a b" },
+    { name = "os_path_move with durable moves a file into another folder, and syncs the 2 folders", in = "{case}/r61 move-d s/a t/b", claims = { line = ["move-d: 0, to 1, from 0"] }, false = "{case}/f61 move-d s/a t/b" },
+    { name = "os_path_move with durable gives -1 when the folder of to does not sync, and the move is made", in = "{case}/r62 unread-move a u/b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f62 unread-move a u/b" },
+    { name = "os_path_move with durable gives -1 when the folder of from does not sync, and the move is made", in = "{case}/r63 unread-move u/a b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f63 unread-move u/a b" },
     { name = "a durable write of a file is refused when its flush fails, and a later one is made", in = "+refuse fsync=1,FlushFileBuffers=1 {case}/r64 again write-d", claims = { matches = ["write-d: [1-9] refused, then made"] }, false = "{case}/f64 again write-d" },
+    { name = "a durable move is refused when its move or its sync fails, and a later one is made", in = "+refuse fsync=1,MoveFileExW=1 {case}/r65 again move-d", claims = { matches = ["move-d: [1-9] refused, then made"] }, false = "{case}/f65 again move-d" },
 ]
 
 [case.files]
@@ -148,6 +153,15 @@ rows = [
 "{case}/f58/t" = "four"
 "{case}/r59/f" = "old text"
 "{case}/f59/f" = "old text"
+"{case}/r60/a" = "a"
+"{case}/r61/s/a" = "a"
+"{case}/r61/t/k" = ""
+"{case}/f61/s/a" = "a"
+"{case}/r62/a" = "a"
+"{case}/r62/u/k" = ""
+"{case}/f62/u/k" = ""
+"{case}/r63/u/a" = "a"
+"{case}/f63/u/k" = ""
 
 [case.folders]
 "{case}/r0" = []
@@ -270,5 +284,15 @@ rows = [
 "{case}/f58" = []
 "{case}/r59" = []
 "{case}/f59" = []
+"{case}/r60" = []
+"{case}/f60" = []
+"{case}/r61" = []
+"{case}/f61" = []
+"{case}/r62" = []
+"{case}/f62" = []
+"{case}/r63" = []
+"{case}/f63" = []
 "{case}/r64" = []
 "{case}/f64" = []
+"{case}/r65" = []
+"{case}/f65" = []
