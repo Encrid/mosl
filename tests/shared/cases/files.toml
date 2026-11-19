@@ -3,7 +3,7 @@ code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/ma
 [[case]]
 name = "files"
 run = ["{out}/files{exe}"]
-sweep = ["CloseHandle", "CreateDirectoryW", "CreateFileW", "CreateSymbolicLinkW", "DeleteFileW", "FindFirstFileExW", "GetFileAttributesW", "GetFileInformationByHandle", "GetFullPathNameW", "MoveFileExW", "RemoveDirectoryW", "SetCurrentDirectoryW", "SetFileAttributesW", "WriteFile", "chdir", "close", "fchmod", "fchmodat", "fdopendir", "fstat", "fstatat", "malloc", "mkdirat", "realpath", "renameat", "symlinkat", "unlinkat", "write"]
+sweep = ["CloseHandle", "CreateDirectoryW", "CreateFileW", "CreateSymbolicLinkW", "DeleteFileW", "FindFirstFileExW", "FlushFileBuffers", "GetFileAttributesW", "GetFileInformationByHandle", "GetFullPathNameW", "MoveFileExW", "RemoveDirectoryW", "SetCurrentDirectoryW", "SetFileAttributesW", "WriteFile", "chdir", "close", "fchmod", "fchmodat", "fdopendir", "fstat", "fstatat", "fsync", "malloc", "mkdirat", "realpath", "renameat", "symlinkat", "unlinkat", "write"]
 claims = { status = 0 }
 rows = [
     { name = "os_folder_make makes each folder above the folder", in = "{case}/r0 make a/b/c", claims = { line = ["make: 0 3"] }, false = "{case}/f0 make a/b/c" },
@@ -65,6 +65,8 @@ rows = [
     { name = "os_folder_entry_size gives -1 for a name that is not there", in = "{case}/r56 size none", claims = { line = ["size: -1 0"] }, false = "{case}/f56 size none" },
     { name = "os_folder_entry_size gives -1 for a folder", in = "{case}/r57 size d", claims = { line = ["size: -1 0"] }, false = "{case}/f57/d size x" },
     { name = "os_folder_entry_size follows a link, and gives the size of its target", in = "{case}/r58 size-link t", claims = { line = ["size-link: 0 4"] }, false = "{case}/f58 size-link none" },
+    { name = "os_file_write with durable writes the bytes, and flushes them before the close", in = "{case}/r59 replace-d new", claims = { line = ["replace-d: 0, 3 bytes: new"] }, false = "{case}/f59 replace-d news" },
+    { name = "a durable write of a file is refused when its flush fails, and a later one is made", in = "+refuse fsync=1,FlushFileBuffers=1 {case}/r64 again write-d", claims = { matches = ["write-d: [1-9] refused, then made"] }, false = "{case}/f64 again write-d" },
 ]
 
 [case.files]
@@ -144,6 +146,8 @@ rows = [
 "{case}/f57/d/x" = "x"
 "{case}/r58/t" = "four"
 "{case}/f58/t" = "four"
+"{case}/r59/f" = "old text"
+"{case}/f59/f" = "old text"
 
 [case.folders]
 "{case}/r0" = []
@@ -264,3 +268,7 @@ rows = [
 "{case}/f57" = []
 "{case}/r58" = []
 "{case}/f58" = []
+"{case}/r59" = []
+"{case}/f59" = []
+"{case}/r64" = []
+"{case}/f64" = []

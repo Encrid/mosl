@@ -43,7 +43,7 @@ static int open_file(int at, const char *name, bool executable)
 }
 
 int os_file_write(const char *path, const void *bytes, size_t len,
-    bool executable)
+    bool executable, bool durable)
 {
     const char *name = nullptr;
     int at = os_open_parent(path, &name, false);
@@ -51,6 +51,8 @@ int os_file_write(const char *path, const void *bytes, size_t len,
     int wrote = fd < 0 ? -1 : os_write_all(fd, -1, bytes, len);
 
     os_close_parent(at);
+    if (!wrote && durable && fsync(fd))
+        wrote = -1;
     if (fd >= 0 && close(fd))
         wrote = -1;
     return (wrote);

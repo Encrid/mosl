@@ -140,7 +140,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_process_kill` | Ends the process at once, as *The processes* tells. |
 | `os_process_wait` | Waits up to `nanos` nanoseconds for the end of the process, and gives its status, as *The processes* tells. |
 | `os_process_free` | Frees a process. It kills a process that still runs, and waits for its end. A null `p` does nothing. |
-| `os_file_write` | Writes all the bytes of the file `path`, as *The files* tells. Gives 0 on success. |
+| `os_file_write` | Writes all the bytes of the file `path`, as *The files* tells. With `durable`, it flushes the bytes to the disk before the close. Gives 0 on success. |
 | `os_path_entry` | Tells what is at `path`, as *The files* tells. |
 | `os_path_move` | Gives the file or the folder `from` the path `to`, as *The files* tells. Gives 0 on success. |
 | `os_path_remove` | Removes what is at `path`, as *The files* tells. |
@@ -321,6 +321,20 @@ Each call on a path takes a path past the limit of the system, as `os_folder_ope
 - A file that was there keeps its read bits and its write bits. With `executable`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
 - Thus no call reads the umask: POSIX has no call that reads it with no change. A private file, for example of mode 0600, stays private.
 - On Windows, a file has no execute bit, and `executable` changes nothing.
+
+With `durable`, `os_file_write` flushes the bytes of the file to the disk before it closes the file. A failed flush gives -1.
+With no `durable`, the call does not wait for the disk, and the system writes the bytes later.
+
+- On Windows, `FlushFileBuffers` flushes the file.
+- On Linux and macOS, `fsync` flushes the file. On Linux, it also flushes the cache of the disk.
+- On macOS, `fsync` gives the bytes to the drive, and the drive can keep them in its cache for some time. The call does not use `F_FULLFSYNC`.
+- Each flush waits for the disk. Thus a durable write of each small file costs more time than one write with no `durable`.
+
+The sources of a durable write:
+
+- Microsoft, `FlushFileBuffers`: "The file handle must have the GENERIC_WRITE access right." It "can be inefficient when used after every write". https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers
+- Linux, `fsync`: "This includes writing through or flushing a disk cache if present." https://man7.org/linux/man-pages/man2/fsync.2.html
+- macOS, `fsync`: "The F_FULLFSYNC fcntl asks the drive to flush all buffered data to permanent storage." https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsync.2.html
 
 `os_path_entry` follows a link, and tells what is at its end:
 
