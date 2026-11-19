@@ -127,7 +127,7 @@ void os_process_kill(os_process_t *p);
 void os_process_free(os_process_t *p);
 
 [[nodiscard]] int os_file_write(const char *path, const void *bytes,
-    size_t len, bool executable);
+    size_t len, bool executable, bool durable);
 
 [[nodiscard]] int os_path_entry(const char *path);
 

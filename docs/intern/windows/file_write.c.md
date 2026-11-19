@@ -10,8 +10,10 @@ Each function gives its path to `os_get_whole` of `src/windows/folder_open.c`. T
 `os_write_all` of `src/windows/write_all.c` writes the bytes, and `CloseHandle` closes the file.
 A file has no execute bit on Windows, so `executable` changes nothing.
 
+With `durable`, `FlushFileBuffers` flushes the file before the close. The handle has `GENERIC_WRITE`, which the flush needs.
+
 ## Functions
 
 | Function | Result |
 | --- | --- |
-| `os_file_write(path, bytes, len, executable)` | Writes the file as *The write* tells. Gives 0, or -1. |
+| `os_file_write(path, bytes, len, executable, durable)` | Writes the file as *The write* tells. Gives 0, or -1. |
