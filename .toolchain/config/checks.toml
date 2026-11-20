@@ -25,3 +25,23 @@ col = 13
 side = "true"
 system = "posix"
 why = "write gives EINTR only when a signal interrupts it, and no case of the layer sends a signal during a write."
+
+[[leaks.exception]]
+case = "the end of a process ends its lock, and a later os_lock takes it within 10 seconds"
+kind = "os_lock"
+why = "The helper of the case ends with its lock held, because the end of the process must end the lock."
+
+[[leaks.exception]]
+case = "the end of a process ends its lock, and a later os_lock takes it within 10 seconds"
+kind = "memory"
+why = "The helper of the case ends with its lock held, so the handle of the lock stays."
+
+[[leaks.exception]]
+case = "a program that the process starts with a call other than os_process_start does not get the file of the lock"
+kind = "os_lock"
+why = "The helper of the case ends with its lock held, because the end of the process must end the lock."
+
+[[leaks.exception]]
+case = "a program that the process starts with a call other than os_process_start does not get the file of the lock"
+kind = "memory"
+why = "The helper of the case ends with its lock held, so the handle of the lock stays."
