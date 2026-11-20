@@ -253,7 +253,8 @@ A take with no change makes no call of the system on Windows and on macOS, and o
 ## The locks
 
 `os_lock` opens the file `path`, and makes it if it is not there. Then it takes an exclusive lock of the file, and does not wait.
-The lock is advisory: it stops only a different `os_lock` of the file, and not a read or a write.
+On Linux and macOS, the lock is advisory: it stops only a different `os_lock` of the file, and not a read or a write.
+On Windows, the lock also refuses a read or a write of the first byte through a different handle.
 
 | Result of `os_lock` | Meaning |
 | --- | --- |
@@ -264,7 +265,7 @@ The lock is advisory: it stops only a different `os_lock` of the file, and not a
 `os_unlock` ends the lock, closes the file and frees the handle. A later `os_lock` of the file, also in the same process, then takes the lock.
 The file stays, because a different process can wait to lock it.
 
-The end of a process also ends each lock that it holds. A process that `os_process_start` starts does not get the file of the lock, so the lock ends with the process that took it.
+The end of a process also ends each lock that it holds. A program that the process starts does not get the file of the lock, also with a call other than `os_process_start`. Thus the lock ends with the process that took it.
 On Windows, the end of the lock after the end of the process can take some time. Thus a program calls `os_unlock` before its end.
 
 - On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`.
@@ -278,6 +279,8 @@ The sources of a lock:
 - Microsoft, `_locking`: `_LK_UNLCK` "Unlocks the specified bytes, which must have been previously locked." https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
 - Microsoft, `LockFile`: when a process ends with a lock, "the locks are unlocked by the operating system." https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile
 - Microsoft, `LockFile`: "However, the time it takes for the operating system to unlock these locks depends upon available system resources."
+- Microsoft, `LockFile`: with a second handle, the locking process "cannot access the specified region through this second handle until it unlocks the region."
+- Microsoft, `_locking`: "Locking bytes in a file prevents access to those bytes by other processes."
 
 ## The signals
 

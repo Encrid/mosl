@@ -220,6 +220,7 @@ rows = [
     { name = "a second os_lock is refused with 1 while the first holds the file", in = "lock {case}/r1.lock keep", claims = { line = ["lock: 0, then 1"] }, false = "lock {case}/f1.lock unlock" },
     { name = "os_lock gives -1 and no handle for a file that does not open", in = "lock {case}/none/r2.lock keep", claims = { line = ["lock: -1, then -1"] }, false = "lock {case}/f2.lock keep" },
     { name = "os_lock gives -1 when its memory fails, and a later one takes the lock", in = "+refuse malloc=1 lock {case}/r3.lock keep", claims = { line = ["lock: -1, then 0"] }, false = "lock {case}/f3.lock keep" },
+    { name = "a write through a different handle is refused by the lock on Windows, and made on Linux and macOS", in = "write {case}/r4.lock", claims = { line = ["{lock_write}"] }, false = "write {case}/none/f4.lock" },
 ]
 
 [[case]]
