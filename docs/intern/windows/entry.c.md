@@ -18,7 +18,7 @@ Both calls take the whole paths of `os_get_whole`, also past 260 characters: `do
 
 `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING` moves the entry, and replaces a file at `to`.
 With no `MOVEFILE_COPY_ALLOWED`, a move between 2 volumes fails.
-With `durable`, the flags also hold `MOVEFILE_WRITE_THROUGH`. Thus the move is on the disk at the end of the call.
+With `durable`, the flags also hold `MOVEFILE_WRITE_THROUGH`. `docs/extern/os.h.md`, *The files*, tells what this flag gives, and the limit of its guarantee.
 
 ## Functions
 
