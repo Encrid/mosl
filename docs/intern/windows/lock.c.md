@@ -9,12 +9,13 @@ The steps are those of `docs/intern/posix/lock.c.md`, *The lock*, with the calls
 
 | Step | Call |
 | --- | --- |
-| Open | `_open`, which creates the file if it is not there. |
+| Open | `_open` with `_O_CREAT`, and `_O_NOINHERIT` in the place of `O_CLOEXEC`. |
 | Lock | `_locking` with `_LK_NBLCK` on 1 byte. |
 | Close | `_close`. |
 | Unlock | `_locking` with `_LK_UNLCK` on the same byte. |
 
 A lock belongs to the handle of the file. Thus a second `_open` in the same process cannot lock the byte while the first holds it.
+The lock is not advisory: a read or a write of the byte through a different handle fails while the lock holds.
 No call reads or writes the file, so its position stays at the first byte for the unlock.
 
 ## Functions

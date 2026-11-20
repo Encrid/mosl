@@ -20,6 +20,7 @@ base_xdg = "base: Saved Games"
 base_xdg_local = "base: Local"
 base_homeless = "base: Saved Games"
 homeless_false = "3 - -"
+lock_write = "write: 0, refused"
 socket_libraries = ["-lws2_32"]
 system_defines = []
 system_libraries = []
@@ -49,6 +50,7 @@ base_xdg = "base: xdg"
 base_xdg_local = "base: xdg"
 base_homeless = "base: none"
 homeless_false = "1 - /"
+lock_write = "write: 0, made"
 system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
@@ -76,6 +78,7 @@ base_xdg = "base: xdg"
 base_xdg_local = "base: xdg"
 base_homeless = "base: none"
 homeless_false = "1 - /"
+lock_write = "write: 0, made"
 system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
@@ -103,6 +106,7 @@ base_xdg = "base: home/Library/Application Support"
 base_xdg_local = "base: home/Library/Application Support"
 base_homeless = "base: none"
 homeless_false = "1 - /"
+lock_write = "write: 0, made"
 system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
@@ -130,6 +134,7 @@ base_xdg = "base: home/Library/Application Support"
 base_xdg_local = "base: home/Library/Application Support"
 base_homeless = "base: none"
 homeless_false = "1 - /"
+lock_write = "write: 0, made"
 system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
@@ -155,6 +160,7 @@ base_xdg = "base: Saved Games"
 base_xdg_local = "base: Local"
 base_homeless = "base: Saved Games"
 homeless_false = "3 - -"
+lock_write = "write: 0, refused"
 socket_libraries = ["-lws2_32"]
 system_defines = []
 system_libraries = []

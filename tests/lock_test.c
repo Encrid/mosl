@@ -24,6 +24,20 @@ static int lock_twice(const char *path, bool unlock)
     return (0);
 }
 
+static int write_locked(const char *path)
+{
+    os_lock_t *lock = nullptr;
+    int took = os_lock(path, &lock);
+    FILE *other = fopen(path, "r+b");
+    bool made = other && fputc('x', other) != EOF && !fflush(other);
+
+    if (other)
+        fclose(other);
+    printf("write: %d, %s\n", took, made ? "made" : "refused");
+    os_unlock(lock);
+    return (0);
+}
+
 static int hold(const char *path)
 {
     os_lock_t *lock = nullptr;
@@ -43,7 +57,9 @@ static int run(int argc, char **argv)
         return (lock_twice(argv[2], !strcmp(argv[3], "unlock")));
     if (argc == 3 && !strcmp(argv[1], "hold"))
         return (hold(argv[2]));
-    return (printf("usage: lock lock|hold <path> [unlock|keep]\n"), 2);
+    if (argc == 3 && !strcmp(argv[1], "write"))
+        return (write_locked(argv[2]));
+    return (printf("usage: lock lock|hold|write <path> [unlock|keep]\n"), 2);
 }
 
 int main(int argc, char **argv)

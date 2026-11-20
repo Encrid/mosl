@@ -18,7 +18,8 @@ int os_lock(const char *path, os_lock_t **lock)
 
     *lock = nullptr;
     if (taken)
-        taken->file = _open(path, _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
+        taken->file = _open(path, _O_RDWR | _O_CREAT | _O_NOINHERIT,
+            _S_IREAD | _S_IWRITE);
     if (taken && taken->file >= 0)
         held = _locking(taken->file, _LK_NBLCK, 1) ? 1 : 0;
     if (held == 1)
