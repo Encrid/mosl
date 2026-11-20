@@ -78,6 +78,11 @@ It tells which entries of the folder changed, as *The watch* tells.
 A process that `os_process_start` starts: `struct os_process`, which each platform defines.
 It holds the pipes of the process, and on Windows its console, as *The processes* tells.
 
+### os_lock_t
+
+A lock of a file that `os_lock` takes: `struct os_lock`, which the layer defines.
+`os_unlock` ends it, as *The locks* tells.
+
 ### os_process_start_t
 
 What `os_process_start` needs: `struct os_process_start`.
@@ -148,7 +153,8 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_watch_take` | Gives the next change of a watch, and does not wait. It gives 1 and sets `*name`, or it gives 0, 2 or -1, as *The watch* tells. |
 | `os_watch_stop` | Stops a watch, and frees it. A null `w` does nothing. |
 | `os_path_whole` | Gives the absolute path of `path`, which the caller frees, or `nullptr`. |
-| `os_lock` | Takes an exclusive lock on the file `path`, so that one process at a time holds it. It does not wait: it gives 0 on success, 1 if a lock holds the file already, and -1 if the file does not open. The mode is fixed, and the layer has one implementation of it. |
+| `os_lock` | Takes an exclusive lock on the file `path`, so that one process at a time holds it, as *The locks* tells. It does not wait. It gives 0 and sets `*lock` on success, 1 if a lock holds the file already, and -1 on a failure. |
+| `os_unlock` | Ends the lock of `lock`, and frees it. A null `lock` does nothing. |
 | `os_signal_catch` | Catches the signals that stop the process, and writes `line` at the first signal, as *The signals* tells. Gives 0 on success. |
 | `os_signal_is_caught` | Tells if a signal set the flag of `os_signal_catch`. A caller reads it between two parts of its work, and then ends its work. |
 | `os_process_start` | Starts a program with the fields of `start`, as *The processes* tells. Gives `nullptr` if the program does not start. The streams of the caller then stay as they are. |
@@ -231,6 +237,35 @@ Each system tells the changes in its own way:
 
 A watch gives 2 when the changes between two takes do not fit. It keeps 64 KiB on Windows and on macOS, and `max_queued_events` changes on Linux. FSEvents can also lose changes.
 A take with no change makes no call of the system on Windows and on macOS, and one call of `read` on Linux.
+
+## The locks
+
+`os_lock` opens the file `path`, and makes it if it is not there. Then it takes an exclusive lock of the file, and does not wait.
+The lock is advisory: it stops only a different `os_lock` of the file, and not a read or a write.
+
+| Result of `os_lock` | Meaning |
+| --- | --- |
+| 0 | The caller holds the lock, and `*lock` is its handle. |
+| 1 | A lock holds the file already: of a different process, or of an earlier call of this process. `*lock` is `nullptr`. |
+| -1 | The file does not open, or the memory of the handle fails. `*lock` is `nullptr`. |
+
+`os_unlock` ends the lock, closes the file and frees the handle. A later `os_lock` of the file, also in the same process, then takes the lock.
+The file stays, because a different process can wait to lock it.
+
+The end of a process also ends each lock that it holds. A process that `os_process_start` starts does not get the file of the lock, so the lock ends with the process that took it.
+On Windows, the end of the lock after the end of the process can take some time. Thus a program calls `os_unlock` before its end.
+
+- On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`.
+- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`.
+
+The sources of a lock:
+
+- Linux, `flock`: "Locks created by flock() are associated with an open file description". https://man7.org/linux/man-pages/man2/flock.2.html
+- Linux, `flock`: a lock "may be denied by a lock that the calling process has already placed via another file descriptor."
+- Linux, `flock`: the lock is released "when all such file descriptors have been closed."
+- Microsoft, `_locking`: `_LK_UNLCK` "Unlocks the specified bytes, which must have been previously locked." https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
+- Microsoft, `LockFile`: when a process ends with a lock, "the locks are unlocked by the operating system." https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile
+- Microsoft, `LockFile`: "However, the time it takes for the operating system to unlock these locks depends upon available system resources."
 
 ## The signals
 
