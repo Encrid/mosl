@@ -14,8 +14,8 @@
 #include "os.h"
 #include "rows.h"
 
-constexpr int RETRIES = 1000;
 constexpr uint64_t RETRY_NANOS = 10'000'000;
+constexpr uint64_t RETRY_LIMIT = 10'000'000'000;
 constexpr int FILES_SCANNED = 64;
 
 #ifdef _WIN32
@@ -121,8 +121,7 @@ static int leave(const char *program, const char *path, const char *child)
         printf("leave: no child\n");
     if (shared)
         fclose(shared);
-    fflush(stdout);
-    _Exit(0);
+    return (0);
 }
 
 static int wait_input(void)
@@ -138,12 +137,13 @@ static int lock_after(const char *path)
 {
     os_lock_t *lock = nullptr;
     os_event_t *pause = os_event_create();
+    uint64_t start = os_get_now();
     int took = pause ? 1 : -1;
 
-    for (int i = 0; took == 1 && i < RETRIES; i++) {
-        if (i)
-            os_event_wait(pause, RETRY_NANOS);
+    while (took == 1 && os_get_now() - start <= RETRY_LIMIT) {
         took = os_lock(path, &lock);
+        if (took == 1)
+            os_event_wait(pause, RETRY_NANOS);
     }
     printf("retry: %d\n", took);
     os_unlock(lock);
