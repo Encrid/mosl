@@ -19,6 +19,11 @@ struct os_lock {
     int file;
 };
 
+static inline bool os_is_folder_kind(uint32_t kind)
+{
+    return (kind == OS_FOLDER_USER || kind == OS_FOLDER_LOCAL);
+}
+
 char *os_read_stream(FILE *file, size_t size, char **kept, size_t *len);
 
 bool os_is_within(const char *name, uint32_t depth);

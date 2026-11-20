@@ -2,7 +2,7 @@
 
 This header gives the calls of the operating system, in the same form on each system.
 That is address space, shared libraries, threads, the clock, a mutex, an event, and folders, watches, paths, locks and signals.
-It also gives processes, files, the environment, the output, a free port and the count of the processors.
+It also gives processes, files, the environment, the base folders of the user, the output, a free port and the count of the processors.
 
 ## The layer
 
@@ -116,6 +116,17 @@ The flags of `os_path_move`: an `enum os_move_flag : uint32_t` of bits, given as
 
 A bit that is not a flag of its function gives -1, and the call does nothing. Thus a later flag never has a silent meaning in an older layer.
 
+### enum os_folder_kind
+
+The kinds of `os_folder_base`: an `enum os_folder_kind : uint32_t`, given as `uint32_t kind`.
+
+| Kind | Value | Folder |
+| --- | --- | --- |
+| `OS_FOLDER_USER` | 1 | The folder of the data that goes with the user, for example the saves of a game. |
+| `OS_FOLDER_LOCAL` | 2 | The folder of the data that stays on this machine. |
+
+A different value gives `nullptr`. On Linux and macOS, the 2 kinds give the same folder: *The base folders*.
+
 ## Functions
 
 Each function that can fail is `[[nodiscard]]`: the caller must use its result.
@@ -172,6 +183,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_link_make` | Makes `path` a symbolic link to `target`, as *The files* tells. Gives 0 on success. |
 | `os_env_get` | Gives a copy of the value of the variable `name`, as *The environment* tells. |
 | `os_path_find` | Finds the program `name`, as *The environment* tells. |
+| `os_folder_base` | Gives the base folder of the data of the user for `kind`, which the caller frees, as *The base folders* tells. Gives `nullptr` for a kind that is not known, or if the system gives no folder. |
 | `os_get_program_path` | Gives the absolute path of the program of the process, which the caller frees, or `nullptr`. |
 | `os_output_write` | Writes all the `len` bytes to the standard output, as *The output* tells. Gives 0, or -1 if a write fails. |
 | `os_get_free_port` | Gives a port of TCP on `127.0.0.1` that no socket held at the call, or -1. Another program can take the port after the call. On Windows, the layer loads `ws2_32.dll` at the call, so a program that links `os.a` links no other library. |
@@ -447,6 +459,36 @@ It gives `nullptr` if the variable is not there, or if the copy fails.
 - Else the call looks in each folder of the `PATH` of the caller, in order.
 - On Windows, if `name` has no extension, it tries `name` with each extension of `PATHEXT`, in order, and then `name` alone. With no `PATHEXT`, it tries no extension.
 - It looks in the current folder only if `PATH` names it.
+
+## The base folders
+
+`os_folder_base` gives the absolute path of a base folder of the data of the user, with no separator at its end. The caller frees it.
+The caller adds the names of its own folders to the base, and makes them with `os_folder_make`.
+
+| System | `OS_FOLDER_USER` | `OS_FOLDER_LOCAL` |
+| --- | --- | --- |
+| Windows | The known folder `FOLDERID_SavedGames`, by default `%USERPROFILE%\Saved Games`. | The known folder `FOLDERID_LocalAppData`, by default `%USERPROFILE%\AppData\Local`. |
+| Linux | `XDG_DATA_HOME`, or `$HOME/.local/share`. | The same folder. |
+| macOS | `$HOME/Library/Application Support`. | The same folder. |
+
+- On Windows, `SHGetKnownFolderPath` gives the folder, also when a policy moved it. The call gives `KF_FLAG_CREATE`, so Windows makes a folder that is not there, with its rights.
+- On Windows, the layer loads `shell32.dll` and `ole32.dll` at the call, so a program that links `os.a` links no other library. `CoTaskMemFree` frees the text of Windows.
+- On Linux, an absolute `XDG_DATA_HOME` is the base. A value that is empty or relative counts as no value, as the specification of XDG tells. The base is then `$HOME/.local/share`.
+- On Linux and macOS, a `HOME` that is not there, empty or relative gives `nullptr`.
+- On Linux and macOS, the call makes no folder.
+
+The sources of the base folders:
+
+- Microsoft, `SHGetKnownFolderPath`: the caller frees the path "by calling CoTaskMemFree, whether SHGetKnownFolderPath succeeds or not." https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath
+- Microsoft, `SHGetKnownFolderPath`: "The returned path does not include a trailing backslash."
+- Microsoft, `KNOWNFOLDERID`: `FOLDERID_SavedGames` has the GUID `{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}` and the default path "%USERPROFILE%\Saved Games". https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid
+- Microsoft, `KNOWNFOLDERID`: `FOLDERID_LocalAppData` has the GUID `{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}` and the default path "%LOCALAPPDATA% (%USERPROFILE%\AppData\Local)".
+- Microsoft, `KF_FLAG_CREATE`: "The security provisions predefined for that folder are applied." https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/ne-shlobj_core-known_folder_flag
+- Microsoft, `CoTaskMemFree`: "If this parameter is NULL, the function has no effect." Its DLL is `Ole32.dll`. https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cotaskmemfree
+- freedesktop.org, XDG Base Directory Specification, version 0.8: "If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used." https://specifications.freedesktop.org/basedir/latest/
+- freedesktop.org, the same page: "If an implementation encounters a relative path in any of these variables it should consider the path invalid and ignore it."
+- Apple, File System Programming Guide: "Use this directory to store all app data files except those associated with the user's documents." https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemOverview/FileSystemOverview.html
+- Apple, the same page: `Library` "is the app's sandbox directory or the current user's home directory (if the app is not in a sandbox)."
 
 ## The output
 

@@ -46,6 +46,11 @@ enum os_move_flag : uint32_t {
     OS_MOVE_DURABLE = 1,
 };
 
+enum os_folder_kind : uint32_t {
+    OS_FOLDER_USER = 1,
+    OS_FOLDER_LOCAL = 2,
+};
+
 [[nodiscard]] void *os_reserve(size_t reserve, size_t commit);
 
 [[nodiscard]] int os_commit(void *base, size_t bytes);
@@ -153,6 +158,8 @@ void os_process_free(os_process_t *p);
 [[nodiscard]] char *os_env_get(const char *name);
 
 [[nodiscard]] char *os_path_find(const char *name);
+
+[[nodiscard]] char *os_folder_base(uint32_t kind);
 
 [[nodiscard]] char *os_get_program_path(void);
 

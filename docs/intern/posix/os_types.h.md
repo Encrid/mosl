@@ -128,3 +128,4 @@ A file of `src/linux` and a file of `src/macos` define `os_open_pipe`, `os_quiet
 | `os_take_pipe_signal(pipe_only)` | The take of the `SIGPIPE` of a broken write. A file of `src/linux` and a file of `src/macos` define it. |
 | `os_get_online_count()` | The count of the processors that run. |
 | `os_remove_entry(at, name)` | The remove of the entry `name` of the folder `at`. |
+| `os_join_base(base, rest)` | The base folder of the user, which `src/posix/base_join.c` defines. |

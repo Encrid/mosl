@@ -120,4 +120,6 @@ uint32_t os_get_online_count(void);
 
 int os_remove_entry(int at, const char *name);
 
+char *os_join_base(const char *base, const char *rest);
+
 #endif
