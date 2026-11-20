@@ -15,6 +15,7 @@ typedef struct os_event os_event_t;
 typedef struct os_folder os_folder_t;
 typedef struct os_watch os_watch_t;
 typedef struct os_process os_process_t;
+typedef struct os_lock os_lock_t;
 typedef void (*os_thread_fn_t)(void *arg);
 
 typedef struct os_process_start {
@@ -110,7 +111,9 @@ void os_watch_stop(os_watch_t *w);
 
 [[nodiscard]] char *os_path_whole(const char *path);
 
-[[nodiscard]] int os_lock(const char *path);
+[[nodiscard]] int os_lock(const char *path, os_lock_t **lock);
+
+void os_unlock(os_lock_t *lock);
 
 [[nodiscard]] int os_signal_catch(const char *line);
 

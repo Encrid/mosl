@@ -5,6 +5,7 @@ A release ships the file as `leaks.toml`: `docs/extern/os.h.md`.
 
 - `memory` names the functions that give memory which the caller frees: `os_path_whole`, `os_env_get`, `os_path_find` and `os_get_program_path`.
 - `pairs` names each function that takes a resource, with the function that gives it back.
+- The kind `os_lock` names `os_lock`, which writes the handle of a lock through its argument 2, and `os_unlock`, which gives it back.
 
 ## The count of the layer itself
 

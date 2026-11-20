@@ -15,6 +15,10 @@ constexpr int OS_AGAIN = 3;
 constexpr uint32_t OS_FILE_FLAGS = OS_FILE_EXECUTABLE | OS_FILE_DURABLE;
 constexpr uint32_t OS_MOVE_FLAGS = OS_MOVE_DURABLE;
 
+struct os_lock {
+    int file;
+};
+
 char *os_read_stream(FILE *file, size_t size, char **kept, size_t *len);
 
 bool os_is_within(const char *name, uint32_t depth);

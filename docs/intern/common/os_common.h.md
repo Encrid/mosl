@@ -12,6 +12,11 @@ No result of `os_watch_take` is 3.
 `OS_FILE_FLAGS` holds each flag of `os_file_write`, and `OS_MOVE_FLAGS` holds each flag of `os_path_move`.
 A call with a bit that is not in its set gives -1, and does nothing: `docs/extern/os.h.md`, *The files*.
 
+## Types
+
+`struct os_lock` holds `file`, the descriptor of the file of a lock. Each system keeps a lock on a descriptor of the C library, so the struct is the same on each system.
+`docs/intern/posix/lock.c.md` and `docs/intern/windows/lock.c.md` tell how the lock uses it.
+
 ## Functions
 
 | Function | Result |

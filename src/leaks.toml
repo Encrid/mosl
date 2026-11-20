@@ -10,3 +10,7 @@ os_event_create = "os_event_free"
 os_folder_open = "os_folder_close"
 os_watch_start = "os_watch_stop"
 os_process_start = "os_process_free"
+
+[leaks.kinds.os_lock]
+takes = { os_lock = "*2" }
+gives = { os_unlock = "1" }

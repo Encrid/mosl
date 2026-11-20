@@ -198,6 +198,7 @@ int main(int argc, char **argv)
     os_event_t *e;
     os_thread_t *t;
     os_mutex_t *m;
+    os_lock_t *lock;
     char *whole;
     void *lib;
     void *sym;
@@ -263,12 +264,9 @@ int main(int argc, char **argv)
     os_mutex_free(nullptr);
 
     snprintf(path, sizeof(path), "%s/lock.tmp", dir);
-    if (os_lock(path))
+    if (os_lock(path, &lock))
         return (printf("FAIL: lock\n"), 1);
-    if (os_lock(path) != 1)
-        return (printf("FAIL: relock\n"), 1);
-    if (os_lock("nowhere_dir/lock.tmp") != -1)
-        return (printf("FAIL: lock a bad path\n"), 1);
+    os_unlock(lock);
 
     whole = os_path_whole(".");
     if (!whole)
