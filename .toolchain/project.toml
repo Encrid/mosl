@@ -16,7 +16,7 @@ why = "FSEvents fixes the 6 parameters of its callback."
 [[style.exception]]
 rule = "F5"
 path = "include/os.h:os_file_write"
-why = "A write has 2 options, executable and durable, and the decision of durable gives each one a bool of its own, as the other calls of the layer do."
+why = "The approved decision gives durable a bool parameter of its own, beside executable, so a caller sees each option of a write in the call."
 
 [[style.exception]]
 rule = "F5"
