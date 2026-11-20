@@ -467,7 +467,7 @@ static void put(const char *name, const char *value)
 #endif
 }
 
-static bool starts(const char *path, const char *start)
+static bool has_start(const char *path, const char *start)
 {
     return (start && *start && !strncmp(path, start, strlen(start)));
 }
@@ -482,9 +482,9 @@ static void show_base(const char *path, const char *xdg, const char *home)
         saved[strlen(profile)] = '\\';
     if (!path)
         printf("base: none\n");
-    else if (starts(path, xdg))
+    else if (has_start(path, xdg))
         printf("base: xdg%s\n", path + strlen(xdg));
-    else if (starts(path, home))
+    else if (has_start(path, home))
         printf("base: home%s\n", path + strlen(home));
     else if (same(path, saved) || same(path, local))
         printf("base: %s\n", same(path, saved) ? "Saved Games" : "Local");
