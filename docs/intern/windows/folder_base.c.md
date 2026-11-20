@@ -7,7 +7,7 @@ It keeps the contract of `docs/extern/os.h.md`, *The base folders*.
 
 `OS_FOLDER_USER` gives `FOLDERID_SavedGames`, and `OS_FOLDER_LOCAL` gives `FOLDERID_LocalAppData`.
 The file writes the 2 GUIDs of `KNOWNFOLDERID` itself. Thus it needs no library of GUIDs at the link.
-`CREATE` is the value of `KF_FLAG_CREATE`, 0x00008000, because `windows.h` does not give the flags of the shell.
+It includes `<shlobj.h>` only for `KF_FLAG_CREATE` and for the declaration of `SHGetKnownFolderPath`. Thus a case can make the call through its pointer fail by its name.
 
 ## The call
 
