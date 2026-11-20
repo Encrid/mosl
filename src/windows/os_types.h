@@ -105,6 +105,10 @@ int os_finish_read(os_watch_t *w);
 
 void os_end_read(HANDLE handle, OVERLAPPED *overlapped);
 
+typedef HRESULT (WINAPI *os_known_path_t)(const GUID *id, DWORD flags,
+    HANDLE token, wchar_t **path);
+typedef void (WINAPI *os_task_free_t)(void *block);
+
 wchar_t *os_widen(const char *text);
 
 char *os_narrow(const wchar_t *wide);
