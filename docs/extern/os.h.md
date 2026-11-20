@@ -176,9 +176,9 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_process_kill` | Ends the process at once, as *The processes* tells. |
 | `os_process_wait` | Waits up to `nanos` nanoseconds for the end of the process, and gives its status, as *The processes* tells. |
 | `os_process_free` | Frees a process. It kills a process that still runs, and waits for its end. A null `p` does nothing. |
-| `os_file_write` | Writes all the bytes of the file `path`, with the flags of `enum os_file_flag`, as *The files* tells. With `OS_FILE_DURABLE`, it flushes the bytes to the disk before the close. On macOS, the cache of the drive can still hold the bytes. Gives 0 on success. |
+| `os_file_write` | Writes all the bytes of the file `path`, with the flags of `enum os_file_flag`, as *The files* tells. With `OS_FILE_DURABLE`, it flushes the bytes to the disk before the close. On macOS, the cache of the drive can still hold the bytes. Gives 0 on success, and -1 for a flag that is not known. |
 | `os_path_entry` | Tells what is at `path`, as *The files* tells. |
-| `os_path_move` | Gives the file or the folder `from` the path `to`, with the flags of `enum os_move_flag`, as *The files* tells. With `OS_MOVE_DURABLE`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success. |
+| `os_path_move` | Gives the file or the folder `from` the path `to`, with the flags of `enum os_move_flag`, as *The files* tells. With `OS_MOVE_DURABLE`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success, and -1 for a flag that is not known. |
 | `os_path_remove` | Removes what is at `path`, as *The files* tells. |
 | `os_link_make` | Makes `path` a symbolic link to `target`, as *The files* tells. Gives 0 on success. |
 | `os_env_get` | Gives a copy of the value of the variable `name`, as *The environment* tells. |
