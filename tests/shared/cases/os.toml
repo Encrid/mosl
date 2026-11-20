@@ -232,6 +232,22 @@ claims = { line = ["lock: 1, then 1"] }
 false = { helper = {} }
 
 [[case]]
+name = "the end of a process ends its lock, and a later os_lock takes it within 10 seconds"
+process = "helper"
+run = ["{out}/lock{exe}", "retry", "{case}/left.lock"]
+helper = { run = ["{out}/lock{exe}", "leave", "{case}/left.lock", "none"], wait = "leave: 0", claims = { line = ["leave: 0"] } }
+claims = { line = ["retry: 0"] }
+false = { helper = { run = ["{out}/lock{exe}", "hold", "{case}/left.lock"], wait = "hold: 0", stdin = "end\n", claims = { line = ["hold: 0"] } } }
+
+[[case]]
+name = "a program that the process starts with a call other than os_process_start does not get the file of the lock"
+process = "helper"
+run = ["{out}/lock{exe}", "retry", "{case}/child.lock"]
+helper = { run = ["{out}/lock{exe}", "leave", "{case}/child.lock", "start"], wait = "leave: 0", stdin = "end\n", claims = { line = ["leave: 0", "child: end, 0 files"] } }
+claims = { line = ["retry: 0"] }
+false = { helper = { run = ["{out}/lock{exe}", "leave", "{case}/child.lock", "share"], wait = "leave: 0", stdin = "end\n", claims = { line = ["leave: 0", "child: end, 0 files"] } } }
+
+[[case]]
 name = "clock"
 run = ["{out}/clock{exe}"]
 claims = { status = 0 }
