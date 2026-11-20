@@ -474,10 +474,11 @@ The caller adds the names of its own folders to the base, and makes them with `o
 | Linux | `XDG_DATA_HOME`, or `$HOME/.local/share`. | The same folder. |
 | macOS | `$HOME/Library/Application Support`. | The same folder. |
 
-- On Windows, `SHGetKnownFolderPath` gives the folder, also when a policy moved it. The call gives `KF_FLAG_CREATE`, so Windows makes a folder that is not there, with its rights.
+- On Windows, `SHGetKnownFolderPath` gives the current path of the folder, also when it is redirected, because the call does not give `KF_FLAG_DEFAULT_PATH`.
+- On Windows, the call gives `KF_FLAG_CREATE`, so Windows makes a folder that is not there, with its rights. Without it, a folder that is not there gives `nullptr`.
 - On Windows, the layer loads `shell32.dll` and `ole32.dll` at the call, so a program that links `os.a` links no other library. `CoTaskMemFree` frees the text of Windows.
 - On Linux, an absolute `XDG_DATA_HOME` is the base. A value that is empty or relative counts as no value, as the specification of XDG tells. The base is then `$HOME/.local/share`.
-- On Linux and macOS, a `HOME` that is not there, empty or relative gives `nullptr`.
+- On Linux with no absolute `XDG_DATA_HOME`, and on macOS, a `HOME` that is not there, empty or relative gives `nullptr`.
 - On Linux and macOS, the call makes no folder.
 
 The sources of the base folders:
@@ -487,6 +488,8 @@ The sources of the base folders:
 - Microsoft, `KNOWNFOLDERID`: `FOLDERID_SavedGames` has the GUID `{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}` and the default path "%USERPROFILE%\Saved Games". https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid
 - Microsoft, `KNOWNFOLDERID`: `FOLDERID_LocalAppData` has the GUID `{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}` and the default path "%LOCALAPPDATA% (%USERPROFILE%\AppData\Local)".
 - Microsoft, `KF_FLAG_CREATE`: "The security provisions predefined for that folder are applied." https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/ne-shlobj_core-known_folder_flag
+- Microsoft, `KF_FLAG_DONT_VERIFY`: without it, a folder that is "absent" gives "a failure code, and no path is returned."
+- Microsoft, `KF_FLAG_DEFAULT_PATH`: "If this flag isn't set, then the function retrieves the current" and "possibly redirected" path "of the folder."
 - Microsoft, `CoTaskMemFree`: "If this parameter is NULL, the function has no effect." Its DLL is `Ole32.dll`. https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cotaskmemfree
 - freedesktop.org, XDG Base Directory Specification, version 0.8: "If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used." https://specifications.freedesktop.org/basedir/latest/
 - freedesktop.org, the same page: "If an implementation encounters a relative path in any of these variables it should consider the path invalid and ignore it."
