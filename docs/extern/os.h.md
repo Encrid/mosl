@@ -140,9 +140,9 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_process_kill` | Ends the process at once, as *The processes* tells. |
 | `os_process_wait` | Waits up to `nanos` nanoseconds for the end of the process, and gives its status, as *The processes* tells. |
 | `os_process_free` | Frees a process. It kills a process that still runs, and waits for its end. A null `p` does nothing. |
-| `os_file_write` | Writes all the bytes of the file `path`, as *The files* tells. With `durable`, it flushes the bytes to the disk before the close. Gives 0 on success. |
+| `os_file_write` | Writes all the bytes of the file `path`, as *The files* tells. With `durable`, it flushes the bytes to the disk before the close. On macOS, the cache of the drive can still hold the bytes. Gives 0 on success. |
 | `os_path_entry` | Tells what is at `path`, as *The files* tells. |
-| `os_path_move` | Gives the file or the folder `from` the path `to`, as *The files* tells. With `durable`, the move is on the disk when the call returns. Gives 0 on success. |
+| `os_path_move` | Gives the file or the folder `from` the path `to`, as *The files* tells. With `durable`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success. |
 | `os_path_remove` | Removes what is at `path`, as *The files* tells. |
 | `os_link_make` | Makes `path` a symbolic link to `target`, as *The files* tells. Gives 0 on success. |
 | `os_env_get` | Gives a copy of the value of the variable `name`, as *The environment* tells. |
@@ -350,20 +350,24 @@ The sources of a durable write:
 `os_path_move` gives the file or the folder `from` the path `to`, and replaces a file at `to`.
 The two paths must be on one volume, else the move fails.
 
-With `durable`, `os_path_move` returns only when the move is on the disk.
+With `durable`, `os_path_move` waits for the disk before it returns. On macOS, the cache of the drive can still hold the move.
 With no `durable`, the call does not wait for the disk, and the system writes the move later.
 
-- On Windows, `MoveFileExW` gets the flag `MOVEFILE_WRITE_THROUGH`.
+- On Windows, `MoveFileExW` gets the flag `MOVEFILE_WRITE_THROUGH`. Microsoft states that the call then returns only when the move is on the disk.
+- The guarantee of Microsoft names only a move that copies and deletes the file. `os_path_move` never copies, because it does not use `MOVEFILE_COPY_ALLOWED`.
 - On Linux and macOS, `fsync` syncs the folder of `to` after the move. It also syncs the folder of `from` if that is a different folder.
 - On Linux and macOS, a failed sync gives -1, and the move is made: the entry is at `to`, and not at `from`.
-- On macOS, the cache of the drive can keep the entries for some time, as for `os_file_write`.
+- On macOS, the cache of the drive can keep the entries for some time, as for `os_file_write`. The drive can also write them in a different sequence.
 - Each sync waits for the disk, so a durable move costs more time than a move with no `durable`.
 
-A durable write and a durable move together keep a whole file: write the file under a temporary path, then move it to its path.
+On Windows and Linux, a durable write and a durable move keep a whole file. Write the file under a temporary path, then move it to its path.
+On macOS, the drive can write the new name before the bytes. Thus a loss of power can give the new name with bytes that are not complete.
 
 The sources of a durable move:
 
 - Microsoft, `MoveFileExW`: "The function does not return until the file is actually moved on the disk." https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw
+- Microsoft, `MoveFileExW`: "Setting this value guarantees that a move performed as a copy and delete operation is flushed to disk before the function returns."
+- macOS, `fsync`: "it may be written in an out-of-order sequence." https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsync.2.html
 - Linux, `fsync`: "Calling fsync() does not necessarily ensure that the entry in the directory containing the file has also reached disk." https://man7.org/linux/man-pages/man2/fsync.2.html
 - Linux, `fsync`: "For that an explicit fsync() on a file descriptor for the directory is also needed."
 
