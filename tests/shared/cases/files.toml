@@ -8,7 +8,7 @@ claims = { status = 0 }
 rows = [
     { name = "os_folder_make makes each folder above the folder", in = "{case}/r0 make a/b/c", claims = { line = ["make: 0 3"] }, false = "{case}/f0 make a/b/c" },
     { name = "os_folder_make gives 0 for a folder that is there", in = "{case}/r1 make a", claims = { line = ["make: 0 3"] }, false = "{case}/f1 make a/k" },
-    { name = "each call on a path takes a path past the limit of the system", in = "{case}/r2 deep made", claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, link 0, entry 3, remove 0, entry 0"] }, false = "{case}/f2 deep unmade" },
+    { name = "each call on a path takes a path past the limit of the system, also a durable write and a durable move", in = "{case}/r2 deep made", claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, link 0, entry 3, remove 0, entry 0"] }, false = "{case}/f2 deep unmade" },
     { name = "os_file_write replaces all the bytes of a file", in = "{case}/r3 replace new", claims = { line = ["replace: 0, 3 bytes: new"] }, false = "{case}/f3 replace news" },
     { name = "a new file with executable gets 0777 less the umask", in = "{case}/r4 mode none x 0755", claims = { line = ["mode: as The files tells"] }, false = "{case}/f4/none mode none x 0755" },
     { name = "a new file gets 0666 less the umask", in = "{case}/r5 mode none - 0644", claims = { line = ["mode: as The files tells"] }, false = "{case}/f5/none mode none - 0644" },
@@ -68,8 +68,8 @@ rows = [
     { name = "os_file_write with durable writes the bytes, and flushes them before the close", in = "{case}/r59 replace-d new", claims = { line = ["replace-d: 0, 3 bytes: new"] }, false = "{case}/f59 replace-d news" },
     { name = "os_path_move with durable moves a file in its folder, and syncs the folder", in = "{case}/r60 move-d a b", claims = { line = ["move-d: 0, to 1, from 0"] }, false = "{case}/f60 move-d a b" },
     { name = "os_path_move with durable moves a file into another folder, and syncs the 2 folders", in = "{case}/r61 move-d s/a t/b", claims = { line = ["move-d: 0, to 1, from 0"] }, false = "{case}/f61 move-d s/a t/b" },
-    { name = "os_path_move with durable gives -1 when the folder of to does not sync, and the move is made", in = "{case}/r62 unread-move a u/b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f62 unread-move a u/b" },
-    { name = "os_path_move with durable gives -1 when the folder of from does not sync, and the move is made", in = "{case}/r63 unread-move u/a b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f63 unread-move u/a b" },
+    { name = "os_path_move with durable gives -1 on Linux and macOS when the folder of to does not sync, and the move is made", in = "{case}/r62 unread-move a u/b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f62 unread-move a u/b" },
+    { name = "os_path_move with durable gives -1 on Linux and macOS when the folder of from does not sync, and the move is made", in = "{case}/r63 unread-move u/a b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f63 unread-move u/a b" },
     { name = "a durable write of a file is refused when its flush fails, and a later one is made", in = "+refuse fsync=1,FlushFileBuffers=1 {case}/r64 again write-d", claims = { matches = ["write-d: [1-9] refused, then made"] }, false = "{case}/f64 again write-d" },
     { name = "a durable move is refused when its move or its sync fails, and a later one is made", in = "+refuse fsync=1,MoveFileExW=1 {case}/r65 again move-d", claims = { matches = ["move-d: [1-9] refused, then made"] }, false = "{case}/f65 again move-d" },
 ]
