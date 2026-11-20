@@ -12,13 +12,3 @@ tables = true
 rule = "F5"
 path = "src/macos/watch_events.c:on_events"
 why = "FSEvents fixes the 6 parameters of its callback."
-
-[[style.exception]]
-rule = "F5"
-path = "include/os.h:os_file_write"
-why = "The approved decision gives durable a bool parameter of its own, beside executable, so a caller sees each option of a write in the call."
-
-[[style.exception]]
-rule = "F5"
-path = "src/*/file_write.c:os_file_write"
-why = "Each system defines the 5 parameters of os_file_write in include/os.h."

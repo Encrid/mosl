@@ -72,6 +72,8 @@ rows = [
     { name = "os_path_move with durable gives -1 on Linux and macOS when the folder of from does not sync, and the move is made", in = "{case}/r63 unread-move u/a b", claims = { line = ["unread-move: {unread_move}, to 1"] }, false = "{case}/f63 unread-move u/a b" },
     { name = "a durable write of a file is refused when its flush fails, and a later one is made", in = "+refuse fsync=1,FlushFileBuffers=1 {case}/r64 again write-d", claims = { matches = ["write-d: [1-9] refused, then made"] }, false = "{case}/f64 again write-d" },
     { name = "a durable move is refused when its move or its sync fails, and a later one is made", in = "+refuse fsync=1,MoveFileExW=1 {case}/r65 again move-d", claims = { matches = ["move-d: [1-9] refused, then made"] }, false = "{case}/f65 again move-d" },
+    { name = "os_file_write gives -1 for a flag that is not known, and writes no file", in = "{case}/r66 write-flags 4", claims = { line = ["write-flags: -1, entry 0"] }, false = "{case}/f66 write-flags 3" },
+    { name = "os_path_move gives -1 for a flag that is not known, and moves nothing", in = "{case}/r67 move-flags 2", claims = { line = ["move-flags: -1, a 1, b 0"] }, false = "{case}/f67 move-flags 1" },
 ]
 
 [case.files]
@@ -296,3 +298,7 @@ rows = [
 "{case}/f64" = []
 "{case}/r65" = []
 "{case}/f65" = []
+"{case}/r66" = []
+"{case}/f66" = []
+"{case}/r67" = []
+"{case}/f67" = []

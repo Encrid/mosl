@@ -92,6 +92,25 @@ What `os_process_start` needs: `struct os_process_start`.
 | `signals` | `bool` | `true`: `os_process_signal` can reach the process. `false`: each signal to it gives -1. |
 | `ignore_interrupt` | `bool` | `true`: the process starts with the interrupt ignored. `false`: it starts with the default action of the interrupt. |
 
+### enum os_file_flag
+
+The flags of `os_file_write`: an `enum os_file_flag : uint32_t` of bits. A call gives their sum, or 0 for none, as `uint32_t flags`.
+
+| Flag | Value | Effect |
+| --- | --- | --- |
+| `OS_FILE_EXECUTABLE` | 1 | The file gets execute bits, as *The files* tells. |
+| `OS_FILE_DURABLE` | 2 | The call flushes the bytes to the disk before the close, as *The files* tells. |
+
+### enum os_move_flag
+
+The flags of `os_path_move`: an `enum os_move_flag : uint32_t` of bits, given as `uint32_t flags`, or 0 for none.
+
+| Flag | Value | Effect |
+| --- | --- | --- |
+| `OS_MOVE_DURABLE` | 1 | The call waits for the disk before it returns, as *The files* tells. |
+
+A bit that is not a flag of its function gives -1, and the call does nothing. Thus a later flag never has a silent meaning in an older layer.
+
 ## Functions
 
 Each function that can fail is `[[nodiscard]]`: the caller must use its result.
@@ -140,9 +159,9 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_process_kill` | Ends the process at once, as *The processes* tells. |
 | `os_process_wait` | Waits up to `nanos` nanoseconds for the end of the process, and gives its status, as *The processes* tells. |
 | `os_process_free` | Frees a process. It kills a process that still runs, and waits for its end. A null `p` does nothing. |
-| `os_file_write` | Writes all the bytes of the file `path`, as *The files* tells. With `durable`, it flushes the bytes to the disk before the close. On macOS, the cache of the drive can still hold the bytes. Gives 0 on success. |
+| `os_file_write` | Writes all the bytes of the file `path`, with the flags of `enum os_file_flag`, as *The files* tells. With `OS_FILE_DURABLE`, it flushes the bytes to the disk before the close. On macOS, the cache of the drive can still hold the bytes. Gives 0 on success. |
 | `os_path_entry` | Tells what is at `path`, as *The files* tells. |
-| `os_path_move` | Gives the file or the folder `from` the path `to`, as *The files* tells. With `durable`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success. |
+| `os_path_move` | Gives the file or the folder `from` the path `to`, with the flags of `enum os_move_flag`, as *The files* tells. With `OS_MOVE_DURABLE`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success. |
 | `os_path_remove` | Removes what is at `path`, as *The files* tells. |
 | `os_link_make` | Makes `path` a symbolic link to `target`, as *The files* tells. Gives 0 on success. |
 | `os_env_get` | Gives a copy of the value of the variable `name`, as *The environment* tells. |
@@ -317,19 +336,19 @@ Each call on a path takes a path past the limit of the system, as `os_folder_ope
 
 `os_file_write` makes the file `path`, or replaces all its bytes. The folder of the file must be there.
 
-- A new file gets the mode 0777 without the bits of the umask with `executable`, and 0666 without them else.
-- A file that was there keeps its read bits and its write bits. With `executable`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
+- A new file gets the mode 0777 without the bits of the umask with `OS_FILE_EXECUTABLE`, and 0666 without them else.
+- A file that was there keeps its read bits and its write bits. With `OS_FILE_EXECUTABLE`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
 - Thus no call reads the umask: POSIX has no call that reads it with no change. A private file, for example of mode 0600, stays private.
-- On Windows, a file has no execute bit, and `executable` changes nothing.
+- On Windows, a file has no execute bit, and `OS_FILE_EXECUTABLE` changes nothing.
 
-With `durable`, `os_file_write` flushes the bytes of the file to the disk before it closes the file. A failed flush gives -1.
-With no `durable`, the call does not wait for the disk, and the system writes the bytes later.
+With `OS_FILE_DURABLE`, `os_file_write` flushes the bytes of the file to the disk before it closes the file. A failed flush gives -1.
+With no `OS_FILE_DURABLE`, the call does not wait for the disk, and the system writes the bytes later.
 
 - On Windows, `FlushFileBuffers` flushes the file.
 - On Linux and macOS, `fsync` flushes the file. On Linux, it also flushes the cache of the disk.
 - On macOS, `fsync` gives the bytes to the drive, and the drive can keep them in its cache for some time. The call does not use `F_FULLFSYNC`.
-- The flush does not sync the entry of a new file in its folder. To keep the name too, give the file its path with `os_path_move` and `durable`.
-- Each flush waits for the disk. Thus a durable write of each small file costs more time than one write with no `durable`.
+- The flush does not sync the entry of a new file in its folder. To keep the name too, give the file its path with `os_path_move` and `OS_MOVE_DURABLE`.
+- Each flush waits for the disk. Thus a durable write of each small file costs more time than one write with no `OS_FILE_DURABLE`.
 
 The sources of a durable write:
 
@@ -350,15 +369,15 @@ The sources of a durable write:
 `os_path_move` gives the file or the folder `from` the path `to`, and replaces a file at `to`.
 The two paths must be on one volume, else the move fails.
 
-With `durable`, `os_path_move` waits for the disk before it returns. On macOS, the cache of the drive can still hold the move.
-With no `durable`, the call does not wait for the disk, and the system writes the move later.
+With `OS_MOVE_DURABLE`, `os_path_move` waits for the disk before it returns. On macOS, the cache of the drive can still hold the move.
+With no `OS_MOVE_DURABLE`, the call does not wait for the disk, and the system writes the move later.
 
 - On Windows, `MoveFileExW` gets the flag `MOVEFILE_WRITE_THROUGH`. Microsoft states that the call then returns only when the move is on the disk.
 - The guarantee of Microsoft names only a move that copies and deletes the file. `os_path_move` never copies, because it does not use `MOVEFILE_COPY_ALLOWED`.
 - On Linux and macOS, `fsync` syncs the folder of `to` after the move. It also syncs the folder of `from` if that is a different folder.
 - On Linux and macOS, a failed sync gives -1, and the move is made: the entry is at `to`, and not at `from`.
 - On macOS, the cache of the drive can keep the entries for some time, as for `os_file_write`. The drive can also write them in a different sequence.
-- Each sync waits for the disk, so a durable move costs more time than a move with no `durable`.
+- Each sync waits for the disk, so a durable move costs more time than a move with no `OS_MOVE_DURABLE`.
 
 On Windows and Linux, a durable write and a durable move keep a whole file. Write the file under a temporary path, then move it to its path.
 On macOS, the drive can write the new name before the bytes. Thus a loss of power can give the new name with bytes that are not complete.

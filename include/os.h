@@ -36,6 +36,15 @@ constexpr int OS_INTERRUPT = 1;
 constexpr int OS_TERMINATION = 2;
 constexpr int OS_HANG_UP = 3;
 
+enum os_file_flag : uint32_t {
+    OS_FILE_EXECUTABLE = 1,
+    OS_FILE_DURABLE = 2,
+};
+
+enum os_move_flag : uint32_t {
+    OS_MOVE_DURABLE = 1,
+};
+
 [[nodiscard]] void *os_reserve(size_t reserve, size_t commit);
 
 [[nodiscard]] int os_commit(void *base, size_t bytes);
@@ -127,12 +136,12 @@ void os_process_kill(os_process_t *p);
 void os_process_free(os_process_t *p);
 
 [[nodiscard]] int os_file_write(const char *path, const void *bytes,
-    size_t len, bool executable, bool durable);
+    size_t len, uint32_t flags);
 
 [[nodiscard]] int os_path_entry(const char *path);
 
 [[nodiscard]] int os_path_move(const char *from, const char *to,
-    bool durable);
+    uint32_t flags);
 
 [[nodiscard]] int os_path_remove(const char *path);
 
