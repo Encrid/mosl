@@ -3,10 +3,10 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
+#include <shlobj.h>
+
 #include "os_types.h"
 #include "../common/os_common.h"
-
-constexpr DWORD CREATE = 0x00008000;
 
 static const GUID SAVED_GAMES = {
     0x4c5c32ff, 0xbb9d, 0x43b0, {0xb5, 0xb4, 0x2d, 0x72, 0xe5, 0x4e, 0xaa, 0xa4}
@@ -24,7 +24,7 @@ static char *get_known(HMODULE shell, HMODULE ole, const GUID *id)
     wchar_t *wide = nullptr;
     char *path = nullptr;
 
-    if (known && task_free && known(id, CREATE, nullptr, &wide) == S_OK)
+    if (known && task_free && known(id, KF_FLAG_CREATE, nullptr, &wide) == S_OK)
         path = os_narrow(wide);
     if (task_free)
         task_free(wide);
