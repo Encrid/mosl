@@ -462,7 +462,7 @@ It gives `nullptr` if the variable is not there, or if the copy fails.
 
 ## The base folders
 
-`os_folder_base` gives the absolute path of a base folder of the data of the user, with no separator at its end. The caller frees it.
+`os_folder_base` gives the absolute path of a base folder of the data of the user. The caller frees it.
 The caller adds the names of its own folders to the base, and makes them with `os_folder_make`.
 
 | System | `OS_FOLDER_USER` | `OS_FOLDER_LOCAL` |
