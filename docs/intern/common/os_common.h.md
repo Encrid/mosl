@@ -24,5 +24,5 @@ A call with a bit that is not in its set gives -1, and does nothing: `docs/exter
 | `os_read_stream(file, size, kept, len)` | Reads a stream whole into the buffer of a folder: `docs/intern/common/read_stream.c.md`, *The buffer*. |
 | `os_set_loopback(address)` | Writes the address of the loopback: `docs/intern/common/port_bytes.c.md`, *The order*. |
 | `os_get_port(port)` | Reads a port: `docs/intern/common/port_bytes.c.md`, *The order*. |
-| `os_is_folder_kind(kind)` | Tells if `kind` is `OS_FOLDER_USER` or `OS_FOLDER_LOCAL`. It is `static inline`, so each system shares the one check of `os_folder_base`. |
+| `os_is_folder_kind(kind)` | Tells if a kind of a base folder is known: `docs/intern/common/folder_kind.c.md`, *The kind*. |
 | `os_is_within(name, depth)` | Tells if a name of a watch is within its depth: `docs/intern/common/watch_depth.c.md`, *The depth*. |
