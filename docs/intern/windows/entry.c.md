@@ -16,9 +16,10 @@ Both calls take the whole paths of `os_get_whole`, also past 260 characters: `do
 
 ## The move
 
+An unknown flag gives -1 before `os_get_whole`: `docs/intern/common/os_common.h.md`, *Constants*.
 `MoveFileExW` with `MOVEFILE_REPLACE_EXISTING` moves the entry, and replaces a file at `to`.
 With no `MOVEFILE_COPY_ALLOWED`, a move between 2 volumes fails.
-With `durable`, the flags also hold `MOVEFILE_WRITE_THROUGH`. `docs/extern/os.h.md`, *The files*, tells what this flag gives, and the limit of its guarantee.
+With `OS_MOVE_DURABLE`, the flags of `MoveFileExW` also hold `MOVEFILE_WRITE_THROUGH`. `docs/extern/os.h.md`, *The files*, tells what this flag gives, and the limit of its guarantee.
 
 ## Functions
 
@@ -26,4 +27,4 @@ With `durable`, the flags also hold `MOVEFILE_WRITE_THROUGH`. `docs/extern/os.h.
 | --- | --- |
 | `os_get_whole_info(whole, info)` | Fills `info` and gives 1, or gives 0 or -1 for the whole path, as *The entry* tells. |
 | `os_path_entry(path)` | Gives 0, 1, 3 or -1, as *The entry* tells. |
-| `os_path_move(from, to, durable)` | Moves the entry as *The move* tells. Gives 0, or -1. |
+| `os_path_move(from, to, flags)` | Moves the entry as *The move* tells. Gives 0, or -1. |

@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "os_types.h"
+#include "../common/os_common.h"
 
 int os_path_entry(const char *path)
 {
@@ -35,12 +36,14 @@ static bool is_same_folder(const char *a, const char *b)
     return (last == os_get_last_start(b) && !strncmp(a, b, last));
 }
 
-int os_path_move(const char *from, const char *to, bool durable)
+int os_path_move(const char *from, const char *to, uint32_t flags)
 {
+    bool known = !(flags & ~OS_MOVE_FLAGS);
+    bool durable = flags & OS_MOVE_DURABLE;
     const char *from_name = nullptr;
     const char *to_name = nullptr;
-    int from_at = os_open_parent(from, &from_name, false);
-    int to_at = os_open_parent(to, &to_name, false);
+    int from_at = known ? os_open_parent(from, &from_name, false) : -1;
+    int to_at = known ? os_open_parent(to, &to_name, false) : -1;
     int moved = -1;
 
     if (from_at != -1 && to_at != -1)

@@ -8,6 +8,7 @@
 
 #include "os_types.h"
 #include "os_whole.h"
+#include "../common/os_common.h"
 
 constexpr DWORD SHARE_ALL = FILE_SHARE_READ | FILE_SHARE_WRITE
     | FILE_SHARE_DELETE;
@@ -40,16 +41,17 @@ int os_path_entry(const char *path)
     return (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ? 3 : 1);
 }
 
-int os_path_move(const char *from, const char *to, bool durable)
+int os_path_move(const char *from, const char *to, uint32_t flags)
 {
-    wchar_t *from_whole = os_get_whole(from);
-    wchar_t *to_whole = os_get_whole(to);
-    DWORD flags = MOVEFILE_REPLACE_EXISTING;
+    bool known = !(flags & ~OS_MOVE_FLAGS);
+    wchar_t *from_whole = known ? os_get_whole(from) : nullptr;
+    wchar_t *to_whole = known ? os_get_whole(to) : nullptr;
+    DWORD how = MOVEFILE_REPLACE_EXISTING;
     int moved = -1;
 
-    if (durable)
-        flags |= MOVEFILE_WRITE_THROUGH;
-    if (from_whole && to_whole && MoveFileExW(from_whole, to_whole, flags))
+    if (flags & OS_MOVE_DURABLE)
+        how |= MOVEFILE_WRITE_THROUGH;
+    if (from_whole && to_whole && MoveFileExW(from_whole, to_whole, how))
         moved = 0;
     free(from_whole);
     free(to_whole);

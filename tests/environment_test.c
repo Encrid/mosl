@@ -114,7 +114,8 @@ static int find_plain(char **argv)
     if (!strcmp(argv[3], "folder"))
         setup(os_folder_make(plain));
     else
-        setup(os_file_write(plain, "", 0, !strcmp(argv[3], "x"), false));
+        setup(os_file_write(plain, "", 0,
+            strcmp(argv[3], "x") ? 0 : OS_FILE_EXECUTABLE));
     path = os_path_find("plain");
     if (argv[3][0] == '-')
         snprintf(name, sizeof(name), "plain");
@@ -146,7 +147,7 @@ static int find_ext(char **)
     for (size_t i = 0; i < 3; i++) {
         free(want);
         want = join(folder, names[i]);
-        setup(os_file_write(want, "", 0, true, false));
+        setup(os_file_write(want, "", 0, OS_FILE_EXECUTABLE));
     }
     free(want);
     want = malloc(strlen(bin) + 16);
