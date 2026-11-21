@@ -1,6 +1,6 @@
 # mosl
 
-mosl (my OS library) is a layer over the operating system, behind one header.
+my OS library
 
 ## Install
 
