@@ -9,7 +9,7 @@ constexpr char INTERRUPT[] = "\x03";
 constexpr char BREAK[] = "\x1b[3;70;0;1;8;1_";
 constexpr COORD CELLS = {80, 25};
 constexpr DWORD GRACE = 1000;
-constexpr UINT HUNG = 0xC0000142;
+constexpr UINT HUNG = 0xC000013A;
 
 int os_make_console(os_process_t *p)
 {
