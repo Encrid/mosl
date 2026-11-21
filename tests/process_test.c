@@ -233,17 +233,18 @@ static void add_text(char *to, const char *bytes, size_t len)
         to[at + --len] = '\0';
 }
 
-static void read_all(os_process_t *p, reads_t *reads)
+static int read_all(os_process_t *p, uint64_t nanos, reads_t *reads)
 {
     const char *bytes = nullptr;
     size_t len = 0;
 
-    reads->last = os_process_read(p, OS_FOREVER, &bytes, &len);
+    reads->last = os_process_read(p, nanos, &bytes, &len);
     while (reads->last == OS_OUTPUT || reads->last == OS_ERRORS) {
         add_text(reads->last == OS_OUTPUT ? reads->out : reads->err, bytes,
             len);
-        reads->last = os_process_read(p, OS_FOREVER, &bytes, &len);
+        reads->last = os_process_read(p, nanos, &bytes, &len);
     }
+    return (reads->last);
 }
 
 static bool read_until(os_process_t *p, const char *line, uint64_t nanos,
@@ -289,7 +290,7 @@ static int print_told(const char *mode, os_process_t *p, int sent)
 {
     reads_t reads = {};
 
-    if (sent || !read_until(p, "got", PATIENCE, &reads))
+    if (sent || read_all(p, PATIENCE, &reads))
         os_process_kill(p);
     printf("%s: %d %s %lld\n", mode, sent, reads.out,
         (long long)end_process(p));
@@ -305,7 +306,7 @@ static void read_child(const os_process_start_t *start, const char *what,
         snprintf(reads->out, TEXT, "none");
         return;
     }
-    read_all(p, reads);
+    read_all(p, OS_FOREVER, reads);
     end_process(p);
 }
 
@@ -357,7 +358,7 @@ static int mode_full(char **argv)
         return (printf("full: no start\n"), 1);
     wrote = os_process_write(p, bytes, len);
     os_process_close(p, OS_INPUT);
-    read_all(p, &reads);
+    read_all(p, OS_FOREVER, &reads);
     end_process(p);
     free(bytes);
     return (printf("full: %d %s\n", wrote, reads.out), 0);
@@ -860,7 +861,7 @@ static int mode_low(char **argv)
     if (p) {
         wrote = os_process_write(p, argv[4], strlen(argv[4]));
         os_process_close(p, OS_INPUT);
-        read_all(p, &reads);
+        read_all(p, OS_FOREVER, &reads);
         end_process(p);
     }
     for (int i = 0; i < count; i++)
