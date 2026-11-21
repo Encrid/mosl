@@ -21,6 +21,7 @@ constexpr size_t TEXT = 256;
 constexpr size_t STACK = 1u << 20;
 constexpr int TRIES = 9;
 constexpr uint64_t BRIEF = 1'000'000;
+constexpr uint64_t PATIENCE = 10'000 * BRIEF;
 constexpr int CROWD = 8;
 constexpr int STARTS = 100;
 constexpr int STREAMS = 3;
@@ -42,6 +43,23 @@ typedef struct {
     size_t len;
     int result;
 } job_t;
+
+typedef struct {
+    int number;
+    const char *line;
+} told_t;
+
+#ifdef _WIN32
+static const told_t TOLD[] = {
+    {CTRL_C_EVENT, "got interrupt\n"}, {CTRL_BREAK_EVENT, "got termination\n"},
+    {CTRL_CLOSE_EVENT, "got hang-up\n"},
+};
+#else
+static const told_t TOLD[] = {
+    {SIGINT, "got interrupt\n"}, {SIGTERM, "got termination\n"},
+    {SIGHUP, "got hang-up\n"},
+};
+#endif
 
 static const char *self;
 
@@ -85,6 +103,64 @@ static int child_hold(char **)
     return (0);
 }
 
+static const char *get_told(int number)
+{
+    for (size_t i = 0; i < sizeof(TOLD) / sizeof(TOLD[0]); i++) {
+        if (TOLD[i].number == number)
+            return (TOLD[i].line);
+    }
+    return (nullptr);
+}
+
+#ifdef _WIN32
+static BOOL WINAPI tell_event(DWORD event)
+{
+    const char *line = get_told((int)event);
+
+    if (line)
+        _write(1, line, (unsigned)strlen(line));
+    return (FALSE);
+}
+
+static int catch_told(void)
+{
+    return (!SetConsoleCtrlHandler(tell_event, TRUE));
+}
+#else
+static void tell_signal(int number)
+{
+    const char *line = get_told(number);
+    [[maybe_unused]] ssize_t wrote = write(STDOUT_FILENO, line, strlen(line));
+
+    raise(number);
+}
+
+static int catch_told(void)
+{
+    struct sigaction act = {.sa_handler = tell_signal,
+        .sa_flags = SA_RESETHAND};
+    struct sigaction old = {};
+    int failed = 0;
+
+    sigemptyset(&act.sa_mask);
+    for (size_t i = 0; i < sizeof(TOLD) / sizeof(TOLD[0]); i++) {
+        sigaction(TOLD[i].number, nullptr, &old);
+        if (old.sa_handler != SIG_IGN)
+            failed |= sigaction(TOLD[i].number, &act, nullptr);
+    }
+    return (failed);
+}
+#endif
+
+static int child_tell(char **argv)
+{
+    if (catch_told())
+        return (3);
+    printf("ready\n");
+    fflush(stdout);
+    return (child_hold(argv));
+}
+
 static int child_stall(char **)
 {
     for (;;) {
@@ -112,7 +188,8 @@ static int child_env(char **argv)
 
 static const test_mode_t CHILDREN[] = {
     {"say", 4, child_say}, {"mix", 3, child_mix}, {"drain", 3, child_drain},
-    {"hold", 3, child_hold}, {"stall", 3, child_stall},
+    {"hold", 3, child_hold}, {"tell", 3, child_tell},
+    {"stall", 3, child_stall},
     {"exit", 4, child_exit}, {"env", 4, child_env},
 };
 
@@ -156,17 +233,34 @@ static void add_text(char *to, const char *bytes, size_t len)
         to[at + --len] = '\0';
 }
 
-static void read_all(os_process_t *p, reads_t *reads)
+static int read_all(os_process_t *p, uint64_t nanos, reads_t *reads)
 {
     const char *bytes = nullptr;
     size_t len = 0;
 
-    reads->last = os_process_read(p, OS_FOREVER, &bytes, &len);
+    reads->last = os_process_read(p, nanos, &bytes, &len);
     while (reads->last == OS_OUTPUT || reads->last == OS_ERRORS) {
         add_text(reads->last == OS_OUTPUT ? reads->out : reads->err, bytes,
             len);
-        reads->last = os_process_read(p, OS_FOREVER, &bytes, &len);
+        reads->last = os_process_read(p, nanos, &bytes, &len);
     }
+    return (reads->last);
+}
+
+static bool read_until(os_process_t *p, const char *line, uint64_t nanos,
+    reads_t *reads)
+{
+    const char *bytes = nullptr;
+    size_t len = 0;
+
+    while (!strstr(reads->out, line)) {
+        reads->last = os_process_read(p, nanos, &bytes, &len);
+        if (reads->last != OS_OUTPUT && reads->last != OS_ERRORS)
+            return (false);
+        add_text(reads->last == OS_OUTPUT ? reads->out : reads->err, bytes,
+            len);
+    }
+    return (true);
 }
 
 static int64_t end_process(os_process_t *p)
@@ -179,6 +273,30 @@ static int64_t end_process(os_process_t *p)
     return (status);
 }
 
+static os_process_t *start_ready(const os_process_start_t *start)
+{
+    os_process_t *p = start_with(start, "tell", nullptr);
+    reads_t reads = {};
+
+    if (p && !read_until(p, "ready", PATIENCE, &reads)) {
+        os_process_kill(p);
+        end_process(p);
+        return (nullptr);
+    }
+    return (p);
+}
+
+static int print_told(const char *mode, os_process_t *p, int sent)
+{
+    reads_t reads = {};
+
+    if (sent || read_all(p, PATIENCE, &reads))
+        os_process_kill(p);
+    printf("%s: %d %s %lld\n", mode, sent, reads.out,
+        (long long)end_process(p));
+    return (0);
+}
+
 static void read_child(const os_process_start_t *start, const char *what,
     const char *word, reads_t *reads)
 {
@@ -188,7 +306,7 @@ static void read_child(const os_process_start_t *start, const char *what,
         snprintf(reads->out, TEXT, "none");
         return;
     }
-    read_all(p, reads);
+    read_all(p, OS_FOREVER, reads);
     end_process(p);
 }
 
@@ -240,7 +358,7 @@ static int mode_full(char **argv)
         return (printf("full: no start\n"), 1);
     wrote = os_process_write(p, bytes, len);
     os_process_close(p, OS_INPUT);
-    read_all(p, &reads);
+    read_all(p, OS_FOREVER, &reads);
     end_process(p);
     free(bytes);
     return (printf("full: %d %s\n", wrote, reads.out), 0);
@@ -352,19 +470,16 @@ static int mode_interrupt(char **argv)
 {
     os_process_start_t start = {.signals = true,
         .ignore_interrupt = !strcmp(argv[3], "ignore")};
-    os_process_t *p = start_with(&start, "hold", nullptr);
+    os_process_t *p = start_ready(&start);
     int64_t status = 0;
-    int waited = -9;
+    int sent = -9;
 
     if (!p)
         return (printf("interrupt: no start\n"), 1);
-    if (os_process_signal(p, OS_INTERRUPT))
-        printf("interrupt: no signal\n");
-    waited = os_process_wait(p, 500 * BRIEF, &status);
-    os_process_kill(p);
-    end_process(p);
-    printf("interrupt: %s\n", waited == 1 ? "ignored" : "default");
-    return (0);
+    sent = os_process_signal(p, OS_INTERRUPT);
+    if (!sent && os_process_wait(p, 500 * BRIEF, &status) == 1)
+        sent = os_process_signal(p, OS_TERMINATION);
+    return (print_told("interrupt", p, sent));
 }
 
 static int mode_say(char **argv)
@@ -409,21 +524,16 @@ static os_process_t *start_signals(bool signals)
 {
     os_process_start_t start = {.signals = signals};
 
-    return (start_with(&start, "hold", nullptr));
+    return (start_ready(&start));
 }
 
 static int mode_signal(char **argv)
 {
     os_process_t *p = start_signals(true);
-    int sent = -9;
 
     if (!p)
         return (printf("signal: no start\n"), 1);
-    sent = os_process_signal(p, get_which(argv[3]));
-    if (sent)
-        os_process_kill(p);
-    printf("signal: %d %lld\n", sent, (long long)end_process(p));
-    return (0);
+    return (print_told("signal", p, os_process_signal(p, get_which(argv[3]))));
 }
 
 static int mode_nosignal(char **argv)
@@ -751,7 +861,7 @@ static int mode_low(char **argv)
     if (p) {
         wrote = os_process_write(p, argv[4], strlen(argv[4]));
         os_process_close(p, OS_INPUT);
-        read_all(p, &reads);
+        read_all(p, OS_FOREVER, &reads);
         end_process(p);
     }
     for (int i = 0; i < count; i++)
