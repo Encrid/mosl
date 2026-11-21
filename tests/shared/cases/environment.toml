@@ -1,4 +1,4 @@
-code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/env.c", "src/windows/file_write.c", "src/windows/find.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/output.c", "src/windows/path.c", "src/windows/port.c", "src/windows/program.c", "src/windows/signal.c", "src/windows/whole_form.c", "src/windows/wide.c", "src/windows/write_all.c", "tests/.gitkeep", "tests/environment_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/leaks/**", "tests/package/**", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/env.c", "src/windows/file_write.c", "src/windows/find.c", "src/windows/folder_base.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/output.c", "src/windows/path.c", "src/windows/port.c", "src/windows/program.c", "src/windows/signal.c", "src/windows/whole_form.c", "src/windows/wide.c", "src/windows/write_all.c", "tests/.gitkeep", "tests/environment_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/leaks/**", "tests/package/**", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
 
 [[case]]
 name = "os_env_get gives a copy of the value of a variable"
@@ -141,7 +141,7 @@ false = { run = ["{out}/environment{exe}", "{case}", "out-closed", "open"] }
 [[case]]
 name = "environment"
 run = ["{out}/environment{exe}"]
-sweep = ["GetActiveProcessorCount", "GetEnvironmentVariableW", "GetModuleFileNameW", "GetProcAddress", "GetProcessAffinityMask", "LoadLibraryW", "WSAStartup", "_NSGetExecutablePath", "bind", "getsockname", "malloc", "readlink", "realloc", "realpath", "sched_getaffinity", "socket", "strdup", "sysconf"]
+sweep = ["GetActiveProcessorCount", "GetEnvironmentVariableW", "GetModuleFileNameW", "GetProcAddress", "GetProcessAffinityMask", "LoadLibraryW", "SHGetKnownFolderPath", "WSAStartup", "_NSGetExecutablePath", "bind", "getsockname", "malloc", "readlink", "realloc", "realpath", "sched_getaffinity", "socket", "strdup", "sysconf"]
 claims = { status = 0 }
 rows = [
     { name = "os_path_find finds a program in a folder of PATH", in = "+env PATH={case}/r0/bin +env PATHEXT=.EXE {case}/r0 find environment {case}/r0/bin/environment{exe}", claims = { line = ["find: the program of PATH"] }, false = "+env PATH={case}/f0/none +env PATHEXT=.EXE {case}/f0 find environment {case}/f0/bin/environment{exe}" },
@@ -166,6 +166,19 @@ rows = [
     { name = "a folder that has the name of the program is not a program", in = "+env PATH={case}/r19/bin +env PATHEXT=.EXE {case}/r19 find-plain folder", claims = { line = ["plain-folder: none"] }, false = "+env PATH={case}/f19/bin +env PATHEXT=.EXE {case}/f19 find-plain x" },
     { name = "os_get_processor_count gives the online count when the affinity of the process fails", in = "+refuse sched_getaffinity=1,GetProcessAffinityMask=1 {case}/r20 cpus-free", claims = { line = ["cpus-free: as The environment tells"] }, false = "+refuse sched_getaffinity=1,GetProcessAffinityMask=1,GetActiveProcessorCount=1,sysconf=1 {case}/f20 cpus-free" },
     { name = "os_path_find is refused when the memory of its path fails", in = "+refuse malloc=1 +env PATH={case}/r21/bin +env PATHEXT=.EXE {case}/r21 again find", claims = { matches = ["find: [1-9] refused, then made"] }, false = "+env PATH={case}/f21/bin +env PATHEXT=.EXE {case}/f21 again find" },
+    { name = "os_folder_base gives the folder of OS_FOLDER_USER", in = "{case}/r22 base 1 - {case}/r22/home", claims = { line = ["{base_user}"] }, false = "{case}/f22 base 3 - {case}/f22/home" },
+    { name = "os_folder_base gives the folder of OS_FOLDER_LOCAL", in = "{case}/r23 base 2 - {case}/r23/home", claims = { line = ["{base_local}"] }, false = "{case}/f23 base 3 - {case}/f23/home" },
+    { name = "os_folder_base gives an absolute XDG_DATA_HOME for OS_FOLDER_USER on Linux", in = "{case}/r24 base 1 {case}/r24/data {case}/r24/home", claims = { line = ["{base_xdg}"] }, false = "{case}/f24 base 3 {case}/f24/data {case}/f24/home" },
+    { name = "os_folder_base gives an absolute XDG_DATA_HOME for OS_FOLDER_LOCAL on Linux", in = "{case}/r25 base 2 {case}/r25/data {case}/r25/home", claims = { line = ["{base_xdg_local}"] }, false = "{case}/f25 base 3 {case}/f25/data {case}/f25/home" },
+    { name = "os_folder_base takes an empty XDG_DATA_HOME as no value", in = "{case}/r26 base 1 \"\" {case}/r26/home", claims = { line = ["{base_user}"] }, false = "{case}/f26 base 3 \"\" {case}/f26/home" },
+    { name = "os_folder_base takes a relative XDG_DATA_HOME as no value", in = "{case}/r27 base 1 data {case}/r27/home", claims = { line = ["{base_user}"] }, false = "{case}/f27 base 3 data {case}/f27/home" },
+    { name = "os_folder_base gives nullptr on Linux and macOS when HOME is not there", in = "{case}/r28 base 1 - -", claims = { line = ["{base_homeless}"] }, false = "{case}/f28 base {homeless_false}" },
+    { name = "os_folder_base gives nullptr on Linux and macOS when HOME is empty", in = "{case}/r29 base 1 - \"\"", claims = { line = ["{base_homeless}"] }, false = "{case}/f29 base {homeless_false}" },
+    { name = "os_folder_base gives nullptr on Linux and macOS when HOME is relative", in = "{case}/r34 base 1 - home", claims = { line = ["{base_homeless}"] }, false = "{case}/f34 base {homeless_false}" },
+    { name = "os_folder_base gives nullptr for a kind above the last kind", in = "{case}/r30 base 3 - {case}/r30/home", claims = { line = ["base: none"] }, false = "{case}/f30 base 2 - {case}/f30/home" },
+    { name = "os_folder_base gives nullptr for the kind 0", in = "{case}/r31 base 0 - {case}/r31/home", claims = { line = ["base: none"] }, false = "{case}/f31 base 1 - {case}/f31/home" },
+    { name = "os_folder_base is refused when a call that it needs fails, and a later one is made", in = "+refuse LoadLibraryW=1,GetProcAddress=1,SHGetKnownFolderPath=1,malloc=1 +env XDG_DATA_HOME={case}/r32 {case}/r32 again base", claims = { matches = ["base: [1-9] refused, then made"] }, false = "+env XDG_DATA_HOME={case}/f32 {case}/f32 again base" },
+    { name = "os_folder_base is refused when its second library or its second call fails, and a later one is made", in = "+refuse LoadLibraryW=2,GetProcAddress=2,malloc=1 {case}/r33 again base", claims = { matches = ["base: [1-9] refused, then made"] }, false = "{case}/f33 again base" },
 ]
 
 [case.files]

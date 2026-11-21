@@ -1,5 +1,5 @@
 [leaks]
-memory = ["os_path_whole", "os_env_get", "os_path_find", "os_get_program_path"]
+memory = ["os_path_whole", "os_env_get", "os_path_find", "os_get_program_path", "os_folder_base"]
 
 [leaks.pairs]
 os_reserve = "os_release"
@@ -10,3 +10,7 @@ os_event_create = "os_event_free"
 os_folder_open = "os_folder_close"
 os_watch_start = "os_watch_stop"
 os_process_start = "os_process_free"
+
+[leaks.kinds.os_lock]
+takes = { os_lock = "*2" }
+gives = { os_unlock = "1" }

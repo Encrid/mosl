@@ -1,4 +1,4 @@
-code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/lock_test.c", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
 
 [[case]]
 name = "the os layer runs every call and its error paths"
@@ -209,6 +209,43 @@ rows = [
     { name = "a mutex is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,pthread_mutex_init=1 mutex", claims = { matches = ["mutex: [1-9] refused, then made"] }, false = "mutex" },
     { name = "a thread is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,pthread_create=1 thread", claims = { matches = ["thread: [1-9] refused, then made"] }, false = "thread" },
 ]
+
+[[case]]
+name = "lock"
+run = ["{out}/lock{exe}"]
+sweep = ["malloc"]
+claims = { status = 0 }
+rows = [
+    { name = "os_unlock ends the lock, and a later os_lock in the process takes it again", in = "lock {case}/r0.lock unlock", claims = { line = ["lock: 0, then 0"] }, false = "lock {case}/f0.lock keep" },
+    { name = "a second os_lock is refused with 1 while the first holds the file", in = "lock {case}/r1.lock keep", claims = { line = ["lock: 0, then 1"] }, false = "lock {case}/f1.lock unlock" },
+    { name = "os_lock gives -1 and no handle for a file that does not open", in = "lock {case}/none/r2.lock keep", claims = { line = ["lock: -1, then -1"] }, false = "lock {case}/f2.lock keep" },
+    { name = "os_lock gives -1 when its memory fails, and a later one takes the lock", in = "+refuse malloc=1 lock {case}/r3.lock keep", claims = { line = ["lock: -1, then 0"] }, false = "lock {case}/f3.lock keep" },
+    { name = "a write through a different handle is refused by the lock on Windows, and made on Linux and macOS", in = "write {case}/r4.lock", claims = { line = ["{lock_write}"] }, false = "write {case}/none/f4.lock" },
+]
+
+[[case]]
+name = "os_lock gives 1 while another process holds the lock of the file"
+process = "helper"
+run = ["{out}/lock{exe}", "lock", "{case}/held.lock", "keep"]
+helper = { run = ["{out}/lock{exe}", "hold", "{case}/held.lock"], wait = "hold: 0", stdin = "end\n", claims = { line = ["hold: 0"] } }
+claims = { line = ["lock: 1, then 1"] }
+false = { helper = {} }
+
+[[case]]
+name = "the end of a process ends its lock, and a later os_lock takes it within 10 seconds"
+process = "helper"
+run = ["{out}/lock{exe}", "retry", "{case}/left.lock"]
+helper = { run = ["{out}/lock{exe}", "leave", "{case}/left.lock", "none"], wait = "leave: 0", claims = { line = ["leave: 0"] } }
+claims = { line = ["retry: 0"] }
+false = { helper = { run = ["{out}/lock{exe}", "hold", "{case}/left.lock"], wait = "hold: 0", stdin = "end\n", claims = { line = ["hold: 0"] } } }
+
+[[case]]
+name = "a program that the process starts with a call other than os_process_start does not get the file of the lock"
+process = "helper"
+run = ["{out}/lock{exe}", "retry", "{case}/child.lock"]
+helper = { run = ["{out}/lock{exe}", "leave", "{case}/child.lock", "start"], wait = "leave: 0", stdin = "end\n", claims = { line = ["leave: 0", "child: end, 0 files"] } }
+claims = { line = ["retry: 0"] }
+false = { helper = { run = ["{out}/lock{exe}", "leave", "{case}/child.lock", "share"], wait = "leave: 0", stdin = "end\n", claims = { line = ["leave: 0", "child: end, 0 files"] } } }
 
 [[case]]
 name = "clock"

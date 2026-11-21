@@ -88,6 +88,13 @@ static void make_writable(const char *path)
 #endif
 }
 
+static void make_unreadable([[maybe_unused]] const char *path)
+{
+#ifndef _WIN32
+    chmod(path, 0333);
+#endif
+}
+
 static int make(char **argv)
 {
     char *path = in(argv[3]);
@@ -129,10 +136,10 @@ static int deep(char **argv)
     first[strlen(folder) + 1 + LEVEL] = '\0';
     if (!strcmp(argv[3], "made"))
         made = os_folder_make(path);
-    wrote = os_file_write(file, "deep file", 9, false);
+    wrote = os_file_write(file, "deep file", 9, OS_FILE_DURABLE);
     printf("deep: make %d, write %d, read %s, entry %d, ", made, wrote,
         show(path, "f"), os_path_entry(file));
-    printf("move %d, entry %d, ", os_path_move(file, moved),
+    printf("move %d, entry %d, ", os_path_move(file, moved, OS_MOVE_DURABLE),
         os_path_entry(moved));
     printf("link %d, entry %d, ", os_link_make(link, "."),
         os_path_entry(link));
@@ -151,24 +158,34 @@ static int locked(char **)
     int wrote = 0;
 
     make_read_only(in("f"));
-    wrote = os_file_write(in("f"), "f", 1, false);
+    wrote = os_file_write(in("f"), "f", 1, 0);
     make_writable(in("f"));
     return (printf("locked: %d\n", wrote), 0);
 }
 
-static int replace(char **argv)
+static int write_text(const char *name, const char *bytes, uint32_t flags)
 {
-    int wrote = os_file_write(in("f"), argv[3], strlen(argv[3]), false);
+    int wrote = os_file_write(in("f"), bytes, strlen(bytes), flags);
     const char *text = show(folder, "f");
 
-    return (printf("replace: %d, %zu bytes: %s\n", wrote, strlen(text), text),
+    return (printf("%s: %d, %zu bytes: %s\n", name, wrote, strlen(text), text),
         0);
+}
+
+static int replace(char **argv)
+{
+    return (write_text("replace", argv[3], 0));
+}
+
+static int replace_durable(char **argv)
+{
+    return (write_text("replace-d", argv[3], OS_FILE_DURABLE));
 }
 
 static int mode(char **argv)
 {
     char *path = in("m");
-    bool executable = argv[4][0] == 'x';
+    uint32_t executable = argv[4][0] == 'x' ? OS_FILE_EXECUTABLE : 0;
     int wrote = 0;
 #ifdef _WIN32
     FILE *before = strcmp(argv[3], "none") ? fopen(path, "wb") : nullptr;
@@ -203,7 +220,7 @@ static int entry(char **)
     char *file = in("f");
     char *made = in("d");
 
-    if (os_file_write(file, "f", 1, false) || os_folder_make(made))
+    if (os_file_write(file, "f", 1, 0) || os_folder_make(made))
         printf("entry: the file or the folder is not made\n");
     printf("entry: %d %d %d ", os_path_entry(file), os_path_entry(made),
         os_path_entry(in("m")));
@@ -218,7 +235,7 @@ static int entry_x(char **)
 #else
     constexpr int WANT = 2;
 #endif
-    int wrote = os_file_write(path, "x", 1, true);
+    int wrote = os_file_write(path, "x", 1, OS_FILE_EXECUTABLE);
     int found = os_path_entry(path);
 
     if (!wrote && found == WANT)
@@ -231,7 +248,7 @@ static int entry_link(char **)
     char *target = in("t");
 
     setup(os_folder_make(target));
-    setup(os_file_write(in("t/k"), "k", 1, false));
+    setup(os_file_write(in("t/k"), "k", 1, 0));
     setup(os_link_make(in("lt"), "t"));
     setup(os_link_make(in("lk"), "t/k"));
     setup(os_link_make(in("ln"), "none"));
@@ -241,11 +258,11 @@ static int entry_link(char **)
 
 static int move(char **)
 {
-    int moved = os_path_move(in("a"), in("b"));
+    int moved = os_path_move(in("a"), in("b"), 0);
 
     printf("move: %d, a %d, b holds %s, ", moved, os_path_entry(in("a")),
         show(folder, "b"));
-    return (printf("none %d\n", os_path_move(in("none"), in("c"))), 0);
+    return (printf("none %d\n", os_path_move(in("none"), in("c"), 0)), 0);
 }
 
 static int move_folder(char **)
@@ -253,8 +270,8 @@ static int move_folder(char **)
     int moved = 0;
 
     setup(os_folder_make(in("d")));
-    setup(os_file_write(in("d/f"), "f", 1, false));
-    moved = os_path_move(in("d"), in("e"));
+    setup(os_file_write(in("d/f"), "f", 1, 0));
+    moved = os_path_move(in("d"), in("e"), 0);
     return (printf("move-folder: %d, d %d, e/f %d\n", moved,
         os_path_entry(in("d")), os_path_entry(in("e/f"))), 0);
 }
@@ -265,9 +282,9 @@ static int remove_tree(char **)
 
     setup(os_folder_make(in("d/s")));
     setup(os_folder_make(in("t")));
-    setup(os_file_write(in("d/f"), "f", 1, false));
-    setup(os_file_write(in("d/s/g"), "g", 1, false));
-    setup(os_file_write(in("t/k"), "k", 1, false));
+    setup(os_file_write(in("d/f"), "f", 1, 0));
+    setup(os_file_write(in("d/s/g"), "g", 1, 0));
+    setup(os_file_write(in("t/k"), "k", 1, 0));
     setup(os_link_make(in("d/l"), "../t"));
     make_read_only(in("d/f"));
     make_read_only(in("d/s"));
@@ -321,8 +338,8 @@ static int deep_move_none(char **)
     if (!file || !none)
         return (printf("deep-move: no memory\n"), 1);
     setup(os_folder_make(path));
-    setup(os_file_write(file, "f", 1, false));
-    moved = os_path_move(file, none);
+    setup(os_file_write(file, "f", 1, 0));
+    moved = os_path_move(file, none, 0);
     printf("deep-move: %d\n", moved);
     setup(os_path_remove(path));
     free(path);
@@ -357,9 +374,51 @@ static int remove_none(char **)
     printf("%d ", os_path_remove(in("none/x")));
     return (printf("%d\n", os_path_remove(in("a/k/x"))), 0);
 }
+
 static int move_args(char **argv)
 {
-    return (printf("move-args: %d\n", os_path_move(argv[3], argv[4])), 0);
+    int moved = os_path_move(argv[3], argv[4], 0);
+
+    return (printf("move-args: %d\n", moved), 0);
+}
+
+static int move_durable(char **argv)
+{
+    int moved = os_path_move(in(argv[3]), in(argv[4]), OS_MOVE_DURABLE);
+
+    printf("move-d: %d, to %d, ", moved, os_path_entry(in(argv[4])));
+    return (printf("from %d\n", os_path_entry(in(argv[3]))), 0);
+}
+
+static int unread_move(char **argv)
+{
+    int moved = 0;
+
+    make_unreadable(in("u"));
+    moved = os_path_move(in(argv[3]), in(argv[4]), OS_MOVE_DURABLE);
+    make_writable(in("u"));
+    return (printf("unread-move: %d, to %d\n", moved,
+        os_path_entry(in(argv[4]))), 0);
+}
+
+static int write_flags(char **argv)
+{
+    uint32_t flags = (uint32_t)strtoul(argv[3], nullptr, 0);
+    int wrote = os_file_write(in("f"), "f", 1, flags);
+
+    return (printf("write-flags: %d, entry %d\n", wrote,
+        os_path_entry(in("f"))), 0);
+}
+
+static int move_flags(char **argv)
+{
+    uint32_t flags = (uint32_t)strtoul(argv[3], nullptr, 0);
+    int moved = 0;
+
+    setup(os_file_write(in("a"), "a", 1, 0));
+    moved = os_path_move(in("a"), in("b"), flags);
+    return (printf("move-flags: %d, a %d, b %d\n", moved,
+        os_path_entry(in("a")), os_path_entry(in("b"))), 0);
 }
 
 static int remove_of(char **argv)
@@ -377,7 +436,7 @@ static int locked_folder(char **)
     setup(os_folder_make(ro));
     setup(os_folder_make(in("ro/sub")));
     make_read_only(ro);
-    wrote = os_file_write(in("ro/f"), "f", 1, false);
+    wrote = os_file_write(in("ro/f"), "f", 1, 0);
     made = os_folder_make(in("ro/new"));
     removed = os_path_remove(in("ro/sub"));
     make_writable(ro);
@@ -401,7 +460,7 @@ static int make_file(char **)
 
     setup(os_folder_make(path));
     setup(os_path_remove(path));
-    setup(os_file_write(path, "f", 1, false));
+    setup(os_file_write(path, "f", 1, 0));
     return (printf("make-file: %d\n", os_folder_make(path)), 0);
 }
 
@@ -410,7 +469,7 @@ static int link_relative(char **argv)
     int linked = 0;
 
     setup(os_folder_make(in("s")));
-    setup(os_file_write(in("f"), "f", 1, false));
+    setup(os_file_write(in("f"), "f", 1, 0));
     linked = os_link_make(in("s/l"), argv[3]);
     return (printf("link-relative: %d, reads %s\n", linked,
         show(in("s"), "l")), 0);
@@ -438,7 +497,7 @@ constexpr size_t BIG = 2u << 20;
 
 static bool try_write([[maybe_unused]] int attempt)
 {
-    return (!os_file_write(in("w"), "w", 1, false));
+    return (!os_file_write(in("w"), "w", 1, 0));
 }
 
 static bool try_write_n(int attempt)
@@ -446,12 +505,12 @@ static bool try_write_n(int attempt)
     char name[8];
 
     snprintf(name, sizeof(name), "w%d", attempt);
-    return (!os_file_write(in(name), "w", 1, false));
+    return (!os_file_write(in(name), "w", 1, 0));
 }
 
 static bool try_write_x([[maybe_unused]] int attempt)
 {
-    return (!os_file_write(in("w"), "w", 1, true));
+    return (!os_file_write(in("w"), "w", 1, OS_FILE_EXECUTABLE));
 }
 
 static bool try_entry([[maybe_unused]] int attempt)
@@ -461,7 +520,18 @@ static bool try_entry([[maybe_unused]] int attempt)
 
 static bool try_move([[maybe_unused]] int attempt)
 {
-    return (!os_path_move(in("a"), in("b")));
+    return (!os_path_move(in("a"), in("b"), 0));
+}
+
+static bool try_write_durable([[maybe_unused]] int attempt)
+{
+    return (!os_file_write(in("w"), "w", 1, OS_FILE_DURABLE));
+}
+
+static bool try_move_durable([[maybe_unused]] int attempt)
+{
+    setup(os_file_write(in("a"), "a", 1, 0));
+    return (!os_path_move(in("a"), in("b"), OS_MOVE_DURABLE));
 }
 
 static bool try_remove([[maybe_unused]] int attempt)
@@ -501,6 +571,7 @@ static const try_t TRIED[] = {
     {"write", try_write}, {"write-n", try_write_n},
     {"write-x", try_write_x}, {"entry", try_entry},
     {"move", try_move}, {"remove", try_remove}, {"link", try_link},
+    {"write-d", try_write_durable}, {"move-d", try_move_durable},
     {"make", try_make}, {"set", try_set}, {"whole", try_whole},
 };
 
@@ -534,7 +605,7 @@ static int big(char **)
     if (!bytes)
         return (printf("big: no memory\n"), 1);
     memset(bytes, 'b', BIG);
-    wrote = os_file_write(in("big"), bytes, BIG, false);
+    wrote = os_file_write(in("big"), bytes, BIG, 0);
     f = os_folder_open(folder);
     if (f && os_folder_read_file(f, "big", &len))
         printf("big: %d, %zu bytes\n", wrote, len);
@@ -586,7 +657,9 @@ static const test_mode_t MODES[] = {
     {"make-file", 3, make_file}, {"make-link", 3, make_link_none},
     {"deep-remake", 3, deep_remake}, {"deep-move", 3, deep_move_none},
     {"deep-remove", 3, deep_remove_none}, {"size", 4, size},
-    {"size-link", 4, size_link},
+    {"size-link", 4, size_link}, {"replace-d", 4, replace_durable},
+    {"move-d", 5, move_durable}, {"unread-move", 5, unread_move},
+    {"write-flags", 4, write_flags}, {"move-flags", 4, move_flags},
 };
 
 static int end(int status)

@@ -114,7 +114,8 @@ static int find_plain(char **argv)
     if (!strcmp(argv[3], "folder"))
         setup(os_folder_make(plain));
     else
-        setup(os_file_write(plain, "", 0, !strcmp(argv[3], "x")));
+        setup(os_file_write(plain, "", 0,
+            strcmp(argv[3], "x") ? 0 : OS_FILE_EXECUTABLE));
     path = os_path_find("plain");
     if (argv[3][0] == '-')
         snprintf(name, sizeof(name), "plain");
@@ -146,7 +147,7 @@ static int find_ext(char **)
     for (size_t i = 0; i < 3; i++) {
         free(want);
         want = join(folder, names[i]);
-        setup(os_file_write(want, "", 0, true));
+        setup(os_file_write(want, "", 0, OS_FILE_EXECUTABLE));
     }
     free(want);
     want = malloc(strlen(bin) + 16);
@@ -454,6 +455,64 @@ static int port(char **)
     return (printf("port: %d\n", free_port), 0);
 }
 
+static void put(const char *name, const char *value)
+{
+#ifdef _WIN32
+    _putenv_s(name, value ? value : "");
+#else
+    if (value)
+        setenv(name, value, 1);
+    else
+        unsetenv(name);
+#endif
+}
+
+static bool has_start(const char *path, const char *start)
+{
+    return (start && *start && !strncmp(path, start, strlen(start)));
+}
+
+static void show_base(const char *path, const char *xdg, const char *home)
+{
+    char *local = os_env_get("LOCALAPPDATA");
+    char *profile = os_env_get("USERPROFILE");
+    char *saved = profile ? join(profile, "Saved Games") : nullptr;
+
+    if (saved)
+        saved[strlen(profile)] = '\\';
+    if (!path)
+        printf("base: none\n");
+    else if (has_start(path, xdg))
+        printf("base: xdg%s\n", path + strlen(xdg));
+    else if (has_start(path, home))
+        printf("base: home%s\n", path + strlen(home));
+    else if (same(path, saved) || same(path, local))
+        printf("base: %s\n", same(path, saved) ? "Saved Games" : "Local");
+    else
+        printf("base: other %s\n", path);
+    free(saved);
+    free(profile);
+    free(local);
+}
+
+static int base(char **argv)
+{
+    char *kept = os_env_get("HOME");
+    const char *xdg = strcmp(argv[4], "-") ? argv[4] : nullptr;
+    const char *home = strcmp(argv[5], "-") ? argv[5] : nullptr;
+    char *path = nullptr;
+
+    put("XDG_DATA_HOME", xdg);
+    put("HOME", home);
+    path = os_folder_base((uint32_t)strtoul(argv[3], nullptr, 10));
+    put("HOME", kept);
+    put("XDG_DATA_HOME", nullptr);
+    show_base(path, xdg, home);
+    free(path);
+    free(kept);
+    return (0);
+}
+
 constexpr int TRIES = 9;
 
 static bool try_get([[maybe_unused]] int attempt)
@@ -495,6 +554,14 @@ static bool try_set([[maybe_unused]] int attempt)
     return (!os_folder_set(folder));
 }
 
+static bool try_base([[maybe_unused]] int attempt)
+{
+    char *path = os_folder_base(OS_FOLDER_USER);
+
+    free(path);
+    return (path != nullptr);
+}
+
 typedef struct {
     const char *name;
     bool (*run)(int attempt);
@@ -503,6 +570,7 @@ typedef struct {
 static const try_t TRIED[] = {
     {"get", try_get}, {"find", try_find}, {"program", try_program},
     {"port", try_port}, {"cpus", try_cpus}, {"set", try_set},
+    {"base", try_base},
 };
 
 static int again(char **argv)
@@ -535,7 +603,7 @@ static const test_mode_t MODES[] = {
     {"find-plain", 4, find_plain}, {"find-ext", 3, find_ext},
     {"program", 4, program}, {"cpus", 3, cpus}, {"cpus-free", 3, cpus_free}, {"out", 4, out},
     {"out-closed", 4, out_closed}, {"out-ignored", 3, out_ignored}, {"console", 3, console}, {"port", 3, port},
-    {"again", 4, again},
+    {"again", 4, again}, {"base", 6, base},
 };
 
 static int run(int argc, char **argv)

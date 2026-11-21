@@ -27,7 +27,7 @@ The right to read keeps the make on the path.
 | Function | Result |
 | --- | --- |
 | `step(at, name, make)` | Makes `name` in `at` if `make`, and opens it: readable with `make`, for search else. Closes `at`, and gives the descriptor, or -1. |
-| `get_last_start(path)` | Gives the place where the last name of `path` starts, after the `/` at the end. |
+| `os_get_last_start(path)` | Gives the place where the last name of `path` starts, after the `/` at the end. `src/posix/folder_sync.c` and `src/posix/entry.c` also use it. |
 | `copy_start(path, len)` | Gives a new copy of the first `len` bytes of `path`. The caller frees it. `nullptr` tells that `malloc` failed. |
 | `os_open_parent(path, name, make)` | Opens the folder before the last name, as *The parent* tells, or gives -1. Sets `*name`. |
 | `os_close_parent(at)` | Closes `at` if it is not `AT_FDCWD`. |

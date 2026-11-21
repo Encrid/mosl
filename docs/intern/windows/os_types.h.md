@@ -87,6 +87,11 @@ The state of the signals: `docs/intern/windows/signal.c.md`, *The state*.
 | `line` | The line that a thread writes at the first event. |
 | `length` | The number of bytes of `line`. |
 
+### os_known_path_t and os_task_free_t
+
+The types of `SHGetKnownFolderPath` of `shell32.dll` and of `CoTaskMemFree` of `ole32.dll`.
+`src/windows/folder_base.c` loads the 2 functions at the call: `docs/intern/windows/folder_base.c.md`.
+
 ### os_stream_t
 
 A pipe that the process writes into: its output or its errors.

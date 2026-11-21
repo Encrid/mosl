@@ -2,7 +2,7 @@
 
 This header gives the calls of the operating system, in the same form on each system.
 That is address space, shared libraries, threads, the clock, a mutex, an event, and folders, watches, paths, locks and signals.
-It also gives processes, files, the environment, the output, a free port and the count of the processors.
+It also gives processes, files, the environment, the base folders of the user, the output, a free port and the count of the processors.
 
 ## The layer
 
@@ -78,6 +78,11 @@ It tells which entries of the folder changed, as *The watch* tells.
 A process that `os_process_start` starts: `struct os_process`, which each platform defines.
 It holds the pipes of the process, and on Windows its console, as *The processes* tells.
 
+### os_lock_t
+
+A lock of a file that `os_lock` takes: `struct os_lock`, which the layer defines.
+`os_unlock` ends it, as *The locks* tells.
+
 ### os_process_start_t
 
 What `os_process_start` needs: `struct os_process_start`.
@@ -91,6 +96,36 @@ What `os_process_start` needs: `struct os_process_start`.
 | `errors_apart` | `bool` | `true`: the errors go into a pipe of their own. `false`: they go into the pipe of the output. |
 | `signals` | `bool` | `true`: `os_process_signal` can reach the process. `false`: each signal to it gives -1. |
 | `ignore_interrupt` | `bool` | `true`: the process starts with the interrupt ignored. `false`: it starts with the default action of the interrupt. |
+
+### enum os_file_flag
+
+The flags of `os_file_write`: an `enum os_file_flag : uint32_t` of bits. A call gives their sum, or 0 for none, as `uint32_t flags`.
+
+| Flag | Value | Effect |
+| --- | --- | --- |
+| `OS_FILE_EXECUTABLE` | 1 | The file gets execute bits, as *The files* tells. |
+| `OS_FILE_DURABLE` | 2 | The call flushes the bytes to the disk before the close, as *The files* tells. |
+
+### enum os_move_flag
+
+The flags of `os_path_move`: an `enum os_move_flag : uint32_t` of bits, given as `uint32_t flags`, or 0 for none.
+
+| Flag | Value | Effect |
+| --- | --- | --- |
+| `OS_MOVE_DURABLE` | 1 | The call waits for the disk before it returns, as *The files* tells. |
+
+A bit that is not a flag of its function gives -1, and the call does nothing. Thus a later flag never has a silent meaning in an older layer.
+
+### enum os_folder_kind
+
+The kinds of `os_folder_base`: an `enum os_folder_kind : uint32_t`, given as `uint32_t kind`.
+
+| Kind | Value | Folder |
+| --- | --- | --- |
+| `OS_FOLDER_USER` | 1 | The folder of the data that goes with the user, for example the saves of a game. |
+| `OS_FOLDER_LOCAL` | 2 | The folder of the data that stays on this machine. |
+
+A different value gives `nullptr`. On Linux and macOS, the 2 kinds give the same folder: *The base folders*.
 
 ## Functions
 
@@ -129,7 +164,8 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_watch_take` | Gives the next change of a watch, and does not wait. It gives 1 and sets `*name`, or it gives 0, 2 or -1, as *The watch* tells. |
 | `os_watch_stop` | Stops a watch, and frees it. A null `w` does nothing. |
 | `os_path_whole` | Gives the absolute path of `path`, which the caller frees, or `nullptr`. |
-| `os_lock` | Takes an exclusive lock on the file `path`, so that one process at a time holds it. It does not wait: it gives 0 on success, 1 if a lock holds the file already, and -1 if the file does not open. The mode is fixed, and the layer has one implementation of it. |
+| `os_lock` | Takes an exclusive lock on the file `path`, so that one process at a time holds it, as *The locks* tells. It does not wait. It gives 0 and sets `*lock` on success, 1 if a lock holds the file already, and -1 on a failure. |
+| `os_unlock` | Ends the lock of `lock`, and frees it. A null `lock` does nothing. |
 | `os_signal_catch` | Catches the signals that stop the process, and writes `line` at the first signal, as *The signals* tells. Gives 0 on success. |
 | `os_signal_is_caught` | Tells if a signal set the flag of `os_signal_catch`. A caller reads it between two parts of its work, and then ends its work. |
 | `os_process_start` | Starts a program with the fields of `start`, as *The processes* tells. Gives `nullptr` if the program does not start. The streams of the caller then stay as they are. |
@@ -140,13 +176,14 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_process_kill` | Ends the process at once, as *The processes* tells. |
 | `os_process_wait` | Waits up to `nanos` nanoseconds for the end of the process, and gives its status, as *The processes* tells. |
 | `os_process_free` | Frees a process. It kills a process that still runs, and waits for its end. A null `p` does nothing. |
-| `os_file_write` | Writes all the bytes of the file `path`, as *The files* tells. Gives 0 on success. |
+| `os_file_write` | Writes all the bytes of the file `path`, with the flags of `enum os_file_flag`, as *The files* tells. With `OS_FILE_DURABLE`, it flushes the bytes to the disk before the close. On macOS, the cache of the drive can still hold the bytes. Gives 0 on success, and -1 for a flag that is not known. |
 | `os_path_entry` | Tells what is at `path`, as *The files* tells. |
-| `os_path_move` | Gives the file or the folder `from` the path `to`, as *The files* tells. Gives 0 on success. |
+| `os_path_move` | Gives the file or the folder `from` the path `to`, with the flags of `enum os_move_flag`, as *The files* tells. With `OS_MOVE_DURABLE`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success, and -1 for a flag that is not known. |
 | `os_path_remove` | Removes what is at `path`, as *The files* tells. |
 | `os_link_make` | Makes `path` a symbolic link to `target`, as *The files* tells. Gives 0 on success. |
 | `os_env_get` | Gives a copy of the value of the variable `name`, as *The environment* tells. |
 | `os_path_find` | Finds the program `name`, as *The environment* tells. |
+| `os_folder_base` | Gives the base folder of the data of the user for `kind`, which the caller frees, as *The base folders* tells. Gives `nullptr` for a kind that is not known, or if the system gives no folder. |
 | `os_get_program_path` | Gives the absolute path of the program of the process, which the caller frees, or `nullptr`. |
 | `os_output_write` | Writes all the `len` bytes to the standard output, as *The output* tells. Gives 0, or -1 if a write fails. |
 | `os_get_free_port` | Gives a port of TCP on `127.0.0.1` that no socket held at the call, or -1. Another program can take the port after the call. On Windows, the layer loads `ws2_32.dll` at the call, so a program that links `os.a` links no other library. |
@@ -212,6 +249,38 @@ Each system tells the changes in its own way:
 
 A watch gives 2 when the changes between two takes do not fit. It keeps 64 KiB on Windows and on macOS, and `max_queued_events` changes on Linux. FSEvents can also lose changes.
 A take with no change makes no call of the system on Windows and on macOS, and one call of `read` on Linux.
+
+## The locks
+
+`os_lock` opens the file `path`, and makes it if it is not there. Then it takes an exclusive lock of the file, and does not wait.
+On Linux and macOS, the lock is advisory: it stops only a different `os_lock` of the file, and not a read or a write.
+On Windows, the lock also refuses a read or a write of the first byte through a different handle.
+
+| Result of `os_lock` | Meaning |
+| --- | --- |
+| 0 | The caller holds the lock, and `*lock` is its handle. |
+| 1 | A lock holds the file already: of a different process, or of an earlier call of this process. `*lock` is `nullptr`. |
+| -1 | The file does not open, or the memory of the handle fails. `*lock` is `nullptr`. |
+
+`os_unlock` ends the lock, closes the file and frees the handle. A later `os_lock` of the file, also in the same process, then takes the lock.
+The file stays, because a different process can wait to lock it.
+
+The end of a process also ends each lock that it holds. A program that the process starts does not get the file of the lock, also with a call other than `os_process_start`. Thus the lock ends with the process that took it.
+On Windows, the end of the lock after the end of the process can take some time. Thus a program calls `os_unlock` before its end.
+
+- On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`.
+- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`.
+
+The sources of a lock:
+
+- Linux, `flock`: "Locks created by flock() are associated with an open file description". https://man7.org/linux/man-pages/man2/flock.2.html
+- Linux, `flock`: a lock "may be denied by a lock that the calling process has already placed via another file descriptor."
+- Linux, `flock`: the lock is released "when all such file descriptors have been closed."
+- Microsoft, `_locking`: `_LK_UNLCK` "Unlocks the specified bytes, which must have been previously locked." https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
+- Microsoft, `LockFile`: when a process ends with a lock, "the locks are unlocked by the operating system." https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile
+- Microsoft, `LockFile`: "However, the time it takes for the operating system to unlock these locks depends upon available system resources."
+- Microsoft, `LockFile`: with a second handle, the locking process "cannot access the specified region through this second handle until it unlocks the region."
+- Microsoft, `_locking`: "Locking bytes in a file prevents access to those bytes by other processes."
 
 ## The signals
 
@@ -317,10 +386,25 @@ Each call on a path takes a path past the limit of the system, as `os_folder_ope
 
 `os_file_write` makes the file `path`, or replaces all its bytes. The folder of the file must be there.
 
-- A new file gets the mode 0777 without the bits of the umask with `executable`, and 0666 without them else.
-- A file that was there keeps its read bits and its write bits. With `executable`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
+- A new file gets the mode 0777 without the bits of the umask with `OS_FILE_EXECUTABLE`, and 0666 without them else.
+- A file that was there keeps its read bits and its write bits. With `OS_FILE_EXECUTABLE`, it gets an execute bit for each read bit that it has. Else it loses each execute bit.
 - Thus no call reads the umask: POSIX has no call that reads it with no change. A private file, for example of mode 0600, stays private.
-- On Windows, a file has no execute bit, and `executable` changes nothing.
+- On Windows, a file has no execute bit, and `OS_FILE_EXECUTABLE` changes nothing.
+
+With `OS_FILE_DURABLE`, `os_file_write` flushes the bytes of the file to the disk before it closes the file. A failed flush gives -1.
+With no `OS_FILE_DURABLE`, the call does not wait for the disk, and the system writes the bytes later.
+
+- On Windows, `FlushFileBuffers` flushes the file.
+- On Linux and macOS, `fsync` flushes the file. On Linux, it also flushes the cache of the disk.
+- On macOS, `fsync` gives the bytes to the drive, and the drive can keep them in its cache for some time. The call does not use `F_FULLFSYNC`.
+- The flush does not sync the entry of a new file in its folder. To keep the name too, give the file its path with `os_path_move` and `OS_MOVE_DURABLE`.
+- Each flush waits for the disk. Thus a durable write of each small file costs more time than one write with no `OS_FILE_DURABLE`.
+
+The sources of a durable write:
+
+- Microsoft, `FlushFileBuffers`: "The file handle must have the GENERIC_WRITE access right." It "can be inefficient when used after every write". https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers
+- Linux, `fsync`: "This includes writing through or flushing a disk cache if present." https://man7.org/linux/man-pages/man2/fsync.2.html
+- macOS, `fsync`: "The F_FULLFSYNC fcntl asks the drive to flush all buffered data to permanent storage." https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsync.2.html
 
 `os_path_entry` follows a link, and tells what is at its end:
 
@@ -334,6 +418,27 @@ Each call on a path takes a path past the limit of the system, as `os_folder_ope
 
 `os_path_move` gives the file or the folder `from` the path `to`, and replaces a file at `to`.
 The two paths must be on one volume, else the move fails.
+
+With `OS_MOVE_DURABLE`, `os_path_move` waits for the disk before it returns. On macOS, the cache of the drive can still hold the move.
+With no `OS_MOVE_DURABLE`, the call does not wait for the disk, and the system writes the move later.
+
+- On Windows, `MoveFileExW` gets the flag `MOVEFILE_WRITE_THROUGH`. Microsoft states that the call then returns only when the move is on the disk.
+- The guarantee of Microsoft names only a move that copies and deletes the file. `os_path_move` never copies, because it does not use `MOVEFILE_COPY_ALLOWED`.
+- On Linux and macOS, `fsync` syncs the folder of `to` after the move. It also syncs the folder of `from` if that is a different folder.
+- On Linux and macOS, a failed sync gives -1, and the move is made: the entry is at `to`, and not at `from`.
+- On macOS, the cache of the drive can keep the entries for some time, as for `os_file_write`. The drive can also write them in a different sequence.
+- Each sync waits for the disk, so a durable move costs more time than a move with no `OS_MOVE_DURABLE`.
+
+On Windows and Linux, a durable write and a durable move keep a whole file. Write the file under a temporary path, then move it to its path.
+On macOS, the drive can write the new name before the bytes. Thus a loss of power can give the new name with bytes that are not complete.
+
+The sources of a durable move:
+
+- Microsoft, `MoveFileExW`: "The function does not return until the file is actually moved on the disk." https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw
+- Microsoft, `MoveFileExW`: "Setting this value guarantees that a move performed as a copy and delete operation is flushed to disk before the function returns."
+- macOS, `fsync`: "it may be written in an out-of-order sequence." https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsync.2.html
+- Linux, `fsync`: "Calling fsync() does not necessarily ensure that the entry in the directory containing the file has also reached disk." https://man7.org/linux/man-pages/man2/fsync.2.html
+- Linux, `fsync`: "For that an explicit fsync() on a file descriptor for the directory is also needed."
 
 `os_path_remove` removes the file, the link or the folder at `path`, with all the entries of the folder:
 
@@ -357,6 +462,39 @@ It gives `nullptr` if the variable is not there, or if the copy fails.
 - Else the call looks in each folder of the `PATH` of the caller, in order.
 - On Windows, if `name` has no extension, it tries `name` with each extension of `PATHEXT`, in order, and then `name` alone. With no `PATHEXT`, it tries no extension.
 - It looks in the current folder only if `PATH` names it.
+
+## The base folders
+
+`os_folder_base` gives the absolute path of a base folder of the data of the user. The caller frees it.
+The caller adds the names of its own folders to the base, and makes them with `os_folder_make`.
+
+| System | `OS_FOLDER_USER` | `OS_FOLDER_LOCAL` |
+| --- | --- | --- |
+| Windows | The known folder `FOLDERID_SavedGames`, by default `%USERPROFILE%\Saved Games`. | The known folder `FOLDERID_LocalAppData`, by default `%USERPROFILE%\AppData\Local`. |
+| Linux | `XDG_DATA_HOME`, or `$HOME/.local/share`. | The same folder. |
+| macOS | `$HOME/Library/Application Support`. | The same folder. |
+
+- On Windows, `SHGetKnownFolderPath` gives the current path of the folder, also when it is redirected, because the call does not give `KF_FLAG_DEFAULT_PATH`.
+- On Windows, the call gives `KF_FLAG_CREATE`, so Windows makes a folder that is not there, with its rights. Without it, a folder that is not there gives `nullptr`.
+- On Windows, the layer loads `shell32.dll` and `ole32.dll` at the call, so a program that links `os.a` links no other library. `CoTaskMemFree` frees the text of Windows.
+- On Linux, an absolute `XDG_DATA_HOME` is the base. A value that is empty or relative counts as no value, as the specification of XDG tells. The base is then `$HOME/.local/share`.
+- On Linux with no absolute `XDG_DATA_HOME`, and on macOS, a `HOME` that is not there, empty or relative gives `nullptr`.
+- On Linux and macOS, the call makes no folder.
+
+The sources of the base folders:
+
+- Microsoft, `SHGetKnownFolderPath`: the caller frees the path "by calling CoTaskMemFree, whether SHGetKnownFolderPath succeeds or not." https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath
+- Microsoft, `SHGetKnownFolderPath`: "The returned path does not include a trailing backslash."
+- Microsoft, `KNOWNFOLDERID`: `FOLDERID_SavedGames` has the GUID `{4C5C32FF-BB9D-43b0-B5B4-2D72E54EAAA4}` and the default path "%USERPROFILE%\Saved Games". https://learn.microsoft.com/en-us/windows/win32/shell/knownfolderid
+- Microsoft, `KNOWNFOLDERID`: `FOLDERID_LocalAppData` has the GUID `{F1B32785-6FBA-4FCF-9D55-7B8E7F157091}` and the default path "%LOCALAPPDATA% (%USERPROFILE%\AppData\Local)".
+- Microsoft, `KF_FLAG_CREATE`: "The security provisions predefined for that folder are applied." https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/ne-shlobj_core-known_folder_flag
+- Microsoft, `KF_FLAG_DONT_VERIFY`: without it, a folder that is "absent" gives "a failure code, and no path is returned."
+- Microsoft, `KF_FLAG_DEFAULT_PATH`: "If this flag isn't set, then the function retrieves the current" and "possibly redirected" path "of the folder."
+- Microsoft, `CoTaskMemFree`: "If this parameter is NULL, the function has no effect." Its DLL is `Ole32.dll`. https://learn.microsoft.com/en-us/windows/win32/api/combaseapi/nf-combaseapi-cotaskmemfree
+- freedesktop.org, XDG Base Directory Specification, version 0.8: "If $XDG_DATA_HOME is either not set or empty, a default equal to $HOME/.local/share should be used." https://specifications.freedesktop.org/basedir/latest/
+- freedesktop.org, the same page: "If an implementation encounters a relative path in any of these variables it should consider the path invalid and ignore it."
+- Apple, File System Programming Guide: "Use this directory to store all app data files except those associated with the user's documents." https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemOverview/FileSystemOverview.html
+- Apple, the same page: `Library` "is the app's sandbox directory or the current user's home directory (if the app is not in a sandbox)."
 
 ## The output
 

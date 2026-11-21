@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "os_types.h"
+#include "../common/os_common.h"
 
 constexpr int WRITE = O_WRONLY | O_CLOEXEC;
 
@@ -43,14 +44,17 @@ static int open_file(int at, const char *name, bool executable)
 }
 
 int os_file_write(const char *path, const void *bytes, size_t len,
-    bool executable)
+    uint32_t flags)
 {
     const char *name = nullptr;
-    int at = os_open_parent(path, &name, false);
-    int fd = at == -1 ? -1 : open_file(at, name, executable);
+    int at = flags & ~OS_FILE_FLAGS ? -1 : os_open_parent(path, &name, false);
+    int fd = at == -1 ? -1
+        : open_file(at, name, flags & OS_FILE_EXECUTABLE);
     int wrote = fd < 0 ? -1 : os_write_all(fd, -1, bytes, len);
 
     os_close_parent(at);
+    if (!wrote && flags & OS_FILE_DURABLE && fsync(fd))
+        wrote = -1;
     if (fd >= 0 && close(fd))
         wrote = -1;
     return (wrote);
