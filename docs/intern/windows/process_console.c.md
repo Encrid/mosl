@@ -16,6 +16,9 @@ Thus the console never waits for a reader, and `ClosePseudoConsole` never waits 
 - The hang-up calls `ClosePseudoConsole`, then `WaitForSingleObject` with a grace of 1 second, then `TerminateProcess` with 3221225786.
   The reason is in `docs/extern/os.h.md`, *A signal to a process*. On a process that ended, `TerminateProcess` does nothing, and the status stays.
   So the code has no choice, and each version of Windows runs the same steps.
+- A write of a key tells only that the pipe of the console took the key. The key can still be lost, before the end of the start or next to a different key.
+- A close before the end of the start stops that start, and `os_signal_catch` of the process writes no line.
+  `docs/extern/os.h.md`, *A signal to a process*, gives the sources of the 2 limits.
 
 ## Functions
 

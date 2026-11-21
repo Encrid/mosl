@@ -319,6 +319,38 @@ Windows has no `SIGPIPE`: a write to a closed output fails.
 Each system gives -1 for a signal to a process that started without `signals`.
 Each system also gives -1 for a signal after a hang-up, because on Windows the hang-up ends the console.
 
+On Windows, an interrupt or a termination that the caller sends before the process has finished its start can be lost.
+A hang-up that the caller sends before that time ends the process, but the process does not get it as a signal.
+Thus `os_signal_catch` of that process does not write its line.
+A result of 0 does not tell that the process got the signal.
+Thus the caller waits for a line of the output of the process, and then sends the signal.
+Do not send the signal again: a process that uses `os_signal_catch` ends at once at a second signal, as *The signals* tells.
+
+On Windows, 2 different signals that the caller sends close together can both be lost.
+The console reads the pipe of its input in parts, and it sends at most 1 signal for each part.
+If a part holds 2 different keys, the console sends no signal for them. If a part holds the same key 2 times, the console sends 1 signal.
+Thus the caller waits for the effect of a signal before it sends the next signal.
+The effect is the line of `os_signal_catch`, or the end of the process.
+
+On Windows, the caller cannot tell an interrupt that the process ignores from an interrupt that is lost. In each case, the interrupt has no effect.
+
+Thus the test of `ignore_interrupt` has a limit. It cannot show that the process ignored the interrupt, and not that the console lost it.
+The process of the test writes a line at the end of its start, and the test sends the interrupt after that line.
+Then the test waits for the end of the process, and it sends the termination only if the process still runs.
+Thus a loss before the end of the start, or a loss of 2 keys in 1 part, cannot explain the result.
+
+The sources of these limits:
+
+- OpenConsole, `VtIo.cpp`, lines 233-237, is about a close of the console before its first process has connected. https://github.com/microsoft/terminal/blob/cf5e6bf22727a251aced8bc30491c87428a4e116/src/host/VtIo.cpp#L233-L237
+- `VtIo.cpp`, line 236: "but since it hasn't finished connecting yet, it won't react to a CTRL_CLOSE_EVENT."
+- `VtIo.cpp`, line 237, about the same close: "Instead, we return an error here which will abort the connection setup."
+- These 2 quotes are about the close only. The loss of an interrupt and of a termination before the end of the start was measured in the tests of the project.
+- OpenConsole, `VtInputThread.cpp`, lines 106-114, takes the lock of the console for each part that it reads. https://github.com/microsoft/terminal/blob/cf5e6bf22727a251aced8bc30491c87428a4e116/src/host/VtInputThread.cpp#L106-L114
+- `VtInputThread.cpp`, line 107: "Only the global unlock attempts to dispatch ctrl events."
+- OpenConsole, `input.cpp`, lines 228-240: each key of a signal sets its flag, for example "gci.CtrlFlags |= CONSOLE_CTRL_C_FLAG;". https://github.com/microsoft/terminal/blob/cf5e6bf22727a251aced8bc30491c87428a4e116/src/host/input.cpp#L228-L240
+- OpenConsole, `input.cpp`, line 294, at the dispatch, clears each flag: "const auto CtrlFlags = std::exchange(gci.CtrlFlags, 0);". https://github.com/microsoft/terminal/blob/cf5e6bf22727a251aced8bc30491c87428a4e116/src/host/input.cpp#L294
+- OpenConsole, `input.cpp`, lines 308-331: the `switch` matches only 1 flag, and with 2 flags its `default` does "return;". https://github.com/microsoft/terminal/blob/cf5e6bf22727a251aced8bc30491c87428a4e116/src/host/input.cpp#L308-L331
+
 ## The processes
 
 `os_process_start` starts a program with the fields of `os_process_start_t`.
