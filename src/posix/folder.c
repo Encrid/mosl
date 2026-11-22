@@ -20,11 +20,15 @@ int os_folder_set(const char *folder)
 static bool is_folder_there(const char *folder, int at, const char *name)
 {
     struct stat there = {};
+    int search = -1;
 
     if (strlen(folder) < PATH_MAX)
         return (!fstatat(AT_FDCWD, folder, &there, 0)
             && S_ISDIR(there.st_mode));
-    return (os_open_search(at, name) >= 0);
+    search = os_open_search(at, name);
+    if (search >= 0)
+        close(search);
+    return (search >= 0);
 }
 
 int os_folder_make(const char *folder)
