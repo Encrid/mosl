@@ -43,6 +43,7 @@ run = ["{out}/threads{exe}"]
 claims = { status = 0 }
 rows = [
     { name = "os_mutex_lock waits while another thread holds the mutex", in = "held", claims = { line = ["mutex: waited, then taken"] }, false = "free" },
+    { name = "os_get_thread_id gives 2 live threads 2 different numbers, and never 0", in = "ids thread", claims = { line = ["ids: differ, none 0"] }, false = "ids main" },
 ]
 
 [[case]]

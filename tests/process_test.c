@@ -324,13 +324,14 @@ static int mode_named(char **argv)
 
 static int mode_env(char **argv)
 {
-    const char *env[] = {"MOSL_A=1", nullptr};
-    const char *unset[] = {"MOSL_B", nullptr};
+    bool lower = !strcmp(argv[3], "lower");
+    const char *env[] = {lower ? "mosl_a=1" : "MOSL_A=1", nullptr};
+    const char *unset[] = {lower ? "mosl_b" : "MOSL_B", nullptr};
     os_process_start_t start = {.env = env};
     reads_t a = {};
     reads_t b = {};
 
-    if (!strcmp(argv[3], "unset"))
+    if (strcmp(argv[3], "keep"))
         start.unset = unset;
     read_child(&start, "env", "MOSL_A", &a);
     read_child(&start, "env", "MOSL_B", &b);
