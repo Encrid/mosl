@@ -14,6 +14,7 @@ constexpr uint64_t HELD = OS_SECOND / 10;
 
 typedef struct {
     os_mutex_t *mutex;
+    os_event_t *trying;
     os_event_t *taken;
     int count;
 } shared_t;
@@ -22,6 +23,7 @@ static void take(void *arg)
 {
     shared_t *shared = arg;
 
+    os_event_set(shared->trying);
     os_mutex_lock(shared->mutex);
     shared->count++;
     os_mutex_unlock(shared->mutex);
@@ -43,6 +45,8 @@ static void take_after(shared_t *shared, bool held)
     os_thread_t *t = os_thread_start(take, shared, STACK);
     const char *first = "no thread";
 
+    if (t && held)
+        os_event_wait(shared->trying, OS_FOREVER);
     if (t) {
         os_event_wait(shared->taken, held ? HELD : OS_FOREVER);
         first = shared->count ? "taken" : "waited";
@@ -59,15 +63,17 @@ static void take_after(shared_t *shared, bool held)
 
 static int wait_mutex(bool held)
 {
-    shared_t shared = {os_mutex_create(), os_event_create(), 0};
+    shared_t shared = {os_mutex_create(), os_event_create(),
+        os_event_create(), 0};
 
-    if (shared.mutex && shared.taken) {
+    if (shared.mutex && shared.trying && shared.taken) {
         if (held)
             os_mutex_lock(shared.mutex);
         take_after(&shared, held);
     } else
         printf("mutex: not made\n");
     os_event_free(shared.taken);
+    os_event_free(shared.trying);
     os_mutex_free(shared.mutex);
     return (0);
 }
