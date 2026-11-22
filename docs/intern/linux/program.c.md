@@ -21,4 +21,5 @@ Then the count is `os_get_online_count` of `src/posix/online.c`, as `available_p
 | Function | Result |
 | --- | --- |
 | `os_get_program_path()` | Gives the target of `/proc/self/exe`, or `nullptr`. |
+| `count_bits(set)` | Gives the count of the bits of `set`: the processors of the affinity. |
 | `os_get_processor_count()` | Gives the bits of the affinity, or `os_get_online_count`. |

@@ -26,5 +26,6 @@ A `SIGPIPE` that waited before the writes stays, so the process gets it as befor
 | --- | --- |
 | `wait_room(fd, wake)` | Waits for room in `fd` or for a byte of `wake`. Gives 0 to go on, or -1. |
 | `write_once(fd, wake, bytes, len)` | Writes once. Gives the count of bytes, 0 to go on, or -1. |
+| `write_each(fd, wake, bytes, len)` | Calls `write_once` until each byte is out. Gives 0, or -1 at the first write that fails. |
 | `os_is_pipe_waiting()` | Gives true if a `SIGPIPE` waits for the thread. |
 | `os_write_all(fd, wake, bytes, len)` | Writes the `len` bytes into `fd` with `SIGPIPE` blocked. Gives -1 at the first write that fails, else 0. |

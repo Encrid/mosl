@@ -17,4 +17,5 @@ A character of UTF-8 that one call cuts in 2 becomes 2 characters of replacement
 
 | Function | Result |
 | --- | --- |
+| `write_console(console, bytes, len)` | Turns the bytes from UTF-8 into UTF-16, and writes them with `WriteConsoleW` until each one is out. Gives 0, or -1 if the memory or a write fails. |
 | `os_output_write(bytes, len)` | Writes the bytes into the console or into the handle, as *The write* tells. Gives 0, or -1. |
