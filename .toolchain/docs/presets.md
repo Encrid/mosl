@@ -14,7 +14,7 @@ On Linux and on macOS, the zip of Bridge-Host records the execute bits of that p
 
 | File | Content |
 | --- | --- |
-| `native_sources.toml` | The sources `bridge`, `bb_native` and `bridge_host`: the release `v0.5.0` of Bridge, of BB-Native and of Bridge-Host. |
+| `native_sources.toml` | The sources `bridge`, `bb_native` and `bridge_host`: the releases `v0.8.0` of Bridge, `v0.5.1` of BB-Native and `host-v0.8.0` of Bridge-Host. The zip of Bridge-Host holds a folder for each target, so its source takes `top`. |
 | `native_targets.toml` | For each target, the section of the manifest, and the sha256 of each release. |
 | `native_kinds.toml` | The variable `native_flags`, and the kind `native_module`. |
 | `native_checks.toml` | `[check.makes]` with the 6 macros of `bridge_schema.h` of Bridge. Each makes a type, or its descriptor `<type>_desc`, from its first argument. |
@@ -62,7 +62,8 @@ The kind `wasm_module` makes a module in 6 steps:
 5. `wasm-opt` removes the exports of the accessors and each part that nothing uses. It runs no other pass, so each accessor keeps the body that BB-Wasm checks at load.
 6. It writes the items of `manifest` into the custom section `bridge:manifest`, with a zero byte after each item. Bridge-Host reads the manifest there.
 
-`wasm_compile` holds the flags of the target and of the language of step 1: `-target wasm32-freestanding`, `{language}`, `-Wno-missing-field-initializers`, `-O2`, `{float}`, `{wasm_simd}` and `-nostdlib`.
+`wasm_compile` holds the flags of the target and of the language of step 1: `-target wasm32-freestanding`, `{language}`, `-Wno-missing-field-initializers`, `-O2`, `{debug_info}`, `{float}`, `{wasm_simd}` and `-nostdlib`.
+With `{debug_info}`, the module or library of a release holds no debug information, so no folder of the machine that built it.
 The step 1 and the command `dump` of the kind both use it. Thus the syntax tree of a changed copy sees the code as the module compiles it, also the code under `__wasm__`.
 
 In the build of the tree of a run, the key `probed` of the kind adds 2 flags to step 1: `.toolchain/docs/toolchain.toml.md`, *[kinds.\<kind\>]*.
