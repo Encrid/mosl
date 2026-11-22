@@ -1,4 +1,4 @@
-code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/lock_test.c", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/lock_test.c", "tests/memory_test.c", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
 
 [[case]]
 name = "the os layer runs every call and its error paths"
@@ -20,6 +20,22 @@ process = "state"
 run = ["{out}/wait{exe}", "50000000", "3600", "20"]
 claims = { line = ["0 of 20 waits took less than 50000000 ns"] }
 false = { run = ["{out}/wait{exe}", "50000000", "3600", "20", "set"] }
+
+[[case]]
+name = "memory"
+run = ["{out}/memory{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "os_reserve makes the first commit bytes readable, writable and zero", in = "commit 131072 65536 0", claims = { line = ["commit: 65536 zero, 65536 kept of 65536"] }, false = "commit 131072 16384 0" },
+    { name = "os_commit makes more bytes of a reservation readable, writable and zero", in = "commit 131072 65536 131072", claims = { line = ["commit: 131072 zero, 131072 kept of 131072"] }, false = "commit 131072 65536 0" },
+]
+
+[[case]]
+name = "a byte of a reservation past its commit faults when touched"
+process = "status"
+run = ["{out}/memory{exe}", "touch", "131072", "65536", "65536"]
+claims = { status_not = 0, line = ["touch 65536"], lacks = ["touched"] }
+false = { run = ["{out}/memory{exe}", "touch", "131072", "65536", "65535"] }
 
 [[case]]
 name = "wait"
