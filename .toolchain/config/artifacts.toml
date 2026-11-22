@@ -41,6 +41,14 @@ defines = ["{paths}"]
 flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
 
 [[artifact]]
+name = "memory"
+kind = "program"
+test = true
+sources = ["tests/memory_test.c", "src/{system}/*.c", "{system_sources}"]
+include = ["include", "{toolchain}/runtime"]
+flags = ["{quiet}", "{system_defines}", "{system_libraries}"]
+
+[[artifact]]
 name = "clock"
 kind = "program"
 test = true
