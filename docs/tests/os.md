@@ -2,6 +2,20 @@
 
 This document gives the limits of some cases of `tests/shared/cases/os.toml`.
 
+## A mutex that waits
+
+This section is about the row "os_mutex_lock waits while another thread holds the mutex" of the case `threads`.
+It checks a claim of `os_mutex_lock` in `docs/extern/os.h.md`, *Functions*. The row runs `tests/threads_test.c` with `held`:
+
+1. The main thread locks the mutex, and starts a second thread.
+2. The second thread sets the event `trying`, then calls `os_mutex_lock`. With the mutex, it adds 1 to a count, unlocks, and sets the event `taken`.
+3. The main thread waits for `trying`. Then it waits up to 100 ms for `taken`, and reads the count while it still holds the mutex.
+4. A count of 0 gives `waited`. Then the main thread unlocks, joins the thread, and reads the count again: 1 gives `taken`.
+
+The row proves the wait only when the second thread calls `os_mutex_lock` within the 100 ms after `trying`.
+A thread that the system does not run in that time gives `waited` also with a lock that does not wait.
+A lock that does not wait, with a thread that runs in time, gives `mutex: taken, then taken`, and the row fails.
+
 ## A wall clock behind the clock of the kernel
 
 This section is about the case "a wall clock behind the clock of the kernel does not change a wait, simulated on Linux and macOS".
