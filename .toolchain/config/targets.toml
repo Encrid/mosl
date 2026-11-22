@@ -22,6 +22,7 @@ base_homeless = "base: Saved Games"
 homeless_false = "3 - -"
 lock_write = "write: 0, refused"
 env_case = "env: 1 none"
+env_case_false = "other"
 socket_libraries = ["-lws2_32"]
 system_defines = []
 system_libraries = []
@@ -53,6 +54,7 @@ base_homeless = "base: none"
 homeless_false = "1 - /"
 lock_write = "write: 0, made"
 env_case = "env: 0 2"
+env_case_false = "unset"
 system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
@@ -82,6 +84,7 @@ base_homeless = "base: none"
 homeless_false = "1 - /"
 lock_write = "write: 0, made"
 env_case = "env: 0 2"
+env_case_false = "unset"
 system_libraries = ["-lm", "-lpthread", "-ldl"]
 system_sources = ["src/linux/*.c", "src/common/*.c"]
 
@@ -111,6 +114,7 @@ base_homeless = "base: none"
 homeless_false = "1 - /"
 lock_write = "write: 0, made"
 env_case = "env: 0 2"
+env_case_false = "unset"
 system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
@@ -140,6 +144,7 @@ base_homeless = "base: none"
 homeless_false = "1 - /"
 lock_write = "write: 0, made"
 env_case = "env: 0 2"
+env_case_false = "unset"
 system_libraries = []
 system_sources = ["src/macos/*.c", "src/common/*.c"]
 
@@ -167,6 +172,7 @@ base_homeless = "base: Saved Games"
 homeless_false = "3 - -"
 lock_write = "write: 0, refused"
 env_case = "env: 1 none"
+env_case_false = "other"
 socket_libraries = ["-lws2_32"]
 system_defines = []
 system_libraries = []

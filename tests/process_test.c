@@ -331,6 +331,10 @@ static int mode_env(char **argv)
     reads_t a = {};
     reads_t b = {};
 
+    if (!strcmp(argv[3], "other")) {
+        env[0] = "mosl_x=1";
+        unset[0] = "mosl_y";
+    }
     if (strcmp(argv[3], "keep"))
         start.unset = unset;
     read_child(&start, "env", "MOSL_A", &a);
