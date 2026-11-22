@@ -451,6 +451,15 @@ static int arm_read(os_process_t *p)
     return (p ? os_process_read(p, OS_SECOND / 1000, &bytes, &len) : -9);
 }
 
+static void pause_for(uint64_t nanos)
+{
+    os_event_t *e = os_event_create();
+
+    if (e)
+        os_event_wait(e, nanos);
+    os_event_free(e);
+}
+
 static int run_job(const char *mode, char **argv, os_thread_fn_t fn)
 {
     bool say = !strcmp(argv[3], "say");
@@ -463,6 +472,8 @@ static int run_job(const char *mode, char **argv, os_thread_fn_t fn)
 
     if (!t)
         return (printf("%s: no start\n", mode), 1);
+    if (kill && fn == write_job)
+        pause_for(OS_SECOND / 10);
     if (kill)
         os_process_kill(job.p);
     os_thread_join(t);

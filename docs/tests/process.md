@@ -43,6 +43,18 @@ The source of the order of the wait:
 
 - Microsoft, `WaitForMultipleObjects`: "If multiple objects become signaled, the function returns the index of the first handle in the array whose object was signaled." https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects
 
+## r13: a kill that ends a write that waits
+
+The row r13 claims that `os_process_kill` from another thread ends a write that waits. The thread writes 4 MiB to the child `stall`, which reads nothing.
+A write has no limit of time, so the test cannot make a write wait before the thread starts, as for r12.
+Thus the test waits 100 ms after the start of the thread, and then kills the process.
+
+On Windows, the stop event ends the wait of the write only if that wait starts before the teardown of the child closes its pipe.
+If the teardown comes first, `WriteFile` fails, and the write gives -1 with no wait. The claim of the row holds both ways.
+That order is outside the code: `docs/extern/os.h.md` gives no way to see the teardown of a killed process.
+Thus the branch of the stop event in `src/windows/process_pipes.c` has an exemption with `may_reach` in `.toolchain/config/checks.toml`.
+The wait of 100 ms lets the thread reach its wait first in nearly each run.
+
 ## Causes of a flaky run
 
 - The false variant f14 starts the process without `ignore_interrupt`. If the console loses its interrupt, the test sends the termination.
