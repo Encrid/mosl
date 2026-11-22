@@ -369,6 +369,22 @@ static int mode_full(char **argv)
     return (printf("full: %d %s\n", wrote, reads.out), 0);
 }
 
+static int mode_full_stall(char **argv)
+{
+    size_t len = (size_t)atoll(argv[3]);
+    char *bytes = calloc(len, 1);
+    os_process_t *p = start_child("stall", nullptr);
+    int wrote = -9;
+
+    if (!bytes || !p)
+        return (printf("full: no start\n"), 1);
+    wrote = os_process_write(p, bytes, len);
+    os_process_kill(p);
+    end_process(p);
+    free(bytes);
+    return (printf("full: %d\n", wrote), 0);
+}
+
 static int mode_closed(char **argv)
 {
     bool ended = !strcmp(argv[3], "exit");
@@ -898,6 +914,7 @@ static int mode_low(char **argv)
 static const test_mode_t MODES[] = {
     {"named", 5, mode_named}, {"env", 4, mode_env},
     {"streams", 4, mode_streams}, {"full", 4, mode_full},
+    {"full-stall", 4, mode_full_stall},
     {"closed", 4, mode_closed}, {"timeout", 5, mode_timeout},
     {"status", 4, mode_status}, {"kill", 4, mode_kill},
     {"kill-read", 4, mode_kill_read}, {"kill-write", 4, mode_kill_write},
