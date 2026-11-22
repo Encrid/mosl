@@ -133,10 +133,10 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 
 | Function | Result |
 | --- | --- |
-| `os_reserve` | Reserves `reserve` bytes of address space, and makes the first `commit` bytes readable, writable and zero. The rest faults when touched, which a caller can use as a guard after a block. Gives `nullptr` on failure. |
-| `os_commit` | Makes the first `bytes` of a reservation readable and writable. Thus a caller grows its memory, up to the reservation. Gives 0 on success. |
+| `os_reserve` | Reserves `reserve` bytes of address space, and makes the first `commit` bytes readable, writable and zero. The system rounds `commit` up to whole pages. The rest, from the next page on, faults when touched, which a caller can use as a guard after a block. Gives `nullptr` on failure. |
+| `os_commit` | Makes the first `bytes` of a reservation readable and writable. A byte that no earlier commit gave is zero. The system rounds `bytes` up to whole pages. Thus a caller grows its memory, up to the reservation. Gives 0 on success. |
 | `os_release` | Gives back all of a reservation. Each caller passes a base that `os_reserve` gave. |
-| `os_lib_open` | Opens a shared library, or gives `nullptr`. For a path, the loader looks there for the library and for what it needs, so a library can bring its runtime beside itself. For a bare name, the loader uses the search of the operating system. |
+| `os_lib_open` | Opens a shared library, or gives `nullptr`. For a path, the loader opens the library at that path. For a bare name, the loader uses the search of the operating system. *The libraries* tells where the loader looks for what the library needs. |
 | `os_lib_get_symbol` | Gives where a library has what it exports as `name`, or `nullptr`. |
 | `os_lib_close` | Closes a library. Each caller passes a library that `os_lib_open` gave. |
 | `os_lib_pin` | Keeps the open library of `path` in the process until its end. A later `os_lib_close` closes the handle, and the library stays. A second pin of a library changes nothing. A process can pin any number of libraries. Gives 0, or -1 if no library of `path` is open. |
@@ -156,7 +156,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_folder_set` | Moves the process into `folder`, so that relative paths start in `folder`. Gives 0 on success. |
 | `os_folder_make` | Makes `folder`, and each folder above it that is not there. Gives 0 on success, also when `folder` is there already. |
 | `os_folder_open` | Opens the folder `path`, so that the caller can list it and read its files, as *The folders* tells. Gives `nullptr` if no folder of `path` opens. |
-| `os_folder_read_entry` | Gives the name of the next entry of the folder, and sets `*is_folder` to true if the entry is a folder. It skips `.` and `..`. The name stays valid until the next call. Gives `nullptr` after the last entry. |
+| `os_folder_read_entry` | Gives the name of the next entry of the folder, and sets `*is_folder` to true if the entry is a folder. It skips `.` and `..`. The entries come in the order of the file system, which differs by system and by file system. Thus a caller that needs an order sorts the names. The name stays valid until the next call. Gives `nullptr` after the last entry. |
 | `os_folder_read_file` | Reads the whole file `name` of the folder. It gives the bytes, then one zero byte, and sets `*len` to the count of the bytes. The bytes belong to the folder: they stay valid until its next read or its close, and the caller does not free them. `name` is one name of the folder, with no separator. Gives `nullptr` if the file does not open or read, or if it is a folder. |
 | `os_folder_entry_size` | Gives 0, and sets `*size` to the size in bytes of the file `name`, as *The folders* tells. It reads no byte of the file. `name` is one name of the folder, with no separator. Gives -1 and keeps `*size` if no file of `name` is there, if it is a folder, or if the call fails. |
 | `os_folder_close` | Closes a folder, and frees its bytes. A null `f` does nothing. |
@@ -219,6 +219,30 @@ The path of a folder can end with a separator. It can also be a root: `/` on Lin
 
 A library loads by its path, so `os_lib_open` keeps the limit of the loader of each system. That limit is 4096 bytes on Linux, 1024 on macOS, and 260 characters on Windows.
 
+## The libraries
+
+`os_lib_open` gives the loader of Linux and macOS no flag of search. Thus each loader looks for what a library needs in its own places:
+
+- On Windows, `LoadLibraryExW` with `LOAD_WITH_ALTERED_SEARCH_PATH` looks first in the folder of a library that a path names. Thus a library can bring its runtime beside itself.
+- On Linux, a run path of `$ORIGIN` in the library makes the loader look in the folder of the library. A `LD_LIBRARY_PATH` that names the folder does it too.
+  Else the loader uses the other rules of `dlopen`: the cache of `ldconfig`, and `/lib` and `/usr/lib`.
+- On macOS, a needed name that starts with `@loader_path` makes the loader look in the folder of the library.
+  A name that starts with `@rpath` does it too, if the library itself has the run path `@loader_path`.
+  The loader also reads the run paths of each image that loaded the library, also of the program. There, `@loader_path` is the folder of that image.
+  A name with `@executable_path`, an absolute name, `DYLD_LIBRARY_PATH` or `DYLD_FALLBACK_LIBRARY_PATH` can also lead to the folder of the library.
+- Thus on Linux and macOS, the build of a library that brings its runtime beside itself gives the library that run path or that name.
+
+The sources of the search:
+
+- Linux, `dlopen`: dependencies "are also automatically loaded by the dynamic linker using the same rules". https://man7.org/linux/man-pages/man3/dlopen.3.html
+- Linux, `dlopen`: the rules are `DT_RPATH`, `LD_LIBRARY_PATH`, `DT_RUNPATH`, "The cache file /etc/ld.so.cache", and "The directories /lib and /usr/lib".
+- Linux, `ld.so`: `$ORIGIN` "expands to the directory containing the program or shared object." https://man7.org/linux/man-pages/man8/ld.so.8.html
+- Apple, `dyld`, in a copy of the man pages of Xcode: https://keith.github.io/xcode-man-pages/dyld.1.html
+- Apple, `dyld`: "The run path stack is built from the LC_RPATH load commands in the dependency chain that lead to the current dylib load."
+- Apple, `dyld`: "in every binary, @loader_path resolves to a different path, whereas @executable_path always resolves to the same path."
+- Apple, `dyld`: with `DYLD_LIBRARY_PATH`, "the dynamic linker looks for its leaf name in each directory". With `DYLD_FALLBACK_LIBRARY_PATH`, "If a dylib is not found at its install path, dyld uses this as a list of directories to search".
+- Microsoft, `LoadLibraryExW`: with an absolute path, "the system uses the alternate file search strategy" "to find associated executable modules". https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw
+
 ## The watch
 
 A watch tells which entries of a folder changed. Thus a caller reads only these entries, and not all the entries of the folder.
@@ -260,7 +284,11 @@ On Windows, the lock also refuses a read or a write of the first byte through a 
 | --- | --- |
 | 0 | The caller holds the lock, and `*lock` is its handle. |
 | 1 | A lock holds the file already: of a different process, or of an earlier call of this process. `*lock` is `nullptr`. |
-| -1 | The file does not open, or the memory of the handle fails. `*lock` is `nullptr`. |
+| -1 | The file does not open, the memory of the handle fails, or the system refuses the lock for a different reason. `*lock` is `nullptr`. |
+
+Only a lock that holds the file gives 1. Thus a caller can tell a held file from a failure.
+For example, `ENOLCK` of `flock` on Linux gives -1: the kernel has no memory for the lock.
+On Windows, `ERROR_ACCESS_DENIED` of `LockFileEx` gives -1, also though `_locking` then sets `errno` to `EACCES`.
 
 `os_unlock` ends the lock, closes the file and frees the handle. A later `os_lock` of the file, also in the same process, then takes the lock.
 The file stays, because a different process can wait to lock it.
@@ -268,15 +296,23 @@ The file stays, because a different process can wait to lock it.
 The end of a process also ends each lock that it holds. A program that the process starts does not get the file of the lock, also with a call other than `os_process_start`. Thus the lock ends with the process that took it.
 On Windows, the end of the lock after the end of the process can take some time. Thus a program calls `os_unlock` before its end.
 
-- On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`.
-- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`.
+- On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`. Only the error `EWOULDBLOCK` of `flock` gives 1.
+- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`. Only the error `ERROR_LOCK_VIOLATION` in `_doserrno` gives 1.
+  The C library of Windows gives `EACCES` also for other refusals of the system, for example `ERROR_ACCESS_DENIED`. Thus `os_lock` does not read `errno` on Windows.
 
 The sources of a lock:
 
 - Linux, `flock`: "Locks created by flock() are associated with an open file description". https://man7.org/linux/man-pages/man2/flock.2.html
 - Linux, `flock`: a lock "may be denied by a lock that the calling process has already placed via another file descriptor."
 - Linux, `flock`: the lock is released "when all such file descriptors have been closed."
+- Linux, `flock`: `EWOULDBLOCK` tells "The file is locked and the LOCK_NB flag was selected."
+- Linux, `flock`: `ENOLCK` tells "The kernel ran out of memory for allocating lock records."
 - Microsoft, `_locking`: `_LK_UNLCK` "Unlocks the specified bytes, which must have been previously locked." https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
+- Microsoft, `_locking`: `EACCES` tells a "Locking violation (file already locked or unlocked)."
+- Microsoft, `_doserrno`: "For I/O operations, `_doserrno` stores the operating-system error-code equivalents of `errno` codes." https://learn.microsoft.com/en-us/cpp/c-runtime-library/errno-doserrno-sys-errlist-and-sys-nerr
+- Microsoft, System Error Codes: `ERROR_LOCK_VIOLATION` tells "The process cannot access the file because another process has locked a portion of the file." https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
+- Microsoft, the source of the UCRT in the Windows SDK, lowio/locking.cpp: on a failure of `LockFileEx`, `_locking` calls `__acrt_errno_map_os_error(GetLastError())`.
+- The same source, misc/errno.cpp: that function sets `_doserrno = oserrno`, and maps `ERROR_ACCESS_DENIED`, `ERROR_LOCK_VIOLATION` and the codes 19 to 36 to `EACCES`.
 - Microsoft, `LockFile`: when a process ends with a lock, "the locks are unlocked by the operating system." https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile
 - Microsoft, `LockFile`: "However, the time it takes for the operating system to unlock these locks depends upon available system resources."
 - Microsoft, `LockFile`: with a second handle, the locking process "cannot access the specified region through this second handle until it unlocks the region."

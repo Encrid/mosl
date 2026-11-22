@@ -47,7 +47,7 @@ rows = [
     { name = "a start is refused when the memory of its environment fails, and a later one is made", in = "+refuse malloc=2 {case}/r31 again plain", claims = { matches = ["again: [1-9] refused, then made"] }, false = "{case}/f31 again plain" },
     { name = "a read gives -1 when the read of a pipe fails", in = "+refuse read=2,ReadFile=1 {case}/r32 again plain", claims = { matches = ["again: [1-9] refused, then made"] }, false = "{case}/f32 again plain" },
     { name = "os_process_wait gives -1 when its wait for the end fails", in = "+refuse poll=1,kevent=2,WaitForSingleObject=1 {case}/r33 wait exit", claims = { line = ["wait: -1"] }, false = "{case}/f33 wait exit" },
-    { name = "a write gives -1 when its wait for room fails", in = "+refuse poll=1,WriteFile=1 {case}/r34 full 1048576", claims = { matches = ["full: -1 "] }, false = "{case}/f34 full 1048576" },
+    { name = "a write gives -1 when its wait for room fails", in = "+refuse poll=1,WriteFile=1 {case}/r34 full-stall 16777216", claims = { line = ["full: -1"] }, false = "{case}/f34 full 16777216" },
     { name = "os_process_read gives -2 at once with no time left", in = "{case}/r35 timeout hold 0", claims = { line = ["timeout: -2"] }, false = "{case}/f35 timeout say 10000000000000000" },
     { name = "a write after the close of the input gives -1", in = "{case}/r36 write-after input", claims = { line = ["write-after: -1"] }, false = "{case}/f36 write-after open" },
     { name = "a signal that the caller catches does not end a read", in = "{case}/r37 interrupted read hold", claims = { line = ["interrupted: -2"] }, false = "{case}/f37 interrupted read say" },
@@ -79,6 +79,7 @@ rows = [
     { name = "a start that fails leaves the standard input of the caller open", in = "{case}/r63 kept mosl_none", claims = { line = ["kept: none, input open"] }, false = "{case}/f63 kept {out}/process{exe}" },
     { name = "a start gives the process its input when the standard input of the caller is closed", in = "{case}/r64 low 1 abc", claims = { line = ["low: 0 3"] }, false = "{case}/f64 low 1 ab" },
     { name = "a start gives the process its 3 streams when the 3 streams of the caller are closed", in = "{case}/r65 low 3 abc", claims = { line = ["low: 0 3"] }, false = "{case}/f65 low 3 ab" },
+    { name = "a name of env or unset has no case on Windows, and has its case on Linux and macOS", in = "+env MOSL_A=0 +env MOSL_B=2 {case}/r66 env lower", claims = { line = ["{env_case}"] }, false = "+env MOSL_A=0 +env MOSL_B=2 {case}/f66 env {env_case_false}" },
 ]
 
 [case.files]

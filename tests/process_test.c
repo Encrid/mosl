@@ -324,13 +324,18 @@ static int mode_named(char **argv)
 
 static int mode_env(char **argv)
 {
-    const char *env[] = {"MOSL_A=1", nullptr};
-    const char *unset[] = {"MOSL_B", nullptr};
+    bool lower = !strcmp(argv[3], "lower");
+    const char *env[] = {lower ? "mosl_a=1" : "MOSL_A=1", nullptr};
+    const char *unset[] = {lower ? "mosl_b" : "MOSL_B", nullptr};
     os_process_start_t start = {.env = env};
     reads_t a = {};
     reads_t b = {};
 
-    if (!strcmp(argv[3], "unset"))
+    if (!strcmp(argv[3], "other")) {
+        env[0] = "mosl_x=1";
+        unset[0] = "mosl_y";
+    }
+    if (strcmp(argv[3], "keep"))
         start.unset = unset;
     read_child(&start, "env", "MOSL_A", &a);
     read_child(&start, "env", "MOSL_B", &b);
@@ -362,6 +367,22 @@ static int mode_full(char **argv)
     end_process(p);
     free(bytes);
     return (printf("full: %d %s\n", wrote, reads.out), 0);
+}
+
+static int mode_full_stall(char **argv)
+{
+    size_t len = (size_t)atoll(argv[3]);
+    char *bytes = calloc(len, 1);
+    os_process_t *p = start_child("stall", nullptr);
+    int wrote = -9;
+
+    if (!bytes || !p)
+        return (printf("full: no start\n"), 1);
+    wrote = os_process_write(p, bytes, len);
+    os_process_kill(p);
+    end_process(p);
+    free(bytes);
+    return (printf("full: %d\n", wrote), 0);
 }
 
 static int mode_closed(char **argv)
@@ -438,16 +459,37 @@ static void write_job(void *arg)
     free(bytes);
 }
 
+static int arm_read(os_process_t *p)
+{
+    const char *bytes = nullptr;
+    size_t len = 0;
+
+    return (p ? os_process_read(p, OS_SECOND / 1000, &bytes, &len) : -9);
+}
+
+static void pause_for(uint64_t nanos)
+{
+    os_event_t *e = os_event_create();
+
+    if (e)
+        os_event_wait(e, nanos);
+    os_event_free(e);
+}
+
 static int run_job(const char *mode, char **argv, os_thread_fn_t fn)
 {
     bool say = !strcmp(argv[3], "say");
     bool kill = !say && strcmp(argv[3], "drain");
     job_t job = {.p = start_child(argv[3], say ? "hi" : nullptr),
         .len = 1u << 22, .result = -9};
-    os_thread_t *t = job.p ? os_thread_start(fn, &job, STACK) : nullptr;
+    bool armed = !kill || fn != read_job || arm_read(job.p) == -2;
+    os_thread_t *t = job.p && armed ? os_thread_start(fn, &job, STACK)
+        : nullptr;
 
     if (!t)
         return (printf("%s: no start\n", mode), 1);
+    if (kill && fn == write_job)
+        pause_for(OS_SECOND / 10);
     if (kill)
         os_process_kill(job.p);
     os_thread_join(t);
@@ -872,6 +914,7 @@ static int mode_low(char **argv)
 static const test_mode_t MODES[] = {
     {"named", 5, mode_named}, {"env", 4, mode_env},
     {"streams", 4, mode_streams}, {"full", 4, mode_full},
+    {"full-stall", 4, mode_full_stall},
     {"closed", 4, mode_closed}, {"timeout", 5, mode_timeout},
     {"status", 4, mode_status}, {"kill", 4, mode_kill},
     {"kill-read", 4, mode_kill_read}, {"kill-write", 4, mode_kill_write},

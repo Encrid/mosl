@@ -11,6 +11,7 @@
     #include <windows.h>
 
     #include "os.h"
+    #include "../common/os_common.h"
 
 struct os_thread {
     HANDLE handle;
@@ -58,8 +59,6 @@ struct os_watch {
     alignas(DWORD) BYTE above_records[OS_ABOVE_ROOM];
     char name[OS_NAME_BYTES];
 };
-
-constexpr size_t OS_PROCESS_BYTES = 65536;
 
 typedef struct {
     HANDLE pipe;

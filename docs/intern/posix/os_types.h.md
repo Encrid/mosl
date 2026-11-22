@@ -1,7 +1,7 @@
 # src/posix/os_types.h
 
 This header gives the thread, the mutex, the event, the open folder and the signal state of `include/os.h` on Linux and macOS.
-It includes `<dirent.h>`, `<pthread.h>`, `<stdatomic.h>` and `include/os.h`, and the other files of `src/posix` include it.
+It includes `<dirent.h>`, `<pthread.h>`, `<signal.h>`, `<stdatomic.h>`, `include/os.h` and `src/common/os_common.h`. Each other file of `src/posix` includes it, except `env.c`, `lock.c`, `path.c` and `port.c`, which need none of its types.
 
 ## Types
 
@@ -55,7 +55,7 @@ The state of the signals: `docs/intern/posix/signal.c.md`, *The state*.
 ## Constants
 
 `OS_PIPE_INPUT`, `OS_PIPE_OUTPUT`, `OS_PIPE_ERRORS`, `OS_PIPE_GATE` and `OS_PIPE_REPORT` are the places of the pipes of a start, 0 to 4. `OS_PIPES` is 5.
-`OS_PROCESS_BYTES` is 65536: the size of the buffer of a read.
+The buffer of a read has `OS_PROCESS_BYTES` bytes, from `src/common/os_common.h`.
 
 ### os_launch_t
 

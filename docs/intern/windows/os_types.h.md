@@ -1,7 +1,7 @@
 # src/windows/os_types.h
 
 This header gives `include/os.h` its thread, its mutex, its event, its open folder, its watch and the state of its signals on Windows.
-It defines `WIN32_LEAN_AND_MEAN`, and includes `<stdatomic.h>`, `<windows.h>` and `include/os.h`. Each other file of `src/windows` includes this header.
+It defines `WIN32_LEAN_AND_MEAN`, and includes `<stdatomic.h>`, `<windows.h>`, `include/os.h` and `src/common/os_common.h`. Each other file of `src/windows` includes this header, directly or through `os_sockets.h`, except `os_whole.h` and `whole_form.c`, which need none of its types.
 
 ## Constants
 

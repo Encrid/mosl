@@ -1,4 +1,4 @@
-code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/lock_test.c", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
+code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/macos/**", "src/posix/**", "src/windows/entry.c", "src/windows/event.c", "src/windows/folder.c", "src/windows/folder_open.c", "src/windows/folder_read.c", "src/windows/folder_watch.c", "src/windows/library.c", "src/windows/lock.c", "src/windows/memory.c", "src/windows/mutex.c", "src/windows/os_sockets.h", "src/windows/os_types.h", "src/windows/os_whole.h", "src/windows/path.c", "src/windows/signal.c", "src/windows/stack.c", "src/windows/thread.c", "src/windows/watch_read.c", "src/windows/watch_take.c", "src/windows/whole_form.c", "src/windows/wide.c", "tests/.gitkeep", "tests/clock_test.c", "tests/fixture.c", "tests/fixture_two.c", "tests/folders_test.c", "tests/leaks/**", "tests/lock_test.c", "tests/memory_test.c", "tests/os_test.c", "tests/package/**", "tests/pins_test.c", "tests/refuse_test.c", "tests/signal_test.c", "tests/stack_left_test.c", "tests/stack_test.c", "tests/threads_test.c", "tests/wait_driver.py", "tests/wait_test.c", "tests/watch_test.c", "tests/whole_test.c", "tools/**", ".toolchain/config/**", ".toolchain/project.toml"]
 
 [[case]]
 name = "the os layer runs every call and its error paths"
@@ -15,11 +15,36 @@ claims = { line = ["0 of 200 first waits of a process took less than 500000 ns"]
 false = { run = ["{python}", "tests/wait_driver.py", "{out}/wait{exe}", "500000", "0", "200", "set"] }
 
 [[case]]
-name = "a step of the wall clock does not change a wait"
+name = "a wall clock behind the clock of the kernel does not change a wait, simulated on Linux and macOS"
 process = "state"
 run = ["{out}/wait{exe}", "50000000", "3600", "20"]
 claims = { line = ["0 of 20 waits took less than 50000000 ns"] }
 false = { run = ["{out}/wait{exe}", "50000000", "3600", "20", "set"] }
+
+[[case]]
+name = "memory"
+run = ["{out}/memory{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "os_reserve makes the first commit bytes readable, writable and zero", in = "commit 131072 65536 0", claims = { line = ["commit: 65536 zero, 65536 kept of 65536"] }, false = "commit 131072 16384 0" },
+    { name = "os_commit makes more bytes of a reservation readable, writable and zero", in = "commit 131072 65536 131072", claims = { line = ["commit: 131072 zero, 131072 kept of 131072"] }, false = "commit 131072 65536 0" },
+]
+
+[[case]]
+name = "a byte of a reservation past its commit faults when touched"
+process = "status"
+run = ["{out}/memory{exe}", "touch", "131072", "65536", "65536"]
+claims = { status_not = 0, line = ["touch 65536"], lacks = ["touched"] }
+false = { run = ["{out}/memory{exe}", "touch", "131072", "65536", "65535"] }
+
+[[case]]
+name = "threads"
+run = ["{out}/threads{exe}"]
+claims = { status = 0 }
+rows = [
+    { name = "os_mutex_lock waits while another thread holds the mutex", in = "held", claims = { line = ["mutex: waited, then taken"] }, false = "free" },
+    { name = "os_get_thread_id gives 2 live threads 2 different numbers, and never 0", in = "ids thread", claims = { line = ["ids: differ, none 0"] }, false = "ids main" },
+]
 
 [[case]]
 name = "wait"
@@ -213,13 +238,14 @@ rows = [
 [[case]]
 name = "lock"
 run = ["{out}/lock{exe}"]
-sweep = ["malloc"]
+sweep = ["_locking", "flock", "malloc"]
 claims = { status = 0 }
 rows = [
     { name = "os_unlock ends the lock, and a later os_lock in the process takes it again", in = "lock {case}/r0.lock unlock", claims = { line = ["lock: 0, then 0"] }, false = "lock {case}/f0.lock keep" },
     { name = "a second os_lock is refused with 1 while the first holds the file", in = "lock {case}/r1.lock keep", claims = { line = ["lock: 0, then 1"] }, false = "lock {case}/f1.lock unlock" },
     { name = "os_lock gives -1 and no handle for a file that does not open", in = "lock {case}/none/r2.lock keep", claims = { line = ["lock: -1, then -1"] }, false = "lock {case}/f2.lock keep" },
     { name = "os_lock gives -1 when its memory fails, and a later one takes the lock", in = "+refuse malloc=1 lock {case}/r3.lock keep", claims = { line = ["lock: -1, then 0"] }, false = "lock {case}/f3.lock keep" },
+    { name = "os_lock gives -1, and not 1, when the system refuses the lock for a reason other than a held lock", in = "+refuse flock=1,_locking=1 lock {case}/r5.lock keep", claims = { line = ["lock: -1, then 0"] }, false = "lock {case}/f5.lock keep" },
     { name = "a write through a different handle is refused by the lock on Windows, and made on Linux and macOS", in = "write {case}/r4.lock", claims = { line = ["{lock_write}"] }, false = "write {case}/none/f4.lock" },
 ]
 
@@ -317,6 +343,8 @@ rows = [
     { name = "a middle folder that grants only the right to search does not stop a long path, as for a short one; Windows opens no middle folder", in = "{case}/r0 middle", claims = { line = ["search only: read 9 bytes: deep file"] }, false = "{case}/f0 last" },
     { name = "a folder path that ends with a separator opens, lists and reads, also past the path limit", in = "{case}/r1 slash", claims = { line = ["slash: listed, and read 9 bytes: deep file"] }, false = "{case}/f1 slash-file" },
     { name = "the root of the drive of a folder, or /, opens and lists", in = "{case}/r2 root", claims = { line = ["root: listed"] }, false = "{case}/f2 root-missing" },
+    { name = "os_folder_make of a folder that is there past the path limit gives 0, and keeps no file open", in = "{case}/r3 make", claims = { line = ["make: 0, 0 more files"] }, false = "{case}/f3 make-file" },
+    { name = "os_folder_make of a file that is there past the path limit gives -1, and keeps no file open", in = "{case}/r4 make-file", claims = { line = ["make: -1, 0 more files"] }, false = "{case}/f4 make" },
 ]
 
 [case.folders]
@@ -326,3 +354,7 @@ rows = [
 "{case}/f1" = []
 "{case}/r2" = []
 "{case}/f2" = []
+"{case}/r3" = []
+"{case}/f3" = []
+"{case}/r4" = []
+"{case}/f4" = []

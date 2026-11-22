@@ -16,5 +16,5 @@ The second call must give the length of the value. Another result tells that the
 
 | Function | Result |
 | --- | --- |
-| `get_variable(name)` | Gives the value in UTF-8, or `nullptr`. |
+| `os_get_variable(name)` | Gives the value in UTF-8, or `nullptr`. |
 | `os_env_get(name)` | Gives the result of `os_get_variable`. |

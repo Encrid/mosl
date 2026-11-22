@@ -26,6 +26,15 @@ side = "true"
 system = "posix"
 why = "write gives EINTR only when a signal interrupts it, and no case of the layer sends a signal during a write."
 
+[[branches.exception]]
+path = "src/windows/process_pipes.c"
+line = 52
+col = 9
+side = "true"
+system = "windows"
+why = "The stop event ends a pending write only when the WriteFile of the row r13 comes before the teardown of the killed child closes its pipe. That order of the teardown against the WriteFile is outside the code, and docs/extern/os.h.md gives no way to see it. docs/tests/process.md, r13, tells it."
+may_reach = true
+
 [[leaks.exception]]
 case = "the end of a process ends its lock, and a later os_lock takes it within 10 seconds"
 kind = "os_lock"
