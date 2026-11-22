@@ -1,7 +1,7 @@
 # The tests of the processes
 
-This document gives the limits of the signal rows of `tests/shared/cases/process.toml` on Windows.
-`docs/extern/os.h.md`, *A signal to a process*, gives the limits of Windows that these rows meet, with their sources.
+This document gives the limits of the signal rows and of the kill rows of `tests/shared/cases/process.toml` on Windows.
+`docs/extern/os.h.md`, *A signal to a process*, gives the limits of Windows that the signal rows meet, with their sources.
 
 ## The child that tells its signal
 
@@ -24,6 +24,24 @@ The proof is indirect:
 
 Thus the line `ready` came before the 2 keys, and the 2 keys come at least 0.5 seconds apart.
 A loss before the end of the start cannot explain the result. A dispatch that holds the 2 keys cannot explain it.
+
+## r12: a kill that ends a read that waits
+
+The row r12 claims that `os_process_kill` from another thread ends a read that waits. The thread of the read and the kill run in no fixed order.
+Thus the test first makes a read wait, with no order of threads:
+
+1. The child `hold` writes nothing.
+2. Before the thread starts, the test reads with a limit of 1 ms. The read gives -2, and on Windows its read of the pipe stays pending.
+3. The thread reads with no limit, and the test kills the process.
+
+On Windows, `os_process_kill` sets the stop event before `TerminateProcess`, and the stop event stays set.
+The read of the thread finds the pending read, so it waits for the stop event and for that read together.
+If it waits before the kill, the stop event ends the wait. If it comes after the kill, the stop event is set already, and the wait gives the first set event, the stop event.
+Thus each run reaches the end of a read by the stop event, in `src/windows/process_read.c`.
+
+The source of the order of the wait:
+
+- Microsoft, `WaitForMultipleObjects`: "If multiple objects become signaled, the function returns the index of the first handle in the array whose object was signaled." https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitformultipleobjects
 
 ## Causes of a flaky run
 
