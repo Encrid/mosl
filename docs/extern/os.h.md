@@ -224,14 +224,23 @@ A library loads by its path, so `os_lib_open` keeps the limit of the loader of e
 `os_lib_open` gives the loader of Linux and macOS no flag of search. Thus each loader looks for what a library needs in its own places:
 
 - On Windows, `LoadLibraryExW` with `LOAD_WITH_ALTERED_SEARCH_PATH` looks first in the folder of a library that a path names. Thus a library can bring its runtime beside itself.
-- On Linux, the loader looks in the folder of the library only if the library has a run path of `$ORIGIN`. Else it uses the other rules of `dlopen`: `LD_LIBRARY_PATH`, the cache of `ldconfig`, and `/lib` and `/usr/lib`.
-- On macOS, the loader looks in the folder of the library only for a name with `@loader_path`. The name can also start with `@rpath`, if the run path is `@loader_path`.
+- On Linux, a run path of `$ORIGIN` in the library makes the loader look in the folder of the library. A `LD_LIBRARY_PATH` that names the folder does it too.
+  Else the loader uses the other rules of `dlopen`: the cache of `ldconfig`, and `/lib` and `/usr/lib`.
+- On macOS, a needed name that starts with `@loader_path` makes the loader look in the folder of the library.
+  A name that starts with `@rpath` does it too, if the library itself has the run path `@loader_path`.
+  The loader also reads the run paths of each image that loaded the library, also of the program. There, `@loader_path` is the folder of that image.
+  A name with `@executable_path`, an absolute name, `DYLD_LIBRARY_PATH` or `DYLD_FALLBACK_LIBRARY_PATH` can also lead to the folder of the library.
 - Thus on Linux and macOS, the build of a library that brings its runtime beside itself gives the library that run path or that name.
 
 The sources of the search:
 
 - Linux, `dlopen`: dependencies "are also automatically loaded by the dynamic linker using the same rules". https://man7.org/linux/man-pages/man3/dlopen.3.html
 - Linux, `dlopen`: the rules are `DT_RPATH`, `LD_LIBRARY_PATH`, `DT_RUNPATH`, "The cache file /etc/ld.so.cache", and "The directories /lib and /usr/lib".
+- Linux, `ld.so`: `$ORIGIN` "expands to the directory containing the program or shared object." https://man7.org/linux/man-pages/man8/ld.so.8.html
+- Apple, `dyld`, in a copy of the man pages of Xcode: https://keith.github.io/xcode-man-pages/dyld.1.html
+- Apple, `dyld`: "The run path stack is built from the LC_RPATH load commands in the dependency chain that lead to the current dylib load."
+- Apple, `dyld`: "in every binary, @loader_path resolves to a different path, whereas @executable_path always resolves to the same path."
+- Apple, `dyld`: with `DYLD_LIBRARY_PATH`, "the dynamic linker looks for its leaf name in each directory". With `DYLD_FALLBACK_LIBRARY_PATH`, "If a dylib is not found at its install path, dyld uses this as a list of directories to search".
 - Microsoft, `LoadLibraryExW`: with an absolute path, "the system uses the alternate file search strategy" "to find associated executable modules". https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw
 
 ## The watch
