@@ -19,4 +19,5 @@ A folder that is there already is not an error: `EEXIST` gives 0 when the name o
 | Function | Result |
 | --- | --- |
 | `os_folder_set` | Changes the working folder through `chdir`. |
+| `is_folder_there(folder, at, name)` | Tells if a folder is at `folder`: with `fstatat` for a path shorter than `PATH_MAX`, else with an open of `name` from `at` for search. |
 | `os_folder_make` | Gives the result of the last `mkdirat`, or 0 for a folder that is there. |

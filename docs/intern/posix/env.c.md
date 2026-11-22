@@ -24,4 +24,5 @@ With no `PATH` in the environment, the call finds nothing, and gives `nullptr`.
 | --- | --- |
 | `is_program(path)` | Gives true if `path` is a regular file with an execute bit. |
 | `os_env_get(name)` | Gives a copy of the value of `name`, or `nullptr`. |
+| `find_in(folders, name)` | Tries `name` in each folder of `folders`, which `:` separates, in order. Gives `realpath` of the first program that it finds, or `nullptr`. An empty folder is the current folder. |
 | `os_path_find(name)` | Gives the whole path of the program, as *The search* tells, or `nullptr`. |
