@@ -275,7 +275,10 @@ On Windows, the lock also refuses a read or a write of the first byte through a 
 | --- | --- |
 | 0 | The caller holds the lock, and `*lock` is its handle. |
 | 1 | A lock holds the file already: of a different process, or of an earlier call of this process. `*lock` is `nullptr`. |
-| -1 | The file does not open, or the memory of the handle fails. `*lock` is `nullptr`. |
+| -1 | The file does not open, the memory of the handle fails, or the system refuses the lock for a different reason. `*lock` is `nullptr`. |
+
+Only a lock that holds the file gives 1. Thus a caller can tell a held file from a failure.
+For example, `ENOLCK` of `flock` on Linux gives -1: the kernel has no memory for the lock.
 
 `os_unlock` ends the lock, closes the file and frees the handle. A later `os_lock` of the file, also in the same process, then takes the lock.
 The file stays, because a different process can wait to lock it.
@@ -283,15 +286,18 @@ The file stays, because a different process can wait to lock it.
 The end of a process also ends each lock that it holds. A program that the process starts does not get the file of the lock, also with a call other than `os_process_start`. Thus the lock ends with the process that took it.
 On Windows, the end of the lock after the end of the process can take some time. Thus a program calls `os_unlock` before its end.
 
-- On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`.
-- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`.
+- On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`. Only the error `EWOULDBLOCK` of `flock` gives 1.
+- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`. Only the error `EACCES` of `_locking` gives 1.
 
 The sources of a lock:
 
 - Linux, `flock`: "Locks created by flock() are associated with an open file description". https://man7.org/linux/man-pages/man2/flock.2.html
 - Linux, `flock`: a lock "may be denied by a lock that the calling process has already placed via another file descriptor."
 - Linux, `flock`: the lock is released "when all such file descriptors have been closed."
+- Linux, `flock`: `EWOULDBLOCK` tells "The file is locked and the LOCK_NB flag was selected."
+- Linux, `flock`: `ENOLCK` tells "The kernel ran out of memory for allocating lock records."
 - Microsoft, `_locking`: `_LK_UNLCK` "Unlocks the specified bytes, which must have been previously locked." https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
+- Microsoft, `_locking`: `EACCES` tells a "Locking violation (file already locked or unlocked)."
 - Microsoft, `LockFile`: when a process ends with a lock, "the locks are unlocked by the operating system." https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile
 - Microsoft, `LockFile`: "However, the time it takes for the operating system to unlock these locks depends upon available system resources."
 - Microsoft, `LockFile`: with a second handle, the locking process "cannot access the specified region through this second handle until it unlocks the region."
