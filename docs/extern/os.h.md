@@ -136,7 +136,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_reserve` | Reserves `reserve` bytes of address space, and makes the first `commit` bytes readable, writable and zero. The rest faults when touched, which a caller can use as a guard after a block. Gives `nullptr` on failure. |
 | `os_commit` | Makes the first `bytes` of a reservation readable and writable. Thus a caller grows its memory, up to the reservation. Gives 0 on success. |
 | `os_release` | Gives back all of a reservation. Each caller passes a base that `os_reserve` gave. |
-| `os_lib_open` | Opens a shared library, or gives `nullptr`. For a path, the loader looks there for the library and for what it needs, so a library can bring its runtime beside itself. For a bare name, the loader uses the search of the operating system. |
+| `os_lib_open` | Opens a shared library, or gives `nullptr`. For a path, the loader opens the library at that path. For a bare name, the loader uses the search of the operating system. *The libraries* tells where the loader looks for what the library needs. |
 | `os_lib_get_symbol` | Gives where a library has what it exports as `name`, or `nullptr`. |
 | `os_lib_close` | Closes a library. Each caller passes a library that `os_lib_open` gave. |
 | `os_lib_pin` | Keeps the open library of `path` in the process until its end. A later `os_lib_close` closes the handle, and the library stays. A second pin of a library changes nothing. A process can pin any number of libraries. Gives 0, or -1 if no library of `path` is open. |
@@ -218,6 +218,21 @@ A folder opens by its path, and `os_folder_read_file` reads a file of it by its 
 The path of a folder can end with a separator. It can also be a root: `/` on Linux and macOS, or the root of a drive on Windows, for example `C:\`.
 
 A library loads by its path, so `os_lib_open` keeps the limit of the loader of each system. That limit is 4096 bytes on Linux, 1024 on macOS, and 260 characters on Windows.
+
+## The libraries
+
+`os_lib_open` gives the loader of Linux and macOS no flag of search. Thus each loader looks for what a library needs in its own places:
+
+- On Windows, `LoadLibraryExW` with `LOAD_WITH_ALTERED_SEARCH_PATH` looks first in the folder of a library that a path names. Thus a library can bring its runtime beside itself.
+- On Linux, the loader looks in the folder of the library only if the library has a run path of `$ORIGIN`. Else it uses the other rules of `dlopen`: `LD_LIBRARY_PATH`, the cache of `ldconfig`, and `/lib` and `/usr/lib`.
+- On macOS, the loader looks in the folder of the library only for a name with `@loader_path`. The name can also start with `@rpath`, if the run path is `@loader_path`.
+- Thus on Linux and macOS, the build of a library that brings its runtime beside itself gives the library that run path or that name.
+
+The sources of the search:
+
+- Linux, `dlopen`: dependencies "are also automatically loaded by the dynamic linker using the same rules". https://man7.org/linux/man-pages/man3/dlopen.3.html
+- Linux, `dlopen`: the rules are `DT_RPATH`, `LD_LIBRARY_PATH`, `DT_RUNPATH`, "The cache file /etc/ld.so.cache", and "The directories /lib and /usr/lib".
+- Microsoft, `LoadLibraryExW`: with an absolute path, "the system uses the alternate file search strategy" "to find associated executable modules". https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw
 
 ## The watch
 

@@ -8,7 +8,8 @@ Each function keeps the contract of `docs/extern/os.h.md`, *Functions*.
 `os_lib_open` calls `dlopen` with `RTLD_NOW` and `RTLD_LOCAL`.
 `RTLD_NOW` resolves every symbol of the library before `dlopen` returns.
 `RTLD_LOCAL` keeps the names of the library to itself: they do not resolve the symbols of a library that opens later.
-The loader looks beside a library that a path names, and searches for a bare name, with no flag of this file.
+The loader opens a path as it is, and searches for a bare name, with no flag of this file.
+The loader looks beside the library for what it needs only if the library asks for it: `docs/extern/os.h.md`, *The libraries*.
 
 ## Pinning
 
