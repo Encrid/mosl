@@ -134,7 +134,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | Function | Result |
 | --- | --- |
 | `os_reserve` | Reserves `reserve` bytes of address space, and makes the first `commit` bytes readable, writable and zero. The rest faults when touched, which a caller can use as a guard after a block. Gives `nullptr` on failure. |
-| `os_commit` | Makes the first `bytes` of a reservation readable and writable. Thus a caller grows its memory, up to the reservation. Gives 0 on success. |
+| `os_commit` | Makes the first `bytes` of a reservation readable and writable. A byte that no earlier commit gave is zero. Thus a caller grows its memory, up to the reservation. Gives 0 on success. |
 | `os_release` | Gives back all of a reservation. Each caller passes a base that `os_reserve` gave. |
 | `os_lib_open` | Opens a shared library, or gives `nullptr`. For a path, the loader opens the library at that path. For a bare name, the loader uses the search of the operating system. *The libraries* tells where the loader looks for what the library needs. |
 | `os_lib_get_symbol` | Gives where a library has what it exports as `name`, or `nullptr`. |
