@@ -16,5 +16,10 @@ On Linux and macOS, the case simulates the step:
 Thus a wait that reads the wall clock ends too soon, and the case fails.
 
 On Windows, the layer reads no wall clock: `os_get_now` reads `QueryPerformanceCounter`, and `WaitForSingleObject` takes a time-out in milliseconds.
-A test program cannot step the wall clock of Windows without the rights of an administrator.
+A test program cannot step the wall clock of Windows without the privilege `SE_SYSTEMTIME_NAME`. By default, only the groups Administrators and Local Service have it.
 Thus on Windows the program does not compile its `clock_gettime`, and the step has no effect. The case then claims only that the 20 waits last their time.
+
+The sources of the wall clock of Windows:
+
+- Microsoft, `SetSystemTime`: "The calling process must have the SE_SYSTEMTIME_NAME privilege." https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-setsystemtime
+- Microsoft, Change the system time: "By default, members of the Administrators and Local Service groups have this right on workstations and servers." https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/security-policy-settings/change-the-system-time
