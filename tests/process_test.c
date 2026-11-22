@@ -443,13 +443,23 @@ static void write_job(void *arg)
     free(bytes);
 }
 
+static int arm_read(os_process_t *p)
+{
+    const char *bytes = nullptr;
+    size_t len = 0;
+
+    return (p ? os_process_read(p, OS_SECOND / 1000, &bytes, &len) : -9);
+}
+
 static int run_job(const char *mode, char **argv, os_thread_fn_t fn)
 {
     bool say = !strcmp(argv[3], "say");
     bool kill = !say && strcmp(argv[3], "drain");
     job_t job = {.p = start_child(argv[3], say ? "hi" : nullptr),
         .len = 1u << 22, .result = -9};
-    os_thread_t *t = job.p ? os_thread_start(fn, &job, STACK) : nullptr;
+    bool armed = !kill || fn != read_job || arm_read(job.p) == -2;
+    os_thread_t *t = job.p && armed ? os_thread_start(fn, &job, STACK)
+        : nullptr;
 
     if (!t)
         return (printf("%s: no start\n", mode), 1);
