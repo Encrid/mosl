@@ -344,6 +344,7 @@ rows = [
     { name = "a folder path that ends with a separator opens, lists and reads, also past the path limit", in = "{case}/r1 slash", claims = { line = ["slash: listed, and read 9 bytes: deep file"] }, false = "{case}/f1 slash-file" },
     { name = "the root of the drive of a folder, or /, opens and lists", in = "{case}/r2 root", claims = { line = ["root: listed"] }, false = "{case}/f2 root-missing" },
     { name = "os_folder_make of a folder that is there past the path limit gives 0, and keeps no file open", in = "{case}/r3 make", claims = { line = ["make: 0, 0 more files"] }, false = "{case}/f3 make-file" },
+    { name = "os_folder_make of a file that is there past the path limit gives -1, and keeps no file open", in = "{case}/r4 make-file", claims = { line = ["make: -1, 0 more files"] }, false = "{case}/f4 make" },
 ]
 
 [case.folders]
@@ -355,3 +356,5 @@ rows = [
 "{case}/f2" = []
 "{case}/r3" = []
 "{case}/f3" = []
+"{case}/r4" = []
+"{case}/f4" = []
