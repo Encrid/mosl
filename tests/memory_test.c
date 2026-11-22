@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+#endif
 
 #include "os.h"
 #include "rows.h"
@@ -53,6 +57,9 @@ static int touch_byte(size_t reserve, size_t first, size_t at)
 
     if (!base)
         return (printf("touch: no reservation\n"), 0);
+#ifdef _WIN32
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX);
+#endif
     printf("touch %zu\n", at);
     fflush(stdout);
     base[at] = 1;
