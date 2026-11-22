@@ -47,7 +47,7 @@ rows = [
     { name = "a start is refused when the memory of its environment fails, and a later one is made", in = "+refuse malloc=2 {case}/r31 again plain", claims = { matches = ["again: [1-9] refused, then made"] }, false = "{case}/f31 again plain" },
     { name = "a read gives -1 when the read of a pipe fails", in = "+refuse read=2,ReadFile=1 {case}/r32 again plain", claims = { matches = ["again: [1-9] refused, then made"] }, false = "{case}/f32 again plain" },
     { name = "os_process_wait gives -1 when its wait for the end fails", in = "+refuse poll=1,kevent=2,WaitForSingleObject=1 {case}/r33 wait exit", claims = { line = ["wait: -1"] }, false = "{case}/f33 wait exit" },
-    { name = "a write gives -1 when its wait for room fails", in = "+refuse poll=1,WriteFile=1 {case}/r34 full 1048576", claims = { matches = ["full: -1 "] }, false = "{case}/f34 full 1048576" },
+    { name = "a write gives -1 when its wait for room fails", in = "+refuse poll=1,WriteFile=1 {case}/r34 full-stall 16777216", claims = { line = ["full: -1"] }, false = "{case}/f34 full 16777216" },
     { name = "os_process_read gives -2 at once with no time left", in = "{case}/r35 timeout hold 0", claims = { line = ["timeout: -2"] }, false = "{case}/f35 timeout say 10000000000000000" },
     { name = "a write after the close of the input gives -1", in = "{case}/r36 write-after input", claims = { line = ["write-after: -1"] }, false = "{case}/f36 write-after open" },
     { name = "a signal that the caller catches does not end a read", in = "{case}/r37 interrupted read hold", claims = { line = ["interrupted: -2"] }, false = "{case}/f37 interrupted read say" },

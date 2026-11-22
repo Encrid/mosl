@@ -55,6 +55,27 @@ That order is outside the code: `docs/extern/os.h.md` gives no way to see the te
 Thus the branch of the stop event in `src/windows/process_pipes.c` has an exemption with `may_reach` in `.toolchain/config/checks.toml`.
 The wait of 100 ms lets the thread reach its wait first in nearly each run.
 
+## r34: a write whose wait for room fails
+
+The row r34 claims that a write gives -1 when its wait for room fails. The wait comes only when the pipe of the input is full.
+Thus the child `stall` reads nothing, and the test writes 16 MiB into it, with the first `poll` and the first `WriteFile` refused.
+Then the test kills the child. The false variant writes the same bytes to the child `drain`, with no refusal, and gives 0.
+
+A child that reads while the test writes can keep the pipe from being full, so the wait does not come in each run.
+16 MiB is more than the buffer of 1 pipe on each of the 6 targets, so the wait comes in each run:
+
+- Windows: `src/windows/process_pipes.c` makes each pipe with a buffer of 65536 bytes. A write sends at most 1 MiB in each part.
+- Linux: mosl makes each pipe with `pipe2`, and does not call `F_SETPIPE_SZ`. The default capacity is 16 pages, and at most `/proc/sys/fs/pipe-max-size`, 1 MiB by default.
+- macOS: mosl makes each pipe with `pipe`. A pipe grows to at most `PIPE_SIZE * 4`, 65536 bytes.
+
+The sources of the buffers:
+
+- Linux, `pipe(7)`: "Since Linux 2.6.11, the pipe capacity is 16 pages (i.e., 65,536 bytes in a system with a page size of 4096 bytes)." https://man7.org/linux/man-pages/man7/pipe.7.html
+- Linux, `pipe(7)`, `/proc/sys/fs/pipe-max-size`: "the value on this file also acts as a ceiling on the default capacity of a new pipe".
+- Linux, `pipe(7)`: "The default value for this file is 1048576 (1 MiB)."
+- Apple, XNU, `bsd/sys/pipe.h`: `#define PIPE_SIZE 16384`. https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/pipe.h
+- Apple, XNU, `bsd/kern/sys_pipe.c`: the last size of `pipesize_blocks` is `PIPE_SIZE * 4`. https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/sys_pipe.c
+
 ## Causes of a flaky run
 
 - The false variant f14 starts the process without `ignore_interrupt`. If the console loses its interrupt, the test sends the termination.
