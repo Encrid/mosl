@@ -1,7 +1,7 @@
 # src/posix/os_types.h
 
 This header gives the thread, the mutex, the event, the open folder and the signal state of `include/os.h` on Linux and macOS.
-It includes `<dirent.h>`, `<pthread.h>`, `<signal.h>`, `<stdatomic.h>`, `include/os.h` and `src/common/os_common.h`, and the other files of `src/posix` include it.
+It includes `<dirent.h>`, `<pthread.h>`, `<signal.h>`, `<stdatomic.h>`, `include/os.h` and `src/common/os_common.h`. Each other file of `src/posix` includes it, except `env.c`, `lock.c`, `path.c` and `port.c`, which need none of its types.
 
 ## Types
 
