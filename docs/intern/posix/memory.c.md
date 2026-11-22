@@ -12,8 +12,9 @@ Linux counts those bytes against its commit limit then, and `mprotect` can refus
 The rest of the range has no access, and Linux counts none of it.
 An anonymous mapping holds zeros, so a committed byte is zero until a write.
 
-The source of the zeros:
+The sources of `mprotect` and `mmap`:
 
+- Linux, `mprotect`: it "changes the access protections for the calling process's memory pages containing any part of the address range". https://man7.org/linux/man-pages/man2/mprotect.2.html
 - Linux, `mmap`: for `MAP_ANONYMOUS`, "its contents are initialized to zero." https://man7.org/linux/man-pages/man2/mmap.2.html
 
 ## Functions

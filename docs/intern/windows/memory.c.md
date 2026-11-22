@@ -10,8 +10,9 @@ A commit calls `VirtualAlloc` again on the start of the range, with `MEM_COMMIT`
 Windows gives committed pages that hold zeros.
 `os_release` frees all of a reservation by its base alone, with `VirtualFree` and `MEM_RELEASE`, so it does not use `reserve`.
 
-The source of the zeros:
+The sources of `VirtualAlloc`:
 
+- Microsoft, `VirtualAlloc`: "the allocated pages include all pages containing one or more bytes in the range". https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualalloc
 - Microsoft, `VirtualAlloc`: "Memory allocated by this function is automatically initialized to zero." https://learn.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualalloc
 
 ## Functions
