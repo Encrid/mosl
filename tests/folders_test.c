@@ -125,6 +125,27 @@ static void lock(const char *base, bool last, bool on)
 }
 #endif
 
+#ifdef _WIN32
+static int count_files(void)
+{
+    DWORD handles = 0;
+
+    GetProcessHandleCount(GetCurrentProcess(), &handles);
+    return ((int)handles);
+}
+#else
+constexpr int FILES_SCANNED = 1024;
+
+static int count_files(void)
+{
+    int files = 0;
+
+    for (int fd = 0; fd < FILES_SCANNED; fd++)
+        files += fcntl(fd, F_GETFD) != -1;
+    return (files);
+}
+#endif
+
 static char *join_chain(const char *base)
 {
     size_t size = strlen(base) + LEVELS * sizeof(level) + 1;
@@ -264,6 +285,35 @@ static int read_root(const char *base, bool missing)
     return (!listed);
 }
 
+static int make_again(const char *whole, bool as_file)
+{
+    size_t size = strlen(whole) + sizeof(file) + 1;
+    char *path = malloc(size);
+    int before = count_files();
+    int made = 0;
+
+    if (!path)
+        return (printf("make: no memory\n"), 1);
+    if (as_file)
+        snprintf(path, size, "%s/%s", whole, file);
+    else
+        snprintf(path, size, "%s", whole);
+    for (int i = 0; i < TRIES; i++)
+        made = os_folder_make(path) ? -1 : made;
+    printf("make: %d, %d more files\n", made, count_files() - before);
+    free(path);
+    return (0);
+}
+
+static int run_more(const char *mode, const char *base, const char *whole)
+{
+    if (!strcmp(mode, "slash") || !strcmp(mode, "slash-file"))
+        return (read_slash(base, whole, !strcmp(mode, "slash-file")));
+    if (!strcmp(mode, "root") || !strcmp(mode, "root-missing"))
+        return (read_root(base, !strcmp(mode, "root-missing")));
+    return (make_again(whole, !strcmp(mode, "make-file")));
+}
+
 static int run_mode(const char *mode, const char *base, const char *whole,
     const char *relative)
 {
@@ -279,10 +329,8 @@ static int run_mode(const char *mode, const char *base, const char *whole,
     }
     if (!strcmp(mode, "middle") || !strcmp(mode, "last"))
         return (read_locked(base, whole, !strcmp(mode, "last")));
-    if (!strcmp(mode, "slash") || !strcmp(mode, "slash-file"))
-        return (read_slash(base, whole, !strcmp(mode, "slash-file")));
-    if (!strcmp(mode, "root") || !strcmp(mode, "root-missing"))
-        return (read_root(base, !strcmp(mode, "root-missing")));
+    if (strcmp(mode, "deep"))
+        return (run_more(mode, base, whole));
     if (!read_deep(whole, &refused, text) || os_folder_set(base)
         || !read_deep(relative, &refused, text))
         return (1);
@@ -293,7 +341,8 @@ static int run_mode(const char *mode, const char *base, const char *whole,
 static bool known(const char *mode)
 {
     const char *modes[] = {"deep", "joined", "current", "base", "middle",
-        "last", "slash", "slash-file", "root", "root-missing"};
+        "last", "slash", "slash-file", "root", "root-missing", "make",
+        "make-file"};
 
     for (size_t i = 0; i < sizeof(modes) / sizeof(*modes); i++)
         if (!strcmp(mode, modes[i]))

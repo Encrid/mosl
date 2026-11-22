@@ -343,6 +343,7 @@ rows = [
     { name = "a middle folder that grants only the right to search does not stop a long path, as for a short one; Windows opens no middle folder", in = "{case}/r0 middle", claims = { line = ["search only: read 9 bytes: deep file"] }, false = "{case}/f0 last" },
     { name = "a folder path that ends with a separator opens, lists and reads, also past the path limit", in = "{case}/r1 slash", claims = { line = ["slash: listed, and read 9 bytes: deep file"] }, false = "{case}/f1 slash-file" },
     { name = "the root of the drive of a folder, or /, opens and lists", in = "{case}/r2 root", claims = { line = ["root: listed"] }, false = "{case}/f2 root-missing" },
+    { name = "os_folder_make of a folder that is there past the path limit gives 0, and keeps no file open", in = "{case}/r3 make", claims = { line = ["make: 0, 0 more files"] }, false = "{case}/f3 make-file" },
 ]
 
 [case.folders]
@@ -352,3 +353,5 @@ rows = [
 "{case}/f1" = []
 "{case}/r2" = []
 "{case}/f2" = []
+"{case}/r3" = []
+"{case}/f3" = []
