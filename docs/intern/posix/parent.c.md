@@ -12,6 +12,8 @@ With `make`, the walk makes each folder before it opens it, for `src/posix/folde
 
 A longer path starts the walk at `/` if it starts with `/`, else at the current folder.
 A longer path that holds only the root opens `/` itself, with the right to read it, and names it `.`.
+`start_copy` opens that start folder: `/` with the right to read it when `last` is 1 or less, else `/` or `.` for search only.
+
 `strtok_r` cuts a copy of the path before the last name, which `malloc` gives, at each `/`. `step` opens each name from the folder before it.
 `strtok_r` gives no empty name, so a path that holds `//` gives `step` no empty name. The last name keeps a `/` at its end.
 
@@ -28,6 +30,6 @@ The right to read keeps the make on the path.
 | --- | --- |
 | `step(at, name, make)` | Makes `name` in `at` if `make`, and opens it: readable with `make`, for search else. Closes `at`, and gives the descriptor, or -1. |
 | `os_get_last_start(path)` | Gives the place where the last name of `path` starts, after the `/` at the end. `src/posix/folder_sync.c` and `src/posix/entry.c` also use it. |
-| `copy_start(path, len)` | Gives a new copy of the first `len` bytes of `path`. The caller frees it. `nullptr` tells that `malloc` failed. |
+| `start_copy(path, last, at)` | Gives a new copy of the first `last` bytes of `path`, which the caller frees, and opens the start folder of the walk into `*at`. `nullptr` tells that `malloc` failed, and then `*at` does not change. |
 | `os_open_parent(path, name, make)` | Opens the folder before the last name, as *The parent* tells, or gives -1. Sets `*name`. |
 | `os_close_parent(at)` | Closes `at` if it is not `AT_FDCWD`. |
