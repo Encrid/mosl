@@ -12,6 +12,7 @@
     #include <stdatomic.h>
 
     #include "os.h"
+    #include "../common/os_common.h"
 
 struct os_thread {
     pthread_t handle;
@@ -40,7 +41,6 @@ constexpr int OS_PIPE_ERRORS = 2;
 constexpr int OS_PIPE_GATE = 3;
 constexpr int OS_PIPE_REPORT = 4;
 constexpr int OS_PIPES = 5;
-constexpr size_t OS_PROCESS_BYTES = 65536;
 
 struct os_process {
     pid_t pid;

@@ -12,6 +12,8 @@ No result of `os_watch_take` is 3.
 `OS_FILE_FLAGS` holds each flag of `os_file_write`, and `OS_MOVE_FLAGS` holds each flag of `os_path_move`.
 A call with a bit that is not in its set gives -1, and does nothing: `docs/extern/os.h.md`, *The files*.
 
+`OS_PROCESS_BYTES` is 65536: the most bytes of 1 `os_process_read`, on each system. Each `os_types.h` takes it for the buffer of a read of a process.
+
 ## Types
 
 `struct os_lock` holds `file`, the descriptor of the file of a lock. Each system keeps a lock on a descriptor of the C library, so the struct is the same on each system.

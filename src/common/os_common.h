@@ -14,6 +14,7 @@
 constexpr int OS_AGAIN = 3;
 constexpr uint32_t OS_FILE_FLAGS = OS_FILE_EXECUTABLE | OS_FILE_DURABLE;
 constexpr uint32_t OS_MOVE_FLAGS = OS_MOVE_DURABLE;
+constexpr size_t OS_PROCESS_BYTES = 65536;
 
 struct os_lock {
     int file;
