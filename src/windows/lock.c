@@ -10,7 +10,7 @@
 #include <sys/locking.h>
 #include <sys/stat.h>
 
-#include "../common/os_common.h"
+#include "os_types.h"
 
 int os_lock(const char *path, os_lock_t **lock)
 {
@@ -24,7 +24,7 @@ int os_lock(const char *path, os_lock_t **lock)
             _S_IREAD | _S_IWRITE);
     opened = taken && taken->file >= 0;
     if (opened && _locking(taken->file, _LK_NBLCK, 1)) {
-        held = errno == EACCES ? 1 : -1;
+        held = _doserrno == ERROR_LOCK_VIOLATION ? 1 : -1;
         _close(taken->file);
     } else if (opened)
         held = 0;
