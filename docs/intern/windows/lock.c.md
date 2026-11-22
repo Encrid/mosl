@@ -10,7 +10,7 @@ The steps are those of `docs/intern/posix/lock.c.md`, *The lock*, with the calls
 | Step | Call |
 | --- | --- |
 | Open | `_open` with `_O_CREAT`, and `_O_NOINHERIT` in the place of `O_CLOEXEC`. |
-| Lock | `_locking` with `_LK_NBLCK` on 1 byte. Only `EACCES` gives 1, in the place of `EWOULDBLOCK`. |
+| Lock | `_locking` with `_LK_NBLCK` on 1 byte. Only `ERROR_LOCK_VIOLATION` in `_doserrno` gives 1, in the place of `EWOULDBLOCK`. `EACCES` also comes for other refusals, so the step does not read `errno`. |
 | Close | `_close`. |
 | Unlock | `_locking` with `_LK_UNLCK` on the same byte. |
 

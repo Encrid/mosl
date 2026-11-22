@@ -279,6 +279,7 @@ On Windows, the lock also refuses a read or a write of the first byte through a 
 
 Only a lock that holds the file gives 1. Thus a caller can tell a held file from a failure.
 For example, `ENOLCK` of `flock` on Linux gives -1: the kernel has no memory for the lock.
+On Windows, `ERROR_ACCESS_DENIED` of `LockFileEx` gives -1, also though `_locking` then sets `errno` to `EACCES`.
 
 `os_unlock` ends the lock, closes the file and frees the handle. A later `os_lock` of the file, also in the same process, then takes the lock.
 The file stays, because a different process can wait to lock it.
@@ -287,7 +288,8 @@ The end of a process also ends each lock that it holds. A program that the proce
 On Windows, the end of the lock after the end of the process can take some time. Thus a program calls `os_unlock` before its end.
 
 - On Linux and macOS, `flock` takes `LOCK_EX` with `LOCK_NB`, and `os_unlock` gives `LOCK_UN`, then `close`. Only the error `EWOULDBLOCK` of `flock` gives 1.
-- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`. Only the error `EACCES` of `_locking` gives 1.
+- On Windows, `_locking` locks the first byte with `_LK_NBLCK`, and `os_unlock` gives `_LK_UNLCK`, then `_close`. Only the error `ERROR_LOCK_VIOLATION` in `_doserrno` gives 1.
+  The C library of Windows gives `EACCES` also for other refusals of the system, for example `ERROR_ACCESS_DENIED`. Thus `os_lock` does not read `errno` on Windows.
 
 The sources of a lock:
 
@@ -298,6 +300,10 @@ The sources of a lock:
 - Linux, `flock`: `ENOLCK` tells "The kernel ran out of memory for allocating lock records."
 - Microsoft, `_locking`: `_LK_UNLCK` "Unlocks the specified bytes, which must have been previously locked." https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking
 - Microsoft, `_locking`: `EACCES` tells a "Locking violation (file already locked or unlocked)."
+- Microsoft, `_doserrno`: "For I/O operations, `_doserrno` stores the operating-system error-code equivalents of `errno` codes." https://learn.microsoft.com/en-us/cpp/c-runtime-library/errno-doserrno-sys-errlist-and-sys-nerr
+- Microsoft, System Error Codes: `ERROR_LOCK_VIOLATION` tells "The process cannot access the file because another process has locked a portion of the file." https://learn.microsoft.com/en-us/windows/win32/debug/system-error-codes--0-499-
+- Microsoft, the source of the UCRT in the Windows SDK, lowio/locking.cpp: on a failure of `LockFileEx`, `_locking` calls `__acrt_errno_map_os_error(GetLastError())`.
+- The same source, misc/errno.cpp: that function sets `_doserrno = oserrno`, and maps `ERROR_ACCESS_DENIED`, `ERROR_LOCK_VIOLATION` and the codes 19 to 36 to `EACCES`.
 - Microsoft, `LockFile`: when a process ends with a lock, "the locks are unlocked by the operating system." https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-lockfile
 - Microsoft, `LockFile`: "However, the time it takes for the operating system to unlock these locks depends upon available system resources."
 - Microsoft, `LockFile`: with a second handle, the locking process "cannot access the specified region through this second handle until it unlocks the region."
