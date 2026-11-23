@@ -155,6 +155,8 @@ void os_process_free(os_process_t *p);
 
 [[nodiscard]] int os_link_make(const char *path, const char *target);
 
+[[nodiscard]] int os_file_link(const char *from, const char *to);
+
 [[nodiscard]] char *os_env_get(const char *name);
 
 [[nodiscard]] char *os_path_find(const char *name);
