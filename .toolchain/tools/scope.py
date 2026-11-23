@@ -6,7 +6,7 @@ import subprocess
 import sys
 import tomllib
 
-from shared import arguments, config, die, part_of, repository
+from shared import arguments, base, config, die, part_of, repository
 
 TOPS = ('src/', 'include/', 'tests/')
 CONFIG = '.toolchain/config/'
@@ -40,8 +40,8 @@ def git(root, *argv):
 def checked_only(root, into):
     if not repository(root):
         return False
-    base = git(root, 'merge-base', 'HEAD', 'origin/' + into) or git(root, 'merge-base', 'HEAD', into)
-    before = base and git(root, 'show', base.decode('ascii').strip() + ':' + PROJECT)
+    shared = base(root, into)
+    before = shared and git(root, 'show', shared + ':' + PROJECT)
     if not before:
         return False
     try:
