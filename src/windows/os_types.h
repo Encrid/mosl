@@ -28,6 +28,8 @@ struct os_event {
 };
 
 constexpr size_t OS_NAME_ROOM = 256;
+constexpr DWORD OS_SHARE_ALL = FILE_SHARE_READ | FILE_SHARE_WRITE
+    | FILE_SHARE_DELETE;
 
 struct os_folder {
     HANDLE find;

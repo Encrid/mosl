@@ -15,7 +15,12 @@ It writes the name in UTF-8 into `name` of the folder, which holds 768 bytes. A 
 A name of more than 255 characters does not fit, and the join fails. No file of Windows has such a name.
 After the call, the zero byte goes back to the end of the whole path.
 
-`os_folder_read_file` joins the name. `_wfopen` opens the file by that path, and `_fstat64` gives its size. `_wfopen` refuses a folder.
+`os_folder_read_file` joins the name. `open_shared` opens the file by that path, and `_fstat64` gives its size.
+
+`open_shared` opens the handle with `CreateFileW`, `GENERIC_READ` and `OS_SHARE_ALL` of `src/windows/os_types.h`.
+Thus the read keeps the contract of `docs/extern/os.h.md`, *The folders*, for a file that another program changes.
+`CreateFileW` with no `FILE_FLAG_BACKUP_SEMANTICS` refuses a folder.
+`_open_osfhandle` then gives the handle a descriptor, and `_fdopen` a stream. If 1 of them fails, `open_shared` closes what it opened, and gives `nullptr`.
 `os_read_stream` reads the bytes: `docs/intern/common/read_stream.c.md`, *The buffer*.
 
 ## The size of a file
@@ -27,7 +32,8 @@ It gives -1 for a folder, for a link with no target, and for a name that does no
 
 | Function | Result |
 | --- | --- |
+| `open_shared(whole)` | Gives a stream of the file at the whole path, as *The read of a file* tells, or `nullptr`. |
 | `join_name(f, name, at)` | Joins `name` to the whole path at `at`, as *The read of a file* tells. Gives false if the name does not fit. |
 | `os_folder_read_entry(f, is_folder)` | Gives the next name of the search, and its kind, as *The entries* tells. Gives `nullptr` at the end. |
-| `os_folder_read_file(f, name, len)` | Gives the bytes of the file `name` of *The read of a file*, or `nullptr` if `_wfopen` or the read fails. |
+| `os_folder_read_file(f, name, len)` | Gives the bytes of the file `name` of *The read of a file*, or `nullptr` if `open_shared` or the read fails. |
 | `os_folder_entry_size(f, name, size)` | Writes the size of *The size of a file* into `*size`, and gives 0. Gives -1 if the name does not fit, if `os_get_whole_info` does not give 1, or if the entry is a folder. |

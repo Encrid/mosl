@@ -217,6 +217,9 @@ A folder opens by its path, and `os_folder_read_file` reads a file of it by its 
 
 The path of a folder can end with a separator. It can also be a root: `/` on Linux and macOS, or the root of a drive on Windows, for example `C:\`.
 
+While `os_folder_read_file` holds a file open, another program can write the file, delete it, or move a file onto its path.
+On Windows, the layer opens the file with `FILE_SHARE_READ`, `FILE_SHARE_WRITE` and `FILE_SHARE_DELETE` for that. The read then gives the bytes of the file that it opened.
+
 A library loads by its path, so `os_lib_open` keeps the limit of the loader of each system. That limit is 4096 bytes on Linux, 1024 on macOS, and 260 characters on Windows.
 
 ## The libraries
@@ -504,23 +507,33 @@ The sources of a durable write:
 `os_path_move` gives the file or the folder `from` the path `to`, and replaces a file at `to`.
 The two paths must be on one volume, else the move fails.
 
+The move also replaces a file at `to` that another program holds open:
+
+- On Linux and macOS, `renameat` replaces the entry. An open handle keeps the old file.
+- On Windows, the layer first renames with `SetFileInformationByHandle` and `FileRenameInfoEx`, with `FILE_RENAME_FLAG_REPLACE_IF_EXISTS` and `FILE_RENAME_FLAG_POSIX_SEMANTICS`. A handle that shares the delete then keeps the old file, and the path gives the new one.
+- If the system refuses that rename, for example a file system with no such semantics, the layer moves with `MoveFileExW`. That move fails while another handle holds `to` open.
+- On Windows, no rename replaces a file that runs, such as a library that a process loaded.
+
 With `OS_MOVE_DURABLE`, `os_path_move` waits for the disk before it returns. On macOS, the cache of the drive can still hold the move.
 With no `OS_MOVE_DURABLE`, the call does not wait for the disk, and the system writes the move later.
 
-- On Windows, `MoveFileExW` gets the flag `MOVEFILE_WRITE_THROUGH`. Microsoft states that the call then returns only when the move is on the disk.
-- The guarantee of Microsoft names only a move that copies and deletes the file. `os_path_move` never copies, because it does not use `MOVEFILE_COPY_ALLOWED`.
+- On Windows, `OS_MOVE_DURABLE` adds nothing to a move on 1 volume. The rename of `FileRenameInfoEx` has no flag that waits for the disk.
+- A move by `MoveFileExW` gets the flag `MOVEFILE_WRITE_THROUGH`. Microsoft states its guarantee only for a move that copies and deletes the file. `os_path_move` never copies, because it does not use `MOVEFILE_COPY_ALLOWED`.
 - On Linux and macOS, `fsync` syncs the folder of `to` after the move. It also syncs the folder of `from` if that is a different folder.
 - On Linux and macOS, a failed sync gives -1, and the move is made: the entry is at `to`, and not at `from`.
 - On macOS, the cache of the drive can keep the entries for some time, as for `os_file_write`. The drive can also write them in a different sequence.
 - Each sync waits for the disk, so a durable move costs more time than a move with no `OS_MOVE_DURABLE`.
 
-On Windows and Linux, a durable write and a durable move keep a whole file. Write the file under a temporary path, then move it to its path.
+On Linux, a durable write and a durable move keep a whole file. Write the file under a temporary path, then move it to its path.
+On Windows, a durable write keeps the bytes of the file, and no source states when the new name reaches the disk.
 On macOS, the drive can write the new name before the bytes. Thus a loss of power can give the new name with bytes that are not complete.
 
 The sources of a durable move:
 
 - Microsoft, `MoveFileExW`: "The function does not return until the file is actually moved on the disk." https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-movefileexw
 - Microsoft, `MoveFileExW`: "Setting this value guarantees that a move performed as a copy and delete operation is flushed to disk before the function returns."
+- Microsoft, `FILE_RENAME_INFORMATION`: with `FILE_RENAME_POSIX_SEMANTICS`, "allow replacing a file even if there are existing handles to it. Existing handles to the replaced file continue to be valid for operations such as read and write." https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_rename_information
+- Microsoft, `FILE_RENAME_INFORMATION`: a rename fails for a target that "is a directory, a read-only file, or a currently executing file."
 - macOS, `fsync`: "it may be written in an out-of-order sequence." https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/fsync.2.html
 - Linux, `fsync`: "Calling fsync() does not necessarily ensure that the entry in the directory containing the file has also reached disk." https://man7.org/linux/man-pages/man2/fsync.2.html
 - Linux, `fsync`: "For that an explicit fsync() on a file descriptor for the directory is also needed."
