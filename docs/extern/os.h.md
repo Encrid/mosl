@@ -181,6 +181,7 @@ Each function that can fail is `[[nodiscard]]`: the caller must use its result.
 | `os_path_move` | Gives the file or the folder `from` the path `to`, with the flags of `enum os_move_flag`, as *The files* tells. With `OS_MOVE_DURABLE`, it waits for the disk before it returns. On macOS, the cache of the drive can still hold the move. Gives 0 on success, and -1 for a flag that is not known. |
 | `os_path_remove` | Removes what is at `path`, as *The files* tells. |
 | `os_link_make` | Makes `path` a symbolic link to `target`, as *The files* tells. Gives 0 on success. |
+| `os_file_link` | Gives the file `from` the second name `to`, a hard link, as *The files* tells. Gives 0 on success, and -1 else. |
 | `os_env_get` | Gives a copy of the value of the variable `name`, as *The environment* tells. |
 | `os_path_find` | Finds the program `name`, as *The environment* tells. |
 | `os_folder_base` | Gives the base folder of the data of the user for `kind`, which the caller frees, as *The base folders* tells. Gives `nullptr` for a kind that is not known, or if the system gives no folder. |
@@ -548,6 +549,14 @@ The sources of a durable move:
 An empty `target` gives -1 on each system, because a link to no path is of no use.
 On Windows, a link needs the Developer Mode or the rights of an administrator.
 On Windows, the link is a link to a folder if `target` is a folder at the call.
+
+`os_file_link` gives the file `from` a second name, `to`: a hard link. The 2 names hold the same bytes, and need no right of an administrator on any system.
+It gives -1 if `from` is no file or a folder, if something is at `to`, or if the paths are on 2 volumes.
+It also gives -1 if the folder of `to` is not there.
+
+A write in place through 1 name changes the bytes of the other.
+A move onto 1 name gives that name a new file. The other name keeps the old bytes.
+On Linux and macOS, `linkat` makes the link. On Windows, `CreateHardLinkW` makes it.
 
 ## The environment
 

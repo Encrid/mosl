@@ -17,4 +17,5 @@ A link to a folder gets `SYMBOLIC_LINK_FLAG_DIRECTORY`. Each link gets `SYMBOLIC
 | --- | --- |
 | `is_absolute(target)` | Gives true if `target` starts with `/`, with `\`, or with a drive. |
 | `get_target_kind(path, target)` | Gives 1 if `target` names a folder from the folder of `path`, 0 if not, or -1 if its memory fails. |
+| `os_file_link(from, to)` | Makes the hard link with `CreateHardLinkW`, from the whole forms of the 2 paths. Gives 0, or -1. |
 | `os_link_make(path, target)` | Makes the link as *The link* tells. Gives 0, or -1. |

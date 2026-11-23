@@ -3,12 +3,12 @@ code = ["include/**", "src/common/**", "src/leaks.toml", "src/linux/**", "src/ma
 [[case]]
 name = "files"
 run = ["{out}/files{exe}"]
-sweep = ["CloseHandle", "CreateDirectoryW", "CreateFileW", "CreateSymbolicLinkW", "DeleteFileW", "FindFirstFileExW", "FlushFileBuffers", "GetFileAttributesW", "GetFileInformationByHandle", "GetFullPathNameW", "MoveFileExW", "RemoveDirectoryW", "SetCurrentDirectoryW", "SetFileAttributesW", "SetFileInformationByHandle", "WriteFile", "_fdopen", "_open_osfhandle", "calloc", "chdir", "close", "fchmod", "fchmodat", "fdopendir", "fstat", "fstatat", "fsync", "malloc", "mkdirat", "realpath", "renameat", "symlinkat", "unlinkat", "write"]
+sweep = ["CloseHandle", "CreateDirectoryW", "CreateFileW", "CreateHardLinkW", "CreateSymbolicLinkW", "DeleteFileW", "FindFirstFileExW", "FlushFileBuffers", "GetFileAttributesW", "GetFileInformationByHandle", "GetFullPathNameW", "MoveFileExW", "RemoveDirectoryW", "SetCurrentDirectoryW", "SetFileAttributesW", "SetFileInformationByHandle", "WriteFile", "_fdopen", "_open_osfhandle", "calloc", "chdir", "close", "fchmod", "fchmodat", "fdopendir", "fstat", "fstatat", "fsync", "linkat", "malloc", "mkdirat", "realpath", "renameat", "symlinkat", "unlinkat", "write"]
 claims = { status = 0 }
 rows = [
     { name = "os_folder_make makes each folder above the folder", in = "{case}/r0 make a/b/c", claims = { line = ["make: 0 3"] }, false = "{case}/f0 make a/b/c" },
     { name = "os_folder_make gives 0 for a folder that is there", in = "{case}/r1 make a", claims = { line = ["make: 0 3"] }, false = "{case}/f1 make a/k" },
-    { name = "each call on a path takes a path past the limit of the system, also a durable write and a durable move", in = "{case}/r2 deep made", claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, link 0, entry 3, remove 0, entry 0"] }, false = "{case}/f2 deep unmade" },
+    { name = "each call on a path takes a path past the limit of the system, also a durable write and a durable move", in = "{case}/r2 deep made", claims = { line = ["deep: make 0, write 0, read deep file, entry 1, move 0, entry 1, hard 0, entry 1, link 0, entry 3, remove 0, entry 0"] }, false = "{case}/f2 deep unmade" },
     { name = "os_file_write replaces all the bytes of a file", in = "{case}/r3 replace new", claims = { line = ["replace: 0, 3 bytes: new"] }, false = "{case}/f3 replace news" },
     { name = "a new file with executable gets 0777 less the umask", in = "{case}/r4 mode none x 0755", claims = { line = ["mode: as The files tells"] }, false = "{case}/f4/none mode none x 0755" },
     { name = "a new file gets 0666 less the umask", in = "{case}/r5 mode none - 0644", claims = { line = ["mode: as The files tells"] }, false = "{case}/f5/none mode none - 0644" },
@@ -24,7 +24,7 @@ rows = [
     { name = "a relative target of a link starts in the folder of the link", in = "{case}/r15 link-relative ../f", claims = { line = ["link-relative: 0, reads f"] }, false = "{case}/f15 link-relative f" },
     { name = "os_path_whole and os_folder_make keep a name of UTF-8", in = "{case}/r16 whole", claims = { line = ["whole: as The folders tells"] }, false = "{case}/f16/f/x whole" },
     { name = "os_folder_make gives -1 for a file at the path", in = "{case}/r17 make a/k", claims = { line = ["make: -1 1"] }, false = "{case}/f17 make a/x" },
-    { name = "each call on a long path that is not there fails", in = "{case}/r18 deep unmade", claims = { line = ["deep: make 1, write -1, read none, entry 0, move -1, entry 0, link -1, entry 0, remove 1, entry 0"] }, false = "{case}/f18 deep made" },
+    { name = "each call on a long path that is not there fails", in = "{case}/r18 deep unmade", claims = { line = ["deep: make 1, write -1, read none, entry 0, move -1, entry 0, hard -1, entry 0, link -1, entry 0, remove 1, entry 0"] }, false = "{case}/f18 deep made" },
     { name = "os_file_write writes a file of 2 MiB", in = "{case}/r19 big", claims = { line = ["big: 0, 2097152 bytes"] }, false = "{case}/f19/none big" },
     { name = "os_link_make takes a link with no folder, an absolute target and an empty target", in = "{case}/r20 link-forms", claims = { line = ["link-forms: set -1, 0 3 0 3 0 0 0 0 -1"] }, false = "{case}/f20/f/x link-forms" },
     { name = "a write of a file is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateFileW=1,WriteFile=1,write=1 {case}/r21 again write", claims = { matches = ["write: [1-9] refused, then made"] }, false = "{case}/f21 again write" },
@@ -75,11 +75,16 @@ rows = [
     { name = "os_file_write gives -1 for a flag that is not known, and writes no file", in = "{case}/r66 write-flags 4", claims = { line = ["write-flags: -1, entry 0"] }, false = "{case}/f66 write-flags 3" },
     { name = "os_path_move gives -1 for a flag that is not known, and moves nothing", in = "{case}/r67 move-flags 2", claims = { line = ["move-flags: -1, a 1, b 0"] }, false = "{case}/f67 move-flags 1" },
     { name = "os_folder_read_file is refused when a call of its open fails, and a later one is made", in = "+refuse _open_osfhandle=1,_fdopen=1,fstat=1 {case}/r68 again read", claims = { matches = ["read: [1-9] refused, then made"] }, false = "{case}/f68 again read" },
+    { name = "os_file_link makes a second name of a file, and refuses a name that is there, a file that is not, a folder of the name that is not, short or past the limit of the system, and a folder", in = "{case}/r69 file-link", claims = { line = ["file-link: 0, b holds a, again -1, none -1, no folder -1, no long folder -1, folder -1"] }, false = "{case}/f69/none file-link" },
+    { name = "os_file_link is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateHardLinkW=1,linkat=1 {case}/r70 again file-link", claims = { matches = ["file-link: [1-9] refused, then made"] }, false = "{case}/f70 again file-link" },
 ]
 
 [case.files]
 "{case}/f0/a" = "x"
 "{case}/r68/r" = "r"
+"{case}/r69/a" = "a"
+"{case}/r70/a" = "a"
+"{case}/f70/b" = "b"
 "{case}/r1/a/k" = ""
 "{case}/f1/a/k" = ""
 "{case}/r3/f" = "old text"
@@ -303,6 +308,8 @@ rows = [
 "{case}/r66" = []
 "{case}/f66" = []
 "{case}/r67" = []
+"{case}/r69/d" = []
+"{case}/f69" = []
 "{case}/f67" = []
 "{case}/f68" = []
 
