@@ -28,9 +28,11 @@
 | `stamp(path)` | Gives the size and the time of the last write of a file, or nothing if it is not there. |
 | `sources_of(item, outputs, values)` | Gives the files of 1 item of `folders`: the artifact or the file, or each file of the project that a pattern with `*` matches. It stops the run if a pattern matches no file. |
 | `cleared(folder)` | Removes a folder with all its files, also a file that is read-only on Windows, such as an object of git. It changes the mode of no other file, so a link keeps the mode of its build output. |
+| `renamed(source, target)` | Renames a file onto its target. On Windows, it renames with the POSIX semantics, so the rename succeeds while a program holds the target open with a share of the delete. If the file system refuses it, it renames with `os.replace`. |
 | `scripted(running, script, outputs, values)` | Does the steps of a script. |
-| `held(hold)` | Gives the text of a hold in `C23_FAIL`, or the empty text with no hold: *The hold*. |
-| `hold_checked(hold, name, path, calls, root)` | Stops if the hold of the case `name` of the file `path` has a fault: *The hold*. |
+| `expanded_hold(hold, values)` | Gives the hold with the variables replaced in `file`, `call` and `until`: *The hold*. |
+| `held(hold, values)` | Gives the text of a hold in `C23_FAIL`, or the empty text with no hold: *The hold*. |
+| `hold_checked(hold, name, path, calls, values)` | Stops if the hold of the case `name` of the file `path` has a fault: *The hold*. |
 | `made_false(case)` | Gives the false variant of a case. |
 | `typed_rows(use, broken, order, values)` | Gives the text that `test` writes to the command of a table. It is the input of each row of `order`, each on one line. With `broken`, it is the false input. |
 | `tried(config, values, outputs, where, case, broken, counted, failing, part, order)` | Runs one case. With `order`, the case is a table, and the command gets the inputs of its rows in that order. With `counted`, it sets the variable `C23_LEAKS` of the case. `failing` gives the variables and the artifacts of the run `fail`, or `None`. `part` is the part of the case, or `False`. |
@@ -157,6 +159,7 @@ So `tried` takes the stamp of each linked file again when the case ends. If a st
 The step `put` of a script copies its file to `<case>.put`, beside the folder of the case, and then renames the copy onto its target.
 So a program that runs always finds the old file or the whole new file, and never a missing or a partial file.
 A rename does not write into the old file, so a put never writes into a linked file.
+On Windows, `renamed` uses the POSIX semantics, so a put also replaces a file that the program holds open, if its handle shares the delete.
 
 `made_false` makes the false variant: the keys of `false` replace the keys of the case.
 For `files` and for `folders`, each path of `false` replaces only that path.
@@ -172,6 +175,8 @@ The key `hold` of a case is a table with exactly 5 keys:
 | `at` | The number of the call in `file` that waits, 1 or more. |
 | `until` | The function whose calls release the wait, in any file of the layer. `[fail.calls]` lists it. |
 | `times` | The count of the calls of `until` that releases the wait, 1 or more. |
+
+`file`, `call` and `until` can hold variables, for example a value of the target: `docs/contributing/tests.md`, *Variables*. So 1 case can hold a different file or call on each system. `hold_checked` checks the texts after it replaces the variables.
 
 `hold_checked` stops `test` with the file and the name of the case if:
 

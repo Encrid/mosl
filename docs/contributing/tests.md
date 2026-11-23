@@ -177,6 +177,7 @@ A text of a case can contain variables, for example `{out}`. `test` replaces eac
 | `{python}` | The Python program that runs the tools. |
 
 Each key of `[variables]` of `.toolchain/project.toml` is a variable too.
+So is each key of the table of the target, for example `{system}`, which is `windows` or `posix`.
 
 ## Scripts
 
@@ -341,6 +342,7 @@ claims = { status = 0, matches = ["main\\s+worker"] }
 false = { hold = { file = "src/held.c", call = "wait_turn", at = 1, until = "done", times = 1 } }
 ```
 
+`file`, `call` and `until` can hold variables, for example `src/{system}/read.c`, so 1 case holds the file of each system.
 `[fail.calls]` lists `call` and `until`. A function with no result has the empty text as its value, so a case can hold it, and no case can make it fail.
 Put the hold before the lock of the thread that waits. Else the other thread can wait for the lock, and the case ends only at its timeout.
 `.toolchain/docs/fail.py.md`, *The hold*, tells how a call waits.

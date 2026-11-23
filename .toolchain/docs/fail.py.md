@@ -67,7 +67,7 @@ Thus a case can give 2 threads the same order in each run, with no wait of a tim
 
 - Call `<at>` of `<function>` in `<file>` waits. The count of a hold is a `static` variable of the file, so the calls of other files do not count.
 - The count of the releases is a `[[gnu::weak]]` variable with hidden visibility, so the files of 1 program share it.
-- Each call of `<until>` in a file of the layer adds 1 to it, after the call returns. A call that fails adds nothing.
+- Each call of `<until>` in a file of the layer adds 1 to it, after the call returns. A call that the layer makes fail adds nothing, since it never runs. A call that runs adds 1, also when it gives an error.
 - The held call goes on when the count of the releases is `<times>` or more. Thus a release that comes before the hold also counts.
 - The wait gives the processor to another thread on each turn: `SwitchToThread` on Windows, and `sched_yield` on the other systems.
 - Under `__wasm__` there is no hold, since a module has 1 thread.

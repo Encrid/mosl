@@ -214,6 +214,31 @@ def placed(use, outputs, values):
     return linked
 
 
+def renamed(source, target):
+    if os.name == 'nt':
+        import ctypes
+        from ctypes import wintypes as w
+
+        name = os.path.abspath(target)
+
+        class Rename(ctypes.Structure):
+            _fields_ = [('flags', w.DWORD), ('root', w.HANDLE), ('length', w.DWORD), ('name', w.WCHAR * (len(name) + 1))]
+        k = ctypes.WinDLL('kernel32', use_last_error=True)
+        k.CreateFileW.restype = w.HANDLE
+        k.CreateFileW.argtypes = [w.LPCWSTR, w.DWORD, w.DWORD, ctypes.c_void_p, w.DWORD, w.DWORD, w.HANDLE]
+        k.SetFileInformationByHandle.argtypes = [w.HANDLE, ctypes.c_int, ctypes.c_void_p, w.DWORD]
+        k.CloseHandle.argtypes = [w.HANDLE]
+        info = Rename(3, None, 2 * len(name), name)
+        handle = k.CreateFileW(os.path.abspath(source), 0x10000, 7, None, 3, 0, None)
+        done = handle not in (None, w.HANDLE(-1).value) and k.SetFileInformationByHandle(
+            handle, 22, ctypes.byref(info), ctypes.sizeof(info))
+        if handle not in (None, w.HANDLE(-1).value):
+            k.CloseHandle(handle)
+        if done:
+            return
+    os.replace(source, target)
+
+
 def scripted(running, script, outputs, values):
     for step in script:
         if 'wait' in step and not waited(running, expand(step['wait'], values)):
@@ -221,7 +246,7 @@ def scripted(running, script, outputs, values):
         for path, item in step.get('put', {}).items():
             spare = Path(values['case'] + '.put')
             shutil.copy(source_of(item, outputs, values), spare)
-            os.replace(spare, located(path, values))
+            renamed(spare, located(path, values))
         for path in step.get('remove', []):
             located(path, values).unlink()
         if 'type' in step:
@@ -234,13 +259,18 @@ def scripted(running, script, outputs, values):
             time.sleep(step['pause'])
 
 
-def held(hold):
-    return ' hold@%(file)s@%(call)s=%(at)d until@%(until)s=1 @times=%(times)d' % hold if hold else ''
+def expanded_hold(hold, values):
+    return dict(hold, **{key: expand(hold[key], values) for key in ('file', 'call', 'until') if isinstance(hold[key], str)})
 
 
-def hold_checked(hold, name, path, calls, root):
+def held(hold, values):
+    return ' hold@%(file)s@%(call)s=%(at)d until@%(until)s=1 @times=%(times)d' % expanded_hold(hold, values) if hold else ''
+
+
+def hold_checked(hold, name, path, calls, values):
     if not isinstance(hold, dict) or set(hold) != {'file', 'call', 'at', 'until', 'times'}:
         die('%s: the case %s states hold, and a hold has exactly the keys file, call, at, until and times' % (path, name))
+    hold, root = expanded_hold(hold, values), Path(values['root'])
     for key in ('call', 'until'):
         if hold[key] not in calls:
             die('%s: the case %s holds at %s %s, and [fail.calls] does not list it' % (path, name, key, hold[key]))
@@ -274,7 +304,7 @@ def tried(config, values, outputs, where, case, broken, counted=False, failing=N
     if '{port}' in str(use):
         mine['port'] = free_port()
     counting = {'C23_LEAKS': folder.as_posix() + '.leaks'} if counted else {}
-    plan = ''.join(' %s=%s' % pair for pair in use.get('fail', {}).items()) + held(use.get('hold')) or False
+    plan = ''.join(' %s=%s' % pair for pair in use.get('fail', {}).items()) + held(use.get('hold'), mine) or False
     part = ''.join(' %s ' % name for name in use['fail_parts']) if 'fail_parts' in use else part
     linked = placed(use, outputs, mine)
     root, timeout, helper = values['root'], config['test']['timeout'], use.get('helper')
@@ -573,7 +603,7 @@ def groups_of(config, values, folder):
                         % (path, case['name'], call, call))
             for hold in (case.get('hold'), case.get('false', {}).get('hold')):
                 if hold is not None:
-                    hold_checked(hold, case['name'], path, calls, root)
+                    hold_checked(hold, case['name'], path, calls, values)
         if config.get('test', {}).get('tables'):
             ruled(path, cases)
         found.append((Path(path).relative_to(folder).with_suffix('').as_posix(), cases))
