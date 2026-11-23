@@ -258,7 +258,7 @@ def probed(config, values, named=(), claimed=None):
         for path, table in probing.skips.items():
             skips.setdefault(path, {}).update(table)
     for (name, used, declared, _), parts in rewrite.united([(found, parts) for (_, found), parts in trees]):
-        outers[name] = fail.layer((root / name).read_bytes(), used, declared, calls, parts)
+        outers[name] = fail.layer((root / name).read_bytes(), used, declared, calls, parts, Path(name).as_posix())
     edits = {path: table for path, table in edits.items() if mine(config, path, named, claimed)}
     skips = {path: table for path, table in skips.items() if mine(config, path, named, claimed)}
     return written(root, rewrite.tree(values, 'branches'), edits, skips, outers)

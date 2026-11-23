@@ -554,6 +554,16 @@ static bool try_set([[maybe_unused]] int attempt)
     return (!os_folder_set(folder));
 }
 
+static bool try_read([[maybe_unused]] int attempt)
+{
+    os_folder_t *f = os_folder_open(folder);
+    size_t len = 0;
+    bool read = f && os_folder_read_file(f, "r", &len);
+
+    os_folder_close(f);
+    return (read);
+}
+
 static bool try_whole([[maybe_unused]] int attempt)
 {
     char *made = os_path_whole(folder);
@@ -573,6 +583,7 @@ static const try_t TRIED[] = {
     {"move", try_move}, {"remove", try_remove}, {"link", try_link},
     {"write-d", try_write_durable}, {"move-d", try_move_durable},
     {"make", try_make}, {"set", try_set}, {"whole", try_whole},
+    {"read", try_read},
 };
 
 static int again(char **argv)
@@ -613,6 +624,40 @@ static int big(char **)
         printf("big: %d, no file\n", wrote);
     os_folder_close(f);
     free(bytes);
+    return (0);
+}
+
+typedef struct {
+    char *from;
+    char *to;
+} held_t;
+
+static void move_held(void *arg)
+{
+    const held_t *h = arg;
+
+    printf("held-move: %d\n", os_path_move(h->from, h->to, 0));
+    fflush(stdout);
+}
+
+static int held_read(char **)
+{
+    held_t h = { in("hs"), in("ht") };
+    os_folder_t *f = nullptr;
+    os_thread_t *t = nullptr;
+    const char *bytes = nullptr;
+    size_t len = 0;
+
+    setup(os_file_write(h.to, "old", 3, 0) | os_file_write(h.from, "new", 3,
+        0));
+    f = os_folder_open(folder);
+    t = f ? os_thread_start(move_held, &h, 65536) : nullptr;
+    bytes = t ? os_folder_read_file(f, "ht", &len) : nullptr;
+    if (t)
+        os_thread_join(t);
+    printf("held-read: %.*s, ", bytes ? (int)len : 4, bytes ? bytes : "none");
+    printf("now %s\n", show(folder, "ht"));
+    os_folder_close(f);
     return (0);
 }
 
@@ -660,6 +705,7 @@ static const test_mode_t MODES[] = {
     {"size-link", 4, size_link}, {"replace-d", 4, replace_durable},
     {"move-d", 5, move_durable}, {"unread-move", 5, unread_move},
     {"write-flags", 4, write_flags}, {"move-flags", 4, move_flags},
+    {"held-read", 3, held_read},
 };
 
 static int end(int status)

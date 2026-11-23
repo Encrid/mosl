@@ -12,6 +12,7 @@ The fields `whole` and `name` of `struct os_folder` keep that room for a name.
 | --- | --- |
 | `OS_CHANGES_ROOM` | 65536: the bytes of the changes of a watch. The system also keeps the changes between two reads in a buffer of this size. |
 | `OS_ABOVE_ROOM` | 1024: the bytes of the changes of the folder above a watch, which no function reads. |
+| `OS_SHARE_ALL` | `FILE_SHARE_READ`, `FILE_SHARE_WRITE` and `FILE_SHARE_DELETE`: the share of each handle that the layer opens on an entry. Thus a handle refuses no write, delete or move. |
 | `OS_NAME_BYTES` | The bytes of the longest name of a watch in UTF-8, and its end: 3 bytes for each wide character of `OS_CHANGES_ROOM`. |
 
 ## Types
