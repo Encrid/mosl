@@ -3,6 +3,8 @@
 **
 ** Under the GNU Affero General Public License, version 3 only: see license.
 */
+#include <fcntl.h>
+#include <io.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <wchar.h>
@@ -33,6 +35,24 @@ static bool join_name(os_folder_t *f, const char *name, size_t at)
         (int)OS_NAME_ROOM) != 0);
 }
 
+static FILE *open_shared(const wchar_t *whole)
+{
+    HANDLE handle = CreateFileW(whole, GENERIC_READ, OS_SHARE_ALL, nullptr,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    int fd = -1;
+    FILE *file = nullptr;
+
+    if (handle == INVALID_HANDLE_VALUE)
+        return (nullptr);
+    fd = _open_osfhandle((intptr_t)handle, _O_RDONLY | _O_BINARY);
+    if (fd < 0)
+        CloseHandle(handle);
+    file = fd < 0 ? nullptr : _fdopen(fd, "rb");
+    if (fd >= 0 && !file)
+        _close(fd);
+    return (file);
+}
+
 char *os_folder_read_file(os_folder_t *f, const char *name, size_t *len)
 {
     size_t at = wcslen(f->whole);
@@ -41,7 +61,7 @@ char *os_folder_read_file(os_folder_t *f, const char *name, size_t *len)
     char *bytes = nullptr;
 
     if (join_name(f, name, at))
-        file = _wfopen(f->whole, L"rb");
+        file = open_shared(f->whole);
     f->whole[at] = L'\0';
     if (!file)
         return (nullptr);

@@ -9,12 +9,11 @@
 #include "os_types.h"
 #include "os_whole.h"
 
-constexpr DWORD SHARE = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 constexpr DWORD FLAGS = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED;
 
 static HANDLE open_listing(const wchar_t *path)
 {
-    return (CreateFileW(path, FILE_LIST_DIRECTORY, SHARE, nullptr,
+    return (CreateFileW(path, FILE_LIST_DIRECTORY, OS_SHARE_ALL, nullptr,
         OPEN_EXISTING, FLAGS, nullptr));
 }
 
