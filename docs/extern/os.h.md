@@ -274,6 +274,23 @@ Each system tells the changes in its own way:
 A watch gives 2 when the changes between two takes do not fit. It keeps 64 KiB on Windows and on macOS, and `max_queued_events` changes on Linux. FSEvents can also lose changes.
 A take with no change makes no call of the system on Windows and on macOS, and one call of `read` on Linux.
 
+The names come in the order in which the system hands them over.
+On Linux, that is the buffer of `read`. On Windows, it is the chain of the records of `ReadDirectoryChangesW`. On macOS, it is the arrays of the callback of FSEvents.
+Only Linux states that this order is the order of the changes:
+
+- On Linux, the names come in the order of the changes, since inotify gives its events as an ordered queue.
+- On Windows, `ReadDirectoryChangesW` states no order of its records. Thus a caller does not rely on the order of 2 names.
+- On macOS, the ids of the events increase, but FSEvents states no order of the events of a callback. It can also merge the changes of 1 folder that come close in time. Thus a caller does not rely on the order of 2 names.
+
+- The Linux man-pages project, `inotify(7)`: https://man7.org/linux/man-pages/man7/inotify.7.html
+- `inotify(7)`: "The events returned by reading from an inotify file descriptor form an ordered queue."
+- Microsoft, `ReadDirectoryChangesW`: https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-readdirectorychangesw
+- Microsoft, `ReadDirectoryChangesW`: "Directory changes that occur between calls to this function are added to the buffer and then returned with the next call."
+- Apple, File System Events Programming Guide, the use of the API: https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/FSEvents_ProgGuide/UsingtheFSEventsFramework/UsingtheFSEventsFramework.html
+- Apple, the use of the API: a stream of 1 host holds "events whose IDs are increasing".
+- Apple, File System Events Programming Guide, the overview: https://developer.apple.com/library/archive/documentation/Darwin/Conceptual/FSEvents_ProgGuide/TechnologyOverview/TechnologyOverview.html
+- Apple, the overview: the daemon "coalesces multiple notifications on a given directory if they occur in a short period of time".
+
 ## The locks
 
 `os_lock` opens the file `path`, and makes it if it is not there. Then it takes an exclusive lock of the file, and does not wait.
