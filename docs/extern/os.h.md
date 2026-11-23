@@ -552,6 +552,7 @@ On Windows, the link is a link to a folder if `target` is a folder at the call.
 
 `os_file_link` gives the file `from` a second name, `to`: a hard link. The 2 names hold the same bytes, and need no right of an administrator on any system.
 It gives -1 if `from` is no file or a folder, if something is at `to`, or if the paths are on 2 volumes.
+It also gives -1 if the folder of `to` is not there.
 
 A write in place through 1 name changes the bytes of the other.
 A move onto 1 name gives that name a new file. The other name keeps the old bytes.
