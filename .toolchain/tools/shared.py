@@ -17,7 +17,7 @@ WAIT = 0.2
 NAME = re.compile(r'\{([a-z_][a-z0-9_]*)(?::([^{}]*))?\}')
 KEYS = {'step': {'run', 'cwd', 'section', 'text', 'contains', 'copy', 'rename'},
         'case': {'name', 'run', 'env', 'stdin', 'script', 'helper', 'files', 'folders', 'fail', 'fail_parts', 'hold', 'claims', 'false', 'alone',
-                 'ignore', 'rows', 'sweep', 'process'},
+                 'ignore', 'rows', 'sweep', 'process', 'systems'},
         'row': {'name', 'in', 'claims', 'false'},
         'claim of a row': {'line', 'has', 'lacks', 'matches', 'matches_not', 'order', 'output'},
         'false': {'run', 'env', 'stdin', 'script', 'helper', 'files', 'folders', 'fail', 'fail_parts', 'hold', 'ignore'},

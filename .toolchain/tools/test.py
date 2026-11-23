@@ -572,6 +572,7 @@ def ruled(path, cases):
 
 def groups_of(config, values, folder):
     root, found, calls = Path(values['root']), [], fail.listed(config, values)
+    systems = {target.get('system') for target in config['targets'].values()}
     for path in files(root, [folder + '/**/*.toml']):
         cases = tomllib.loads((root / path).read_text(encoding='utf-8')).get('case', [])
         for case in cases:
@@ -604,9 +605,18 @@ def groups_of(config, values, folder):
             for hold in (case.get('hold'), case.get('false', {}).get('hold')):
                 if hold is not None:
                     hold_checked(hold, case['name'], path, calls, values)
+            if 'systems' in case and not (isinstance(case['systems'], list) and case['systems']
+                                          and all(system in systems for system in case['systems'])):
+                die('%s: the case %s states systems %s, and each must be the system of a target: %s'
+                    % (path, case['name'], case['systems'], ' '.join(sorted(systems))))
         if config.get('test', {}).get('tables'):
             ruled(path, cases)
-        found.append((Path(path).relative_to(folder).with_suffix('').as_posix(), cases))
+        group = Path(path).relative_to(folder).with_suffix('').as_posix()
+        mine = [case for case in cases if values.get('system') in case.get('systems', [values.get('system')])]
+        if len(mine) < len(cases):
+            print('%s: %d cases for another system: %s' % (group, len(cases) - len(mine),
+                                                           ', '.join(case['name'] for case in cases if case not in mine)))
+        found.append((group, mine))
     return [(group, cases) for group, cases in found if cases]
 
 

@@ -29,12 +29,12 @@ A config file belongs to the part whose table `[parts.<part>]` it states alone.
 
 A group tests the project as a whole if its file states `whole = true`. Such a group has no code by default, so it does not run for a changed source.
 
-A pull request into `main` runs only the groups of the whole. Each piece ran its own groups when it changed.
-A project with no such group runs no case there. `check` and the package proof of `pack` still run.
+A pull request into `main` runs the groups of each changed path, and the groups of the whole. A pull request into `dev` runs only `test` of its groups, so the other test commands of a changed piece run there.
+`check` and the package proof of `pack` still run.
 
 ## The scope
 
-For a pull request into a different branch than `main`, each changed path gives the groups that test it.
+For each pull request, each changed path gives the groups that test it.
 A file of the copy of the toolchain that no group tests gives the groups of the whole.
 The cases of the toolchain run in the repository `mc23t`.
 

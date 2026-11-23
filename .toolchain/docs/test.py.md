@@ -114,9 +114,13 @@ A file with no case gives no group.
 - states the process `script` with no key `script` and no key `stdin`: `<path>: the case <name> states the process script, and it has no script and no stdin`,
 - states a call in `fail`, also in its false variant, that `listed` of `fail.py` does not give: `<path>: the case <name> makes <call> fail, and [fail.calls] does not list it`,
 - states such a call whose value is the empty text: `<path>: the case <name> makes <call> fail, and <call> gives no result, so no case can make it fail`,
-- states a `hold` that `hold_checked` refuses, also in its false variant: *The hold*.
+- states a `hold` that `hold_checked` refuses, also in its false variant: *The hold*,
+- states `systems` that is not a list of 1 or more systems of the targets: `<path>: the case <name> states systems <list>, and each must be the system of a target: <systems>`.
 
 With `tables = true` in `[test]`, `groups_of` then gives the cases of each file to `ruled`.
+
+Then `groups_of` keeps only the cases with no `systems`, or whose `systems` holds the `system` of the target. If it leaves a case out, it writes `<group>: <n> cases for another system: <names>`.
+So a case that it leaves out runs in no run of `test`, also with `--branches` or `--leaks`.
 
 ## A case
 

@@ -138,6 +138,7 @@ A change runs only the groups that test a changed file: `.toolchain/docs/scope.p
 | `false` | The false variant of the case. Each case must have one. |
 | `rows` | The rows of a table: *Tables*. A case with `rows` has no `false`, no `stdin` and no `script`. |
 | `process` | The reason why a case with no `rows` has its own process: *Its own process*. |
+| `systems` | The systems on which the case runs, for example `["windows"]`. Each is the `system` of a target. On another system, the case does not run, and `test` writes `<group>: <n> cases for another system: <names>`. A false variant cannot state it. |
 | `alone` | `true` if the case must not run at the same time as a copy of itself. Such a case runs one time with `--copies`. |
 
 Each case starts in an empty folder, `{case}`. The command runs in the folder of the project.

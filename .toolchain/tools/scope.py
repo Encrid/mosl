@@ -91,9 +91,9 @@ def claimed(settings, root, names):
 def scoped(settings, root, paths, into):
     found = groups(settings, root)
     wholes = [group['name'] for group in found if group['whole']] or [group['name'] for group in found]
-    if not found or into == 'main':
+    if not found:
         return wholes
-    picked = set()
+    picked = set(wholes) if into == 'main' else set()
     for path in paths:
         if path == PROJECT and checked_only(root, into):
             continue
