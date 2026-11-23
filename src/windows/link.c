@@ -40,6 +40,19 @@ static int get_target_kind(const char *path, const char *target)
     return (kind);
 }
 
+int os_file_link(const char *from, const char *to)
+{
+    wchar_t *from_whole = os_get_whole(from);
+    wchar_t *to_whole = from_whole ? os_get_whole(to) : nullptr;
+    int linked = -1;
+
+    if (to_whole && CreateHardLinkW(to_whole, from_whole, nullptr))
+        linked = 0;
+    free(from_whole);
+    free(to_whole);
+    return (linked);
+}
+
 int os_link_make(const char *path, const char *target)
 {
     wchar_t *whole = os_get_whole(path);

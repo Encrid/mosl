@@ -57,6 +57,21 @@ int os_path_move(const char *from, const char *to, uint32_t flags)
     return (moved);
 }
 
+int os_file_link(const char *from, const char *to)
+{
+    const char *from_name = nullptr;
+    const char *to_name = nullptr;
+    int from_at = os_open_parent(from, &from_name, false);
+    int to_at = os_open_parent(to, &to_name, false);
+    int linked = -1;
+
+    if (from_at != -1 && to_at != -1)
+        linked = linkat(from_at, from_name, to_at, to_name, 0) ? -1 : 0;
+    os_close_parent(from_at);
+    os_close_parent(to_at);
+    return (linked);
+}
+
 int os_link_make(const char *path, const char *target)
 {
     const char *name = nullptr;

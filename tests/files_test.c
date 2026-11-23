@@ -128,10 +128,11 @@ static int deep(char **argv)
     char *file = path ? join(path, "f") : nullptr;
     char *moved = path ? join(path, "g") : nullptr;
     char *link = path ? join(path, "l") : nullptr;
+    char *hard = path ? join(path, "h") : nullptr;
     int made = 1;
     int wrote = 0;
 
-    if (!first || !file || !moved || !link)
+    if (!first || !file || !moved || !link || !hard)
         return (printf("deep: no memory\n"), 1);
     first[strlen(folder) + 1 + LEVEL] = '\0';
     if (!strcmp(argv[3], "made"))
@@ -141,6 +142,8 @@ static int deep(char **argv)
         show(path, "f"), os_path_entry(file));
     printf("move %d, entry %d, ", os_path_move(file, moved, OS_MOVE_DURABLE),
         os_path_entry(moved));
+    printf("hard %d, entry %d, ", os_file_link(moved, hard),
+        os_path_entry(hard));
     printf("link %d, entry %d, ", os_link_make(link, "."),
         os_path_entry(link));
     printf("remove %d, entry %d\n", os_path_remove(first),
@@ -150,7 +153,18 @@ static int deep(char **argv)
     free(file);
     free(moved);
     free(link);
+    free(hard);
     return (0);
+}
+
+static int file_link(char **)
+{
+    int linked = os_file_link(in("a"), in("b"));
+
+    printf("file-link: %d, b holds %s, ", linked, show(folder, "b"));
+    printf("again %d, ", os_file_link(in("a"), in("b")));
+    printf("none %d, ", os_file_link(in("none"), in("c")));
+    return (printf("folder %d\n", os_file_link(in("d"), in("e"))), 0);
 }
 
 static int locked(char **)
@@ -564,6 +578,11 @@ static bool try_read([[maybe_unused]] int attempt)
     return (read);
 }
 
+static bool try_file_link([[maybe_unused]] int attempt)
+{
+    return (!os_file_link(in("a"), in("b")));
+}
+
 static bool try_whole([[maybe_unused]] int attempt)
 {
     char *made = os_path_whole(folder);
@@ -583,7 +602,7 @@ static const try_t TRIED[] = {
     {"move", try_move}, {"remove", try_remove}, {"link", try_link},
     {"write-d", try_write_durable}, {"move-d", try_move_durable},
     {"make", try_make}, {"set", try_set}, {"whole", try_whole},
-    {"read", try_read},
+    {"read", try_read}, {"file-link", try_file_link},
 };
 
 static int again(char **argv)
@@ -705,7 +724,7 @@ static const test_mode_t MODES[] = {
     {"size-link", 4, size_link}, {"replace-d", 4, replace_durable},
     {"move-d", 5, move_durable}, {"unread-move", 5, unread_move},
     {"write-flags", 4, write_flags}, {"move-flags", 4, move_flags},
-    {"held-read", 3, held_read},
+    {"held-read", 3, held_read}, {"file-link", 3, file_link},
 };
 
 static int end(int status)

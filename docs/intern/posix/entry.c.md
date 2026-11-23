@@ -29,4 +29,5 @@ A failed sync gives -1, and the entry has its new name.
 | `os_path_entry(path)` | Tells what is at `path`, as *The entry* tells. |
 | `is_same_folder(a, b)` | Tells if the texts of `a` and `b` before their last names are the same. |
 | `os_path_move(from, to, flags)` | Moves the entry as *The move* tells. Gives 0, or -1. |
+| `os_file_link(from, to)` | Makes the hard link with `linkat`, from the parents of the 2 paths. With no flag, a link at `from` gets a second name itself. Gives 0, or -1. |
 | `os_link_make(path, target)` | Makes the link with `symlinkat`. The system starts a relative `target` in the folder of the link. Gives 0, or -1. |
