@@ -75,7 +75,7 @@ rows = [
     { name = "os_file_write gives -1 for a flag that is not known, and writes no file", in = "{case}/r66 write-flags 4", claims = { line = ["write-flags: -1, entry 0"] }, false = "{case}/f66 write-flags 3" },
     { name = "os_path_move gives -1 for a flag that is not known, and moves nothing", in = "{case}/r67 move-flags 2", claims = { line = ["move-flags: -1, a 1, b 0"] }, false = "{case}/f67 move-flags 1" },
     { name = "os_folder_read_file is refused when a call of its open fails, and a later one is made", in = "+refuse _open_osfhandle=1,_fdopen=1,fstat=1 {case}/r68 again read", claims = { matches = ["read: [1-9] refused, then made"] }, false = "{case}/f68 again read" },
-    { name = "os_file_link makes a second name of a file, and refuses a name that is there, a file that is not, a folder of the name that is not, and a folder", in = "{case}/r69 file-link", claims = { line = ["file-link: 0, b holds a, again -1, none -1, no folder -1, folder -1"] }, false = "{case}/f69/none file-link" },
+    { name = "os_file_link makes a second name of a file, and refuses a name that is there, a file that is not, a folder of the name that is not, short or past the limit of the system, and a folder", in = "{case}/r69 file-link", claims = { line = ["file-link: 0, b holds a, again -1, none -1, no folder -1, no long folder -1, folder -1"] }, false = "{case}/f69/none file-link" },
     { name = "os_file_link is refused when a call that it needs fails, and a later one is made", in = "+refuse malloc=1,CreateHardLinkW=1,linkat=1 {case}/r70 again file-link", claims = { matches = ["file-link: [1-9] refused, then made"] }, false = "{case}/f70 again file-link" },
 ]
 
