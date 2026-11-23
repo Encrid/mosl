@@ -159,12 +159,17 @@ static int deep(char **argv)
 
 static int file_link(char **)
 {
+    char *deep = deep_path();
+    char *away = deep ? join(deep, "c") : nullptr;
     int linked = os_file_link(in("a"), in("b"));
 
     printf("file-link: %d, b holds %s, ", linked, show(folder, "b"));
     printf("again %d, ", os_file_link(in("a"), in("b")));
     printf("none %d, ", os_file_link(in("none"), in("c")));
     printf("no folder %d, ", os_file_link(in("a"), in("x/c")));
+    printf("no long folder %d, ", away ? os_file_link(in("a"), away) : -2);
+    free(deep);
+    free(away);
     return (printf("folder %d\n", os_file_link(in("d"), in("e"))), 0);
 }
 
