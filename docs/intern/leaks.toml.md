@@ -17,6 +17,6 @@ Thus `.toolchain/config/leaks.toml` is the list of the layer. It names the same 
 | File | `memory` | Reason |
 | --- | --- | --- |
 | `tests/leaks/windows.toml` | No function. | On Windows, each of the 5 functions takes its memory with `malloc`. |
-| `tests/leaks/posix.toml` | `os_env_get`, `os_path_find`, `os_path_whole`. | On Linux and on macOS, these 3 get their memory from `strdup` or from `realpath`, which the count does not see. `os_get_program_path` and `os_folder_base` take it with `malloc`. |
+| `tests/leaks/posix.toml` | `os_path_find`, `os_path_whole`. | On Linux and on macOS, these 2 get their memory from `realpath`, which the count does not see. `os_env_get` takes it with `strdup`, and `os_get_program_path` and `os_folder_base` take it with `malloc`. |
 
 A change of the inside of a function of `memory` can change how it takes its memory. Its place in these 2 files then changes too.
